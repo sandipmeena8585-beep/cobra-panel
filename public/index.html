@@ -1,129 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COBRA PANEL</title>
-
-<style>
-
-*{box-sizing:border-box;}
-
-body{
-  margin:0;
-  background:linear-gradient(135deg,#071226,#0f1c2e);
-  font-family:sans-serif;
-  color:white;
-}
-
-.container{
-  max-width:420px;
-  margin:auto;
-  padding:15px;
-}
-
-.card{
-  background:#0f1c2e;
-  border-radius:18px;
-  padding:20px;
-  margin-top:20px;
-  box-shadow:0 0 20px rgba(0,255,255,0.2);
-}
-
-h2{
-  text-align:center;
-  margin-bottom:20px;
-}
-
-select,input{
-  width:100%;
-  padding:14px;
-  margin:10px 0;
-  border-radius:12px;
-  border:none;
-  font-size:15px;
-}
-
-button{
-  width:100%;
-  padding:14px;
-  border:none;
-  border-radius:12px;
-  background:linear-gradient(90deg,#00f2ff,#007bff);
-  color:white;
-  font-size:16px;
-  margin-top:10px;
-}
-
-button:active{
-  transform:scale(0.97);
-}
-
-img{
-  display:block;
-  margin:auto;
-  border-radius:10px;
-}
-
-.hidden{display:none;}
-
-.status{
-  text-align:center;
-  margin-top:10px;
-  color:#00f2ff;
-}
-
-</style>
-</head>
-
-<body>
-
-<div class="container">
-
-<div class="card">
-
-<h2>🎮 BGMI PANEL</h2>
-
-<select id="plan">
-<option value="">Select Plan</option>
-<option value="1hour">1 Hour - ₹30</option>
-<option value="3hour">3 Hour - ₹50</option>
-<option value="1day">1 Day - ₹110</option>
-<option value="3day">3 Day - ₹200</option>
-<option value="7day">7 Day - ₹400</option>
-</select>
-
-<button onclick="startBuy()">BUY KEY</button>
-
-<div id="payment" class="hidden">
-
-<p style="text-align:center;">💰 UPI: <b>godxcobra@axl</b></p>
-
-<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl" width="200">
-
-<p id="planShow" style="text-align:center;"></p>
-
-<select id="method" onchange="changeMethod()">
-<option value="utr">Enter UTR ID</option>
-<option value="qr">Upload Screenshot</option>
-</select>
-
-<input id="utr" placeholder="Enter UTR ID">
-<input type="file" id="file" class="hidden">
-
-<button onclick="submitPayment()">SUBMIT</button>
-
-<p class="status" id="status"></p>
-
-</div>
-
-</div>
-
-</div>
-
 <script>
 
 let selectedPlan="";
 let interval;
+let timerInterval;
+let timeLeft = 60;
 
 // START
 function startBuy(){
@@ -139,6 +19,38 @@ function changeMethod(){
   let m=document.getElementById("method").value;
   document.getElementById("utr").style.display = (m==="utr")?"block":"none";
   document.getElementById("file").style.display = (m==="qr")?"block":"none";
+}
+
+// 🔥 TIMER START
+function startTimer(){
+  clearInterval(timerInterval);
+  timeLeft = 60;
+
+  timerInterval = setInterval(()=>{
+    timeLeft--;
+
+    document.getElementById("status").innerText =
+      "⏳ Waiting Admin Verify... " + timeLeft + "s";
+
+    if(timeLeft <= 0){
+      clearInterval(timerInterval);
+
+      alert("⚠️ Timeout! Please try again");
+
+      localStorage.removeItem("utr");
+      location.reload();
+    }
+
+  },1000);
+}
+
+// 🔥 FAKE PAYMENT CHECK (basic)
+function fakeCheck(utr){
+  if(utr.length < 5){
+    alert("⚠️ Invalid UTR (Fake Payment Suspected)");
+    return false;
+  }
+  return true;
 }
 
 // SUBMIT
@@ -159,6 +71,9 @@ async function submitPayment(){
 
   let finalUTR = utr || Date.now().toString();
 
+  // 🔥 fake check
+  if(!file && !fakeCheck(finalUTR)) return;
+
   let form=new FormData();
   form.append("plan",selectedPlan);
   form.append("utr",finalUTR);
@@ -173,7 +88,7 @@ async function submitPayment(){
 
     localStorage.setItem("utr",finalUTR);
 
-    document.getElementById("status").innerText="⏳ Waiting for admin...";
+    startTimer(); // ⏳ start timer
 
     check(finalUTR);
 
@@ -194,6 +109,8 @@ function check(utr){
 
     if(data.status==="approved"){
       clearInterval(interval);
+      clearInterval(timerInterval);
+
       localStorage.removeItem("utr");
 
       alert("✅ KEY: "+data.key);
@@ -203,27 +120,31 @@ function check(utr){
 
     if(data.status==="rejected"){
       clearInterval(interval);
+      clearInterval(timerInterval);
+
       localStorage.removeItem("utr");
 
-      alert("❌ Rejected");
+      alert("❌ Payment Rejected");
 
-      location.reload();
+      setTimeout(()=>{
+        location.reload();
+      },3000);
     }
 
   },2000);
 }
 
-// RESUME
+// RESUME (IMPORTANT)
 window.onload=()=>{
   let utr=localStorage.getItem("utr");
+
   if(utr){
     document.getElementById("payment").classList.remove("hidden");
-    document.getElementById("status").innerText="⏳ Waiting...";
+
+    startTimer(); // resume timer
+
     check(utr);
   }
 };
 
 </script>
-
-</body>
-</html>
