@@ -1,52 +1,90 @@
-<h2>ADMIN PANEL</h2>
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADMIN</title>
+
+<style>
+body{background:#071226;color:white;font-family:sans-serif;}
+.box{max-width:420px;margin:auto;padding:20px;background:#0f1c2e;border-radius:20px;}
+button{padding:8px;margin:5px;}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>ADMIN LOGIN</h2>
+
+<input id="user" placeholder="Username">
+<input id="pass" placeholder="Password">
+
+<button onclick="login()">LOGIN</button>
+
+<div id="panel" class="hidden">
+
+<h3>Requests</h3>
 <div id="data"></div>
+
+</div>
+
+</div>
 
 <script>
 
+function login(){
+  if(user.value==="COBRA SERVER" && pass.value==="SAMI9166"){
+    panel.classList.remove("hidden");
+    load();
+  }else alert("Wrong");
+}
+
 async function load(){
 
-  let res=await fetch("/admin/data");
-  let data=await res.json();
+  let r=await fetch("/admin/data");
+  let d=await r.json();
 
   let html="";
 
-  data.forEach(x=>{
+  d.forEach(x=>{
 
     if(x.status==="pending"){
-
       html+=`
       <div style="border:1px solid white;margin:10px;padding:10px">
 
       Plan: ${x.plan}<br>
       UTR: ${x.utr}<br>
-
-      Risk: ${x.risk=="high"?"⚠️ HIGH":x.risk=="medium"?"⚠️ MEDIUM":"OK"}<br>
+      Time: ${x.time}<br>
 
       ${x.file?`<img src="${x.file}" width="100">`:""}
 
       <br>
 
-      <button onclick="verify(${x.id})">VERIFY</button>
-      <button onclick="reject(${x.id})">REJECT</button>
+      <button onclick="v(${x.id})">VERIFY</button>
+      <button onclick="rj(${x.id})">REJECT</button>
 
       </div>`;
     }
 
   });
 
-  document.getElementById("data").innerHTML=html;
+  data.innerHTML=html;
 }
 
-async function verify(id){
+async function v(id){
   await fetch("/admin/verify/"+id);
   load();
 }
 
-async function reject(id){
+async function rj(id){
   await fetch("/admin/reject/"+id);
   load();
 }
 
-load();
+setInterval(load,3000);
 
 </script>
+
+</body>
+</html>
