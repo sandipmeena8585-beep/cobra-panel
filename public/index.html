@@ -1,43 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COBRA PANEL</title>
+
+<style>
+body{
+  margin:0;
+  background:#071226;
+  color:white;
+  font-family:sans-serif;
+}
+.box{
+  max-width:420px;
+  margin:auto;
+  padding:20px;
+  background:#0f1c2e;
+  border-radius:20px;
+  margin-top:20px;
+}
+select,input{
+  width:100%;
+  padding:12px;
+  margin:10px 0;
+  border-radius:10px;
+  border:none;
+}
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:#00f2ff;
+}
+.hidden{display:none;}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>🎮 BGMI PANEL</h2>
+
+<select id="plan">
+<option value="1hour">1 Hour - ₹30</option>
+<option value="3hour">3 Hour - ₹50</option>
+<option value="1day">1 Day - ₹110</option>
+<option value="3day">3 Day - ₹200</option>
+<option value="7day">7 Day - ₹400</option>
+</select>
+
+<button onclick="startBuy()">BUY KEY</button>
+
+<div id="payment" class="hidden">
+
+<p>UPI: godxcobra@axl</p>
+
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl" width="200">
+
+<p id="planShow"></p>
+
+<select id="method" onchange="changeMethod()">
+<option value="utr">Enter UTR</option>
+<option value="qr">Upload Screenshot</option>
+</select>
+
+<input id="utr" placeholder="Enter UTR">
+<input type="file" id="file" class="hidden">
+
+<button onclick="submit()">SUBMIT</button>
+
+<div id="status"></div>
+
+</div>
+
+</div>
+
 <script>
 
+let selectedPlan="";
+let interval;
+
+// PAGE LOAD
+window.onload=function(){
+  let saved=localStorage.getItem("utr");
+
+  if(saved){
+    document.getElementById("payment").classList.remove("hidden");
+    document.getElementById("status").innerText="⏳ Please wait admin verify";
+    checkStatus(saved);
+  }
+};
+
+// START
+function startBuy(){
+  selectedPlan=document.getElementById("plan").value;
+
+  document.getElementById("payment").classList.remove("hidden");
+
+  document.getElementById("planShow").innerText="Plan: "+selectedPlan;
+}
+
+// METHOD CHANGE
+function changeMethod(){
+  let m=document.getElementById("method").value;
+
+  if(m==="utr"){
+    document.getElementById("utr").style.display="block";
+    document.getElementById("file").style.display="none";
+  }else{
+    document.getElementById("utr").style.display="none";
+    document.getElementById("file").style.display="block";
+  }
+}
+
+// SUBMIT
 async function submit(){
 
-  let planValue = document.getElementById("plan").value;
-  let utrValue = document.getElementById("utr").value;
-  let fileInput = document.getElementById("file").files[0];
+  let utr=document.getElementById("utr").value.trim();
+  let file=document.getElementById("file").files[0];
 
-  if(!planValue){
-    alert("Select Plan");
+  if(!selectedPlan){
+    alert("Select Plan First");
     return;
   }
 
-  if(!utrValue && !fileInput){
+  if(!utr && !file){
     alert("Enter UTR or Upload Screenshot");
     return;
   }
 
-  let finalUTR = utrValue || Date.now().toString();
+  let finalUTR = utr || Date.now().toString();
 
-  let form = new FormData();
-  form.append("plan", planValue);
-  form.append("utr", finalUTR);
+  let form=new FormData();
+  form.append("plan",selectedPlan);
+  form.append("utr",finalUTR);
 
-  if(fileInput){
-    form.append("file", fileInput);
+  if(file){
+    form.append("file",file);
   }
-
-  console.log("SENDING:", planValue, finalUTR);
 
   await fetch("/buy",{
     method:"POST",
     body:form
   });
 
-  localStorage.setItem("utr", finalUTR);
+  localStorage.setItem("utr",finalUTR);
 
   document.getElementById("status").innerText="⏳ Please wait admin verify";
 
-  check(finalUTR);
+  checkStatus(finalUTR);
+}
+
+// STATUS CHECK
+function checkStatus(utr){
+
+  clearInterval(interval);
+
+  interval=setInterval(async()=>{
+
+    let res=await fetch("/status/"+utr);
+    let data=await res.json();
+
+    if(data.status==="approved"){
+
+      clearInterval(interval);
+      localStorage.removeItem("utr");
+
+      alert(
+        "KEY: "+data.key+
+        "\nJoin: https://t.me/GODx_COBRA"+
+        "\nExpire: 24h"
+      );
+
+      setTimeout(()=>location.reload(),1000);
+    }
+
+    if(data.status==="rejected"){
+
+      clearInterval(interval);
+      localStorage.removeItem("utr");
+
+      alert("❌ Payment Rejected");
+
+      setTimeout(()=>location.reload(),60000);
+    }
+
+  },2000);
 }
 
 </script>
+
+</body>
+</html>
