@@ -1,168 +1,174 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
+<title>ADMIN PANEL</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADMIN</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{
-  background:#0f172a;
-  color:white;
+  margin:0;
+  background:#071226;
   font-family:sans-serif;
-  text-align:center;
+  color:white;
+}
+
+.wrapper{
+  display:flex;
+  justify-content:center;
+  padding:20px;
 }
 
 .card{
-  background:#1e293b;
-  margin:10px;
-  padding:15px;
-  border-radius:12px;
+  width:100%;
+  max-width:450px;
+  background:#0f1c2e;
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 0 25px rgba(0,255,255,0.2);
+}
+
+input{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border-radius:10px;
+  border:none;
 }
 
 button{
-  padding:8px;
+  width:100%;
+  padding:12px;
+  margin-top:10px;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
+  background:linear-gradient(90deg,#00f2ff,#0072ff);
+  color:white;
+  font-weight:bold;
 }
 
-.verify{background:green;color:white;}
-.reject{background:red;color:white;}
-
-canvas{
-  background:#111;
+.req{
+  background:#14243d;
+  padding:10px;
+  margin-top:10px;
   border-radius:10px;
-  margin:10px;
+}
+
+img{
+  width:100%;
+  border-radius:10px;
+  margin-top:5px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="loginBox">
-<h3>🔐 ADMIN LOGIN</h3>
-<input id="pass" placeholder="Password"><br><br>
-<button onclick="login()">NEXT</button>
+<div class="wrapper">
+<div class="card">
 
-<div id="otpBox" style="display:none;">
-<input id="otp" placeholder="OTP"><br><br>
-<button onclick="verifyOTP()">LOGIN</button>
-</div>
-</div>
+<h2>🔐 ADMIN LOGIN</h2>
+
+<input id="user" placeholder="Username">
+<input id="pass" type="password" placeholder="Password">
+<input id="otp" placeholder="Enter OTP">
+
+<button onclick="sendOTP()">📲 Send OTP</button>
+<button onclick="login()">LOGIN</button>
 
 <div id="panel" style="display:none;">
 
-<h2>📊 DASHBOARD</h2>
-<div id="stats"></div>
+<h2>📊 Dashboard</h2>
 
-<canvas id="chart" width="300" height="200"></canvas>
+<p>Total: <span id="t"></span></p>
+<p>Approved: <span id="a"></span></p>
+<p>Rejected: <span id="r"></span></p>
 
-<h2>📜 USER HISTORY</h2>
-<div id="history"></div>
+<canvas id="chart"></canvas>
 
-<h2>📥 REQUESTS</h2>
-<div id="list"></div>
+<h2>📦 Requests</h2>
+<div id="data"></div>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</div>
+</div>
 
 <script>
 
-function login(){
-  fetch("/admin-login",{
+async function sendOTP(){
+  await fetch("/admin/send-otp");
+  alert("OTP sent (console me check)");
+}
+
+async function login(){
+  let user=document.getElementById("user").value;
+  let pass=document.getElementById("pass").value;
+  let otp=document.getElementById("otp").value;
+
+  let res=await fetch("/admin/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({password:pass.value})
-  })
-  .then(res=>res.json())
-  .then(d=>{
-    if(d.step==="otp_sent"){
-      otpBox.style.display="block";
-    } else alert("Wrong Password");
-  });
-}
-
-function verifyOTP(){
-  fetch("/verify-otp",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({otp:otp.value})
-  })
-  .then(res=>res.json())
-  .then(d=>{
-    if(d.success){
-      loginBox.style.display="none";
-      panel.style.display="block";
-      load();
-    } else alert("Wrong OTP");
-  });
-}
-
-function load(){
-
-  fetch("/admin-data")
-  .then(res=>res.json())
-  .then(d=>{
-
-    stats.innerHTML = "Sales: "+d.totalSales;
-
-    let hist="";
-    d.requests.forEach(r=>{
-      if(r.status==="approved"){
-        hist+=`<div class="card">
-        Plan:${r.plan}<br>
-        Key:${r.key}
-        </div>`;
-      }
-    });
-    history.innerHTML=hist;
-
-    let html="";
-    d.requests.forEach(r=>{
-      html+=`<div class="card">
-      Plan:${r.plan}<br>
-      UTR:${r.utr}<br>
-      Status:${r.status}<br>
-      ${r.file?`<img src="/uploads/${r.file}" width="100">`:""}
-      <br>
-      <button class="verify" onclick="v(${r.id})">VERIFY</button>
-      <button class="reject" onclick="rj(${r.id})">REJECT</button>
-      </div>`;
-    });
-
-    list.innerHTML=html;
+    body:JSON.stringify({user,pass,otp})
   });
 
-  // 📊 GRAPH
-  fetch("/sales-graph")
-  .then(res=>res.json())
-  .then(data=>{
-    new Chart(chart,{
-      type:'line',
-      data:{
-        labels:Object.keys(data),
-        datasets:[{
-          label:"Sales",
-          data:Object.values(data)
-        }]
-      }
-    });
+  let data=await res.json();
+
+  if(data.status==="success"){
+    document.getElementById("panel").style.display="block";
+    load();
+  }else{
+    alert("Login Failed");
+  }
+}
+
+async function load(){
+  let res=await fetch("/admin/stats");
+  let d=await res.json();
+
+  document.getElementById("t").innerText=d.total;
+  document.getElementById("a").innerText=d.approved;
+  document.getElementById("r").innerText=d.rejected;
+
+  // chart
+  new Chart(document.getElementById("chart"),{
+    type:"bar",
+    data:{
+      labels:["Approved","Rejected"],
+      datasets:[{
+        data:[d.approved,d.rejected]
+      }]
+    }
   });
+
+  let html="";
+  d.data.forEach((x,i)=>{
+    html+=`
+    <div class="req">
+      <p><b>Plan:</b> ${x.plan}</p>
+      <p><b>UTR:</b> ${x.utr}</p>
+
+      ${x.file ? `<img src="${x.file}">` : ""}
+
+      <button onclick="verify(${i})">✅ VERIFY</button>
+      <button onclick="reject(${i})">❌ REJECT</button>
+    </div>
+    `;
+  });
+
+  document.getElementById("data").innerHTML=html;
 }
 
-function v(id){
-  fetch("/verify",{method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({id})})
-  .then(res=>res.json())
-  .then(()=>load());
+async function verify(i){
+  await fetch("/admin/verify/"+i);
+  load();
 }
 
-function rj(id){
-  fetch("/reject",{method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({id})})
-  .then(()=>load());
+async function reject(i){
+  await fetch("/admin/reject/"+i);
+  load();
 }
 
 </script>
