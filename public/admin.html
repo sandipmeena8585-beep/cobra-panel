@@ -1,177 +1,79 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>ADMIN PANEL</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<style>
-body{
-  margin:0;
-  background:#071226;
-  font-family:sans-serif;
-  color:white;
-}
-
-.wrapper{
-  display:flex;
-  justify-content:center;
-  padding:20px;
-}
-
-.card{
-  width:100%;
-  max-width:450px;
-  background:#0f1c2e;
-  border-radius:20px;
-  padding:20px;
-  box-shadow:0 0 25px rgba(0,255,255,0.2);
-}
-
-input{
-  width:100%;
-  padding:12px;
-  margin:8px 0;
-  border-radius:10px;
-  border:none;
-}
-
-button{
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  border:none;
-  border-radius:10px;
-  background:linear-gradient(90deg,#00f2ff,#0072ff);
-  color:white;
-  font-weight:bold;
-}
-
-.req{
-  background:#14243d;
-  padding:10px;
-  margin-top:10px;
-  border-radius:10px;
-}
-
-img{
-  width:100%;
-  border-radius:10px;
-  margin-top:5px;
-}
-</style>
-</head>
-
-<body>
-
-<div class="wrapper">
-<div class="card">
-
-<h2>🔐 ADMIN LOGIN</h2>
-
 <input id="user" placeholder="Username">
-<input id="pass" type="password" placeholder="Password">
-<input id="otp" placeholder="Enter OTP">
+<input id="pass" placeholder="Password">
+<input id="otp" placeholder="OTP">
 
-<button onclick="sendOTP()">📲 Send OTP</button>
+<button onclick="sendOTP()">GET OTP</button>
 <button onclick="login()">LOGIN</button>
 
-<div id="panel" style="display:none;">
-
-<h2>📊 Dashboard</h2>
-
-<p>Total: <span id="t"></span></p>
-<p>Approved: <span id="a"></span></p>
-<p>Rejected: <span id="r"></span></p>
-
 <canvas id="chart"></canvas>
-
-<h2>📦 Requests</h2>
 <div id="data"></div>
-
-</div>
-
-</div>
-</div>
 
 <script>
 
 async function sendOTP(){
-  await fetch("/admin/send-otp");
-  alert("OTP sent (console me check)");
+  let r = await fetch("/admin/send-otp");
+  let d = await r.json();
+  alert("OTP: "+d.otp);
 }
 
 async function login(){
-  let user=document.getElementById("user").value;
-  let pass=document.getElementById("pass").value;
-  let otp=document.getElementById("otp").value;
 
-  let res=await fetch("/admin/login",{
+  let r = await fetch("/admin/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({user,pass,otp})
+    body:JSON.stringify({
+      user:user.value,
+      pass:pass.value,
+      otp:otp.value
+    })
   });
 
-  let data=await res.json();
+  let d = await r.json();
 
-  if(data.status==="success"){
-    document.getElementById("panel").style.display="block";
+  if(d.status==="success"){
     load();
-  }else{
-    alert("Login Failed");
-  }
+  } else alert("Wrong");
 }
 
 async function load(){
-  let res=await fetch("/admin/stats");
-  let d=await res.json();
 
-  document.getElementById("t").innerText=d.total;
-  document.getElementById("a").innerText=d.approved;
-  document.getElementById("r").innerText=d.rejected;
+  let r = await fetch("/admin/stats");
+  let d = await r.json();
 
-  // chart
-  new Chart(document.getElementById("chart"),{
+  new Chart(chart,{
     type:"bar",
     data:{
       labels:["Approved","Rejected"],
-      datasets:[{
-        data:[d.approved,d.rejected]
-      }]
+      datasets:[{data:[d.approved,d.rejected]}]
     }
   });
 
   let html="";
+
   d.data.forEach((x,i)=>{
     html+=`
-    <div class="req">
-      <p><b>Plan:</b> ${x.plan}</p>
-      <p><b>UTR:</b> ${x.utr}</p>
-
-      ${x.file ? `<img src="${x.file}">` : ""}
-
-      <button onclick="verify(${i})">✅ VERIFY</button>
-      <button onclick="reject(${i})">❌ REJECT</button>
-    </div>
-    `;
+    <div>
+      Plan:${x.plan}<br>
+      UTR:${x.utr}<br>
+      <img src="${x.file}" width="100"><br>
+      <button onclick="v(${i})">Verify</button>
+      <button onclick="rj(${i})">Reject</button>
+    </div>`;
   });
 
-  document.getElementById("data").innerHTML=html;
+  data.innerHTML=html;
 }
 
-async function verify(i){
+async function v(i){
   await fetch("/admin/verify/"+i);
   load();
 }
 
-async function reject(i){
+async function rj(i){
   await fetch("/admin/reject/"+i);
   load();
 }
 
 </script>
-
-</body>
-</html>
