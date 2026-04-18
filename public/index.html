@@ -1,38 +1,89 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login</title>
+  <title>COBRA PANEL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #0a0a0a;
+      color: white;
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 20px;
+      font-size: 28px;
+      letter-spacing: 2px;
+    }
+
+    .card {
+      margin: 20px;
+      padding: 20px;
+      background: #111;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.6);
+    }
+
+    /* 🔥 GLOW BUTTON */
+    .btn {
+      display: block;
+      margin: 15px auto;
+      padding: 15px;
+      width: 80%;
+      font-size: 16px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(45deg, #ff00cc, #3333ff);
+      box-shadow: 0 0 10px #ff00cc, 0 0 20px #3333ff;
+      transition: 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ✨ CLICK ANIMATION */
+    .btn:active {
+      transform: scale(0.92);
+      box-shadow: 0 0 5px #ff00cc;
+    }
+
+    /* 🔥 GLOW HOVER */
+    .btn:hover {
+      box-shadow: 0 0 20px #ff00cc, 0 0 40px #3333ff;
+    }
+
+    /* 💎 PRIME TEXT */
+    .premium {
+      background: linear-gradient(90deg, #ff00cc, #00ffff);
+      -webkit-background-clip: text;
+      color: transparent;
+      font-weight: bold;
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+  </style>
 </head>
+
 <body>
 
-<h2>COBRA LOGIN</h2>
+  <h1>🔥 COBRA VIP PANEL 🔥</h1>
 
-<input id="user" placeholder="Username"><br><br>
-<input id="pass" type="password" placeholder="Password"><br><br>
+  <div class="card">
 
-<button onclick="login()">Login</button>
+    <div class="premium">💎 PREMIUM ACCESS</div>
 
-<script>
-function login(){
-  fetch("/login",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      username:user.value,
-      password:pass.value
-    })
-  })
-  .then(res=>res.json())
-  .then(data=>{
-    if(data.success){
-      localStorage.setItem("token",data.token);
-      location="admin.html";
-    } else {
-      alert("Wrong login");
-    }
-  });
-}
-</script>
+    <button class="btn">🗝️ 1 DAY - 100₹</button>
+    <button class="btn">🗝️ 7 DAY - 400₹</button>
+    <button class="btn">🗝️ 15 DAY - 700₹</button>
+    <button class="btn">🗝️ 30 DAY - 900₹</button>
+    <button class="btn">🗝️ 60 DAY - 1200₹</button>
+
+  </div>
 
 </body>
 </html>
