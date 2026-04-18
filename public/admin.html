@@ -1,147 +1,36 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADMIN</title>
-
-<style>
-body{
-  margin:0;
-  background:#071226;
-  color:white;
-  font-family:sans-serif;
-}
-
-.box{
-  max-width:420px;
-  margin:auto;
-  padding:20px;
-  background:#0f1c2e;
-  border-radius:20px;
-  margin-top:20px;
-}
-
-input{
-  width:100%;
-  padding:12px;
-  margin:8px 0;
-  border-radius:10px;
-  border:none;
-}
-
-button{
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  background:#00f2ff;
-  width:100%;
-}
-
-.hidden{display:none;}
-
-.req{
-  border:1px solid white;
-  padding:10px;
-  margin:10px 0;
-  border-radius:10px;
-}
-</style>
-</head>
-
-<body>
-
-<div class="box">
-
-<h2>🔐 ADMIN LOGIN</h2>
-
-<input id="user" placeholder="Username">
-<input id="pass" placeholder="Password">
-
-<button onclick="login()">LOGIN</button>
-
-<!-- PANEL -->
-<div id="panel" class="hidden">
-<h3>Requests</h3>
-<div id="data"></div>
-</div>
-
-</div>
-
-<script>
-
-// 🔥 LOGIN (FORCE WORKING)
-function login(){
-
-  let u = document.getElementById("user").value.trim();
-  let p = document.getElementById("pass").value.trim();
-
-  console.log("USER:",u);
-  console.log("PASS:",p);
-
-  if(u === "COBRA SERVER" && p === "SAMI9166"){
-
-    alert("✅ Login Success");
-
-    document.getElementById("panel").style.display="block";
-
-    load();
-
-  }else{
-
-    alert("❌ Wrong Login");
-  }
-}
-
-// 🔥 LOAD DATA
 async function load(){
 
   let res = await fetch("/admin/data");
   let data = await res.json();
 
+  console.log("ADMIN DATA:", data); // 🔥 DEBUG
+
   let html="";
+
+  if(data.length === 0){
+    html = "<p>No Requests Found</p>";
+  }
 
   data.forEach(x=>{
 
-    if(x.status==="pending"){
+    // 🔥 REMOVE status check (temporary debug)
+    html+=`
+    <div class="req">
 
-      html+=`
-      <div class="req">
+    <b>Plan:</b> ${x.plan}<br>
+    <b>UTR:</b> ${x.utr}<br>
+    <b>Status:</b> ${x.status}<br>
 
-      <b>Plan:</b> ${x.plan}<br>
-      <b>UTR:</b> ${x.utr}<br>
+    ${x.file ? `<img src="${x.file}" width="100">` : ""}
 
-      ${x.file ? `<img src="${x.file}" width="100">` : ""}
+    <br>
 
-      <br>
+    <button onclick="verify(${x.id})">VERIFY</button>
+    <button onclick="reject(${x.id})">REJECT</button>
 
-      <button onclick="verify(${x.id})">✅ VERIFY</button>
-      <button onclick="reject(${x.id})">❌ REJECT</button>
-
-      </div>
-      `;
-    }
-
+    </div>
+    `;
   });
 
   document.getElementById("data").innerHTML = html;
 }
-
-// 🔥 VERIFY
-async function verify(id){
-  await fetch("/admin/verify/"+id);
-  load();
-}
-
-// 🔥 REJECT
-async function reject(id){
-  await fetch("/admin/reject/"+id);
-  load();
-}
-
-// 🔥 AUTO REFRESH
-setInterval(load,3000);
-
-</script>
-
-</body>
-</html>
