@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>COBRA PANEL</title>
+<title>COBRA VIP PANEL</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
@@ -26,7 +28,7 @@ body{
 select,input{
   padding:10px;
   margin:10px;
-  width:230px;
+  width:240px;
   border-radius:8px;
   border:none;
 }
@@ -62,7 +64,7 @@ button:hover{
 
 <body>
 
-<h1 class="glow">🔥 COBRA VIP PANEL</h1>
+<h1 class="glow">🔥 COBRA VIP PANEL 🔥</h1>
 
 <div class="card">
 
@@ -81,6 +83,7 @@ button:hover{
 
 </div>
 
+<!-- PAYMENT BOX -->
 <div class="card" id="payBox" style="display:none">
 
 <h2>💳 PAYMENT</h2>
@@ -89,40 +92,43 @@ button:hover{
 
 <p>UPI: godxcobra@axl</p>
 
-<input id="utr" placeholder="Enter UTR">
+<input id="utr" placeholder="Enter UTR ID">
 <input type="file" id="img">
 
 <br>
 
-<button onclick="send()">SUBMIT</button>
+<button onclick="send()">SUBMIT PAYMENT</button>
 
 <br><br>
 
-<button onclick="check()">CHECK KEY</button>
+<button onclick="check()">🔍 CHECK MY KEY</button>
 
 <p id="res"></p>
 
 </div>
 
-<!-- TELEGRAM HELP -->
-<div class="tg" onclick="tg()">
-📩
-</div>
+<!-- TELEGRAM BUTTON -->
+<div class="tg" onclick="tg()">📩</div>
 
 <script>
 
-function tg(){
-  window.open("https://t.me/GODx_COBRA","_blank");
-}
-
+// BUY CLICK → PAYMENT SHOW
 function buy(){
   document.getElementById("payBox").style.display="block";
+  window.scrollTo(0, document.body.scrollHeight);
 }
 
+// SEND REQUEST
 async function send(){
-  let plan = plan.value;
+
+  let plan = document.getElementById("plan").value;
   let utr = document.getElementById("utr").value;
   let file = document.getElementById("img").files[0];
+
+  if(!utr || !file){
+    alert("Fill all details ❌");
+    return;
+  }
 
   let f = new FormData();
   f.append("plan",plan);
@@ -131,21 +137,30 @@ async function send(){
 
   await fetch("/buy",{method:"POST",body:f});
 
-  alert("Request Sent ✅");
+  alert("✅ Request Sent\nWait for admin verify");
 }
 
+// CHECK KEY
 async function check(){
+
   let utr = document.getElementById("utr").value;
 
   let r = await fetch("/my-key/"+utr);
   let d = await r.json();
 
   if(d.status=="pending"){
-    res.innerText="⏳ Pending";
+    res.innerText="⏳ Pending / Not Approved";
   }else{
-    res.innerText="🔑 "+d.key;
+    res.innerText="🔑 YOUR KEY: " + d.key;
   }
 }
+
+// TELEGRAM AUTO MESSAGE
+function tg(){
+  let msg = encodeURIComponent("Hello, I need help for BGMI panel");
+  window.open("https://t.me/GODx_COBRA?text="+msg,"_blank");
+}
+
 </script>
 
 </body>
