@@ -1,202 +1,121 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>COBRA PANEL</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-body{
-  margin:0;
-  font-family:sans-serif;
-  background:#071226;
-  color:white;
-}
-
-.container{
-  max-width:420px;
-  margin:auto;
-  padding:20px;
-}
-
-.card{
-  background:#0f1c2e;
-  padding:20px;
-  border-radius:20px;
-  box-shadow:0 0 25px rgba(0,255,255,0.2);
-}
-
-h2{
-  text-align:center;
-}
-
-select,input{
-  width:100%;
-  padding:14px;
-  margin:10px 0;
-  border-radius:12px;
-  border:none;
-}
-
-button{
-  width:100%;
-  padding:15px;
-  border:none;
-  border-radius:12px;
-  background:linear-gradient(90deg,#00f2ff,#0072ff);
-  color:white;
-  font-weight:bold;
-  box-shadow:0 0 20px #00f2ff;
-}
-
-.qr{
-  width:200px;
-  display:block;
-  margin:auto;
-}
-
-.timer{
-  text-align:center;
-  font-size:18px;
-  margin:10px;
-}
-</style>
-</head>
-
-<body>
-
-<div class="container">
-
-<div class="card" id="page1">
-
-<h2>🎮 BGMI PANEL</h2>
-
-<select id="game">
-<option>BGMI</option>
-</select>
-
-<select id="plan">
-<option value="1hour">1 Hour - ₹30</option>
-<option value="3hour">3 Hour - ₹50</option>
-<option value="1day">1 DAY - ₹110</option>
-<option value="3day">3 DAY - ₹200</option>
-<option value="7day">7 DAY - ₹400</option>
-</select>
-
-<button onclick="buy()">💳 BUY KEY</button>
-
-</div>
-
-<!-- PAYMENT PAGE -->
-<div class="card" id="page2" style="display:none;">
-
-<h2>💰 PAYMENT</h2>
-
-<p>UPI ID: <b>godxcobra@axl</b></p>
-
-<img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl">
-
-<div class="timer" id="timer">30</div>
-
-</div>
-
-<!-- SUBMIT PAGE -->
-<div class="card" id="page3" style="display:none;">
-
-<h2>📤 SUBMIT PAYMENT</h2>
-
-<input id="utr" placeholder="Enter UTR ID">
-
-<input type="file" id="file">
-
-<button onclick="submit()">SUBMIT</button>
-
-</div>
-
-</div>
-
 <script>
 
-let selectedPlan = "";
+let selectedPlan="";
+let checkInterval;
+let timerInterval;
 
-// BUY CLICK
-function buy(){
+// ===== PAGE LOAD CHECK =====
+window.onload = function(){
 
+  let savedUTR = localStorage.getItem("utr");
+
+  if(savedUTR){
+    document.getElementById("payment").classList.remove("hidden");
+    document.getElementById("status").innerText = "⏳ Restoring session...";
+    checkStatus(savedUTR);
+  }
+};
+
+// ===== START BUY =====
+function startBuy(){
   selectedPlan = document.getElementById("plan").value;
-
-  document.getElementById("page1").style.display="none";
-  document.getElementById("page2").style.display="block";
-
-  startTimer();
+  document.getElementById("payment").classList.remove("hidden");
 }
 
-// TIMER 1
-function startTimer(){
+// ===== METHOD SWITCH =====
+function changeMethod(){
+  let m = document.getElementById("method").value;
 
-  let t = 30;
-
-  let interval = setInterval(()=>{
-
-    document.getElementById("timer").innerText = t;
-
-    t--;
-
-    if(t<0){
-      clearInterval(interval);
-
-      document.getElementById("page2").style.display="none";
-      document.getElementById("page3").style.display="block";
-    }
-
-  },1000);
+  if(m=="utr"){
+    document.getElementById("utr").style.display="block";
+    document.getElementById("file").style.display="none";
+  }else{
+    document.getElementById("utr").style.display="none";
+    document.getElementById("file").style.display="block";
+  }
 }
 
-// SUBMIT
+// ===== SUBMIT =====
 async function submit(){
 
   let utr = document.getElementById("utr").value;
   let file = document.getElementById("file").files[0];
+  let method = document.getElementById("method").value;
 
-  if(!utr){
+  if(method=="utr" && !utr){
     alert("Enter UTR");
     return;
   }
 
+  if(method=="qr" && !file){
+    alert("Upload Screenshot");
+    return;
+  }
+
+  let finalUTR = utr || Date.now().toString();
+
   let form = new FormData();
-  form.append("utr", utr);
   form.append("plan", selectedPlan);
-  form.append("file", file);
+  form.append("utr", finalUTR);
+  if(file) form.append("file", file);
 
-  await fetch("/buy",{
-    method:"POST",
-    body:form
-  });
+  await fetch("/buy",{method:"POST",body:form});
 
-  alert("⏳ Please wait admin verify");
+  // 🔥 SAVE SESSION
+  localStorage.setItem("utr", finalUTR);
 
-  checkStatus(utr);
+  document.getElementById("status").innerText = "⏳ Please wait admin verify";
+
+  startTimer(60);
+  checkStatus(finalUTR);
 }
 
-// AUTO CHECK STATUS
+// ===== TIMER =====
+function startTimer(t){
+  clearInterval(timerInterval);
+
+  timerInterval = setInterval(()=>{
+    document.getElementById("status").innerText =
+    "⏳ Waiting... " + t + "s";
+
+    t--;
+
+    if(t<0){
+      clearInterval(timerInterval);
+      document.getElementById("status").innerText =
+      "⏳ Still waiting admin...";
+    }
+  },1000);
+}
+
+// ===== STATUS CHECK =====
 function checkStatus(utr){
 
-  let interval = setInterval(async ()=>{
+  clearInterval(checkInterval);
+
+  checkInterval = setInterval(async ()=>{
 
     let res = await fetch("/status/"+utr);
     let data = await res.json();
 
-    if(data.status === "approved"){
+    if(!data) return;
 
-      clearInterval(interval);
+    if(data.status=="approved"){
+      clearInterval(checkInterval);
+      clearInterval(timerInterval);
 
-      alert("✅ KEY: " + data.key);
+      localStorage.removeItem("utr"); // 🔥 CLEAR
+
+      alert("✅ KEY: "+data.key);
 
       location.reload();
     }
 
-    if(data.status === "rejected"){
+    if(data.status=="rejected"){
+      clearInterval(checkInterval);
+      clearInterval(timerInterval);
 
-      clearInterval(interval);
+      localStorage.removeItem("utr");
 
       alert("❌ Fake Payment");
 
@@ -207,6 +126,3 @@ function checkStatus(utr){
 }
 
 </script>
-
-</body>
-</html>
