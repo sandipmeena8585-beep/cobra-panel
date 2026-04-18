@@ -1,150 +1,92 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>COBRA PANEL</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COBRA PANEL</title>
 
-  <style>
-    body{
-      margin:0;
-      font-family:sans-serif;
-      background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-      color:white;
-      text-align:center;
-    }
+<style>
+body{background:#0f172a;color:white;text-align:center;font-family:sans-serif;}
+.card{background:#1e293b;padding:20px;margin:20px;border-radius:12px;}
+button{padding:10px;border:none;border-radius:8px;background:#00f2ff;}
+</style>
 
-    .box{
-      margin:60px auto;
-      width:90%;
-      max-width:400px;
-      padding:25px;
-      border-radius:20px;
-      background:rgba(255,255,255,0.08);
-      backdrop-filter:blur(15px);
-      box-shadow:0 0 25px rgba(0,255,255,0.2);
-    }
-
-    h2{
-      margin-bottom:20px;
-      font-size:22px;
-      letter-spacing:1px;
-    }
-
-    select, input{
-      width:100%;
-      padding:12px;
-      margin:10px 0;
-      border-radius:10px;
-      border:none;
-      outline:none;
-      font-size:15px;
-    }
-
-    .btn{
-      width:100%;
-      padding:14px;
-      border:none;
-      border-radius:12px;
-      font-size:16px;
-      cursor:pointer;
-      background:linear-gradient(90deg,#00c6ff,#0072ff);
-      color:white;
-      box-shadow:0 0 15px #00c6ff;
-      transition:0.3s;
-    }
-
-    .btn:hover{
-      transform:scale(1.05);
-      box-shadow:0 0 25px #00c6ff;
-    }
-
-    .qrBox{
-      display:none;
-      margin-top:20px;
-      animation:fade 0.5s ease;
-    }
-
-    @keyframes fade{
-      from{opacity:0; transform:translateY(20px);}
-      to{opacity:1;}
-    }
-
-    img{
-      width:200px;
-      border-radius:10px;
-      margin:10px 0;
-    }
-
-  </style>
 </head>
 
 <body>
 
-<div class="box">
+<div class="card">
 
-  <h2>🔑 Purchase Your Key</h2>
+<h2>🎮 BGMI PANEL</h2>
 
-  <!-- GAME -->
-  <select id="game">
-    <option value="bgmi">BGMI</option>
-  </select>
+<select id="plan">
+<option value="1hour">1 Hour - ₹30</option>
+<option value="3hour">3 Hour - ₹50</option>
+<option value="1day">1 Day - ₹110</option>
+<option value="3day">3 Day - ₹200</option>
+<option value="7day">7 Day - ₹400</option>
+</select>
 
-  <!-- PLAN -->
-  <select id="plan">
-    <option value="1hour">1 Hour - ₹30</option>
-    <option value="3hour">3 Hour - ₹50</option>
-    <option value="1day">1 Day - ₹110</option>
-    <option value="3day">3 Day - ₹200</option>
-    <option value="7day">7 Day - ₹400</option>
-  </select>
+<br><br>
 
-  <!-- BUY BUTTON -->
-  <button class="btn" onclick="showPayment()">💳 BUY KEY</button>
+<input id="utr" placeholder="Enter UTR">
+<br><br>
 
-  <!-- PAYMENT UI -->
-  <div class="qrBox" id="paymentBox">
+<input type="file" id="file">
 
-    <h3>📲 Scan & Pay</h3>
+<br><br>
 
-    <!-- QR IMAGE -->
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl">
+<button onclick="buy()">BUY KEY</button>
 
-    <p>UPI: <b>godxcobra@axl</b></p>
+<br><br>
 
-    <input id="utr" placeholder="Enter UTR ID">
-    <input type="file" id="file">
-
-    <button class="btn" onclick="buy()">Submit Payment</button>
-
-  </div>
+<div id="statusBox"></div>
 
 </div>
 
 <script>
 
-function showPayment(){
-  document.getElementById("paymentBox").style.display="block";
-}
+let requestId = null;
 
 function buy(){
-  let form = new FormData();
 
-  form.append("plan", document.getElementById("plan").value);
-  form.append("utr", document.getElementById("utr").value);
-  form.append("screenshot", document.getElementById("file").files[0]);
+  let f = new FormData();
+  f.append("plan", document.getElementById("plan").value);
+  f.append("utr", document.getElementById("utr").value);
+  f.append("screenshot", document.getElementById("file").files[0]);
 
-  fetch("/buy",{method:"POST",body:form})
+  fetch("/buy",{method:"POST",body:f})
   .then(res=>res.json())
-  .then(()=>{
-    alert("✅ Request Sent To Admin");
-    location.reload();
+  .then(d=>{
+    alert(d.msg);
+    requestId = d.id;
   });
 }
+
+// AUTO KEY CHECK
+setInterval(()=>{
+  if(!requestId) return;
+
+  fetch("/get-key/"+requestId)
+  .then(res=>res.json())
+  .then(d=>{
+
+    if(d.status==="pending"){
+      statusBox.innerHTML="⏳ WAIT ADMIN VERIFY";
+    }
+
+    if(d.status==="rejected"){
+      statusBox.innerHTML="❌ FAKE PAYMENT";
+    }
+
+    if(d.status==="approved"){
+      statusBox.innerHTML="🔑 KEY: "+d.key;
+      requestId=null;
+    }
+
+  });
+
+},2000);
 
 </script>
 
 </body>
 </html>
-<a href="https://t.me/GODx_COBRA">
-  <button class="btn">📩 HELP TELEGRAM</button>
-</a>
