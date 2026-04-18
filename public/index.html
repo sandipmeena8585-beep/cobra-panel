@@ -3,10 +3,66 @@
 <head>
 <title>COBRA PANEL</title>
 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-body{background:#0f172a;color:white;text-align:center;font-family:sans-serif;}
-.card{background:#1e293b;padding:20px;margin:20px;border-radius:12px;}
-button{padding:10px;border:none;border-radius:8px;background:#00f2ff;}
+body{
+  margin:0;
+  padding:0;
+  background:#0f172a;
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
+}
+
+/* CARD */
+.card{
+  width:95%;
+  max-width:420px;
+  margin:auto;
+  margin-top:20px;
+  padding:20px;
+  border-radius:15px;
+  background:#1e293b;
+  box-shadow:0 0 15px rgba(0,255,255,0.2);
+}
+
+/* INPUTS */
+select,input{
+  width:100%;
+  padding:12px;
+  margin:10px 0;
+  border-radius:10px;
+  border:none;
+  outline:none;
+  font-size:15px;
+}
+
+/* BUTTON */
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(90deg,#00f2ff,#0072ff);
+  color:white;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  box-shadow:0 0 15px #00f2ff;
+  transition:0.3s;
+}
+
+button:hover{
+  transform:scale(1.05);
+}
+
+/* STATUS */
+#statusBox{
+  margin-top:15px;
+  font-size:14px;
+}
+
 </style>
 
 </head>
@@ -17,6 +73,7 @@ button{padding:10px;border:none;border-radius:8px;background:#00f2ff;}
 
 <h2>🎮 BGMI PANEL</h2>
 
+<!-- PLAN -->
 <select id="plan">
 <option value="1hour">1 Hour - ₹30</option>
 <option value="3hour">3 Hour - ₹50</option>
@@ -25,19 +82,16 @@ button{padding:10px;border:none;border-radius:8px;background:#00f2ff;}
 <option value="7day">7 Day - ₹400</option>
 </select>
 
-<br><br>
+<!-- UTR -->
+<input id="utr" placeholder="Enter UTR ID">
 
-<input id="utr" placeholder="Enter UTR">
-<br><br>
-
+<!-- SCREENSHOT -->
 <input type="file" id="file">
 
-<br><br>
+<!-- BUTTON -->
+<button onclick="buy()">💳 BUY KEY</button>
 
-<button onclick="buy()">BUY KEY</button>
-
-<br><br>
-
+<!-- STATUS -->
 <div id="statusBox"></div>
 
 </div>
@@ -46,14 +100,24 @@ button{padding:10px;border:none;border-radius:8px;background:#00f2ff;}
 
 let requestId = null;
 
+// BUY REQUEST
 function buy(){
 
-  let f = new FormData();
-  f.append("plan", document.getElementById("plan").value);
-  f.append("utr", document.getElementById("utr").value);
-  f.append("screenshot", document.getElementById("file").files[0]);
+  let plan = document.getElementById("plan").value;
+  let utr = document.getElementById("utr").value;
+  let file = document.getElementById("file").files[0];
 
-  fetch("/buy",{method:"POST",body:f})
+  if(!utr || !file){
+    alert("Fill all details ❌");
+    return;
+  }
+
+  let form = new FormData();
+  form.append("plan", plan);
+  form.append("utr", utr);
+  form.append("screenshot", file);
+
+  fetch("/buy",{method:"POST",body:form})
   .then(res=>res.json())
   .then(d=>{
     alert(d.msg);
@@ -61,25 +125,29 @@ function buy(){
   });
 }
 
-// AUTO KEY CHECK
+// AUTO STATUS CHECK (NO REFRESH)
 setInterval(()=>{
+
   if(!requestId) return;
 
   fetch("/get-key/"+requestId)
   .then(res=>res.json())
-  .then(d=>{
+  .then(data=>{
 
-    if(d.status==="pending"){
-      statusBox.innerHTML="⏳ WAIT ADMIN VERIFY";
+    if(!data) return;
+
+    if(data.status === "pending"){
+      statusBox.innerHTML = "⏳ PLEASE WAIT... ADMIN VERIFY";
     }
 
-    if(d.status==="rejected"){
-      statusBox.innerHTML="❌ FAKE PAYMENT";
+    if(data.status === "rejected"){
+      statusBox.innerHTML = "❌ FAKE PAYMENT / REJECTED";
+      requestId = null;
     }
 
-    if(d.status==="approved"){
-      statusBox.innerHTML="🔑 KEY: "+d.key;
-      requestId=null;
+    if(data.status === "approved"){
+      statusBox.innerHTML = "🔑 YOUR KEY: " + data.key;
+      requestId = null;
     }
 
   });
