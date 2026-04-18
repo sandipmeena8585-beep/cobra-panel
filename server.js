@@ -96,3 +96,17 @@ app.get("/admin/reject/:id", (req, res) => {
 });
 
 app.listen(3000, () => console.log("🔥 SYSTEM RUNNING"));
+app.post("/admin/addkey",(req,res)=>{
+
+  let {plan,key}=req.body;
+
+  let keys=JSON.parse(fs.readFileSync("keys.json"));
+
+  if(!keys[plan]) keys[plan]=[];
+
+  keys[plan].push(key);
+
+  fs.writeFileSync("keys.json",JSON.stringify(keys,null,2));
+
+  res.send("OK");
+});
