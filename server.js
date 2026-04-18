@@ -1,183 +1,155 @@
 const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
+const path = require("path");
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ===== STATIC =====
 app.use(express.static("public"));
+app.use("/uploads", express.static("uploads"));
 
-const upload = multer({ dest: "uploads/" });
-
-// ===== ADMIN SECURITY =====
-const ADMIN_PASS = "cobra123"; // 🔒 password
-let currentOTP = null;
-
-// ===== FILE HELPERS =====
-function read(file){
-  return JSON.parse(fs.readFileSync(file));
-}
-function write(file,data){
-  fs.writeFileSync(file, JSON.stringify(data,null,2));
-}
-
-// ===== PASSWORD + OTP =====
-app.post("/admin-login",(req,res)=>{
-  if(req.body.password !== ADMIN_PASS){
-    return res.json({step:"wrong_pass"});
-  }
-
-  currentOTP = Math.floor(100000 + Math.random()*900000);
-  console.log("OTP:", currentOTP);
-
-  res.json({step:"otp_sent"});
-});
-
-app.post("/verify-otp",(req,res)=>{
-  if(req.body.otp == currentOTP){
-    res.json({success:true});
-  } else {
-    res.json({success:false});
+// ===== FILE UPLOAD =====
+const storage = multer.diskStorage({
+  destination: "uploads/",
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + ".jpg");
   }
 });
+const upload = multer({ storage });
 
-// ===== BUY =====
-app.post("/buy", upload.single("screenshot"), (req,res)=>{
-  let data = read("data.json");
+// ===== FILE INIT =====
+if (!fs.existsSync("data.json")) fs.writeFileSync("data.json", "[]");
 
-  let plan = req.body.plan;
-  let utr = req.body.utr;
+if (!fs.existsSync("keys.json")) {
+  fs.writeFileSync("keys.json", JSON.stringify({
+    "1h": ["KEY-1H-001","KEY-1H-002"],
+    "3h": ["KEY-3H-001"],
+    "1d": ["KEY-1D-001"],
+    "3d": [],
+    "7d": []
+  }, null, 2));
+}
 
-  if(!utr || utr.length < 8){
-    return res.json({msg:"Fake Payment Detected"});
-  }
+// ===== BUY REQUEST =====
+app.post("/buy", upload.single("file"), (req, res) => {
 
-  let id = Date.now();
+  let { plan, utr } = req.body;
 
-  data.requests.push({
-    id,
+  let data = JSON.parse(fs.readFileSync("data.json"));
+
+  data.push({
     plan,
     utr,
-    file: req.file ? req.file.filename : null,
-    status:"pending",
-    time: new Date()
+    file: req.file ? "/uploads/" + req.file.filename : "",
+    status: "pending",
+    key: ""
   });
 
-  write("data.json",data);
+  fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
 
-  res.json({msg:"Request Sent", id});
+  res.json({ status: "pending" });
 });
 
-// ===== ADMIN DATA =====
-app.get("/admin-data",(req,res)=>{
-  let data = read("data.json");
-  let keys = read("keys.json");
-
-  let stock = {};
-  for(let p in keys){
-    stock[p] = keys[p].length;
-  }
-
-  res.json({
-    requests:data.requests,
-    totalSales:data.sales,
-    stock
-  });
+// ===== ADMIN REQUEST LIST =====
+app.get("/admin/requests", (req, res) => {
+  let data = JSON.parse(fs.readFileSync("data.json"));
+  res.json(data);
 });
 
 // ===== VERIFY =====
-app.post("/verify",(req,res)=>{
-  let {id} = req.body;
+app.get("/admin/verify/:id", (req, res) => {
 
-  let data = read("data.json");
-  let keys = read("keys.json");
+  let id = req.params.id;
+  let data = JSON.parse(fs.readFileSync("data.json"));
+  let keys = JSON.parse(fs.readFileSync("keys.json"));
 
-  let index = data.requests.findIndex(r=>r.id==id);
-  let request = data.requests[index];
+  if (!data[id]) return res.send("Invalid");
 
-  let plan = request.plan;
+  let plan = data[id].plan;
 
-  if(!keys[plan] || keys[plan].length===0){
-    return res.json({msg:"No Stock"});
+  if (keys[plan] && keys[plan].length > 0) {
+    let key = keys[plan].shift(); // remove 1 key
+
+    data[id].status = "approved";
+    data[id].key = key;
+
+    fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
+    fs.writeFileSync("keys.json", JSON.stringify(keys, null, 2));
+
+    res.send("Approved");
+  } else {
+    res.send("No Stock");
   }
-
-  let key = keys[plan].shift();
-
-  data.requests[index].status="approved";
-  data.requests[index].key=key;
-
-  data.sales++;
-
-  write("data.json",data);
-  write("keys.json",keys);
-
-  res.json({key});
 });
 
 // ===== REJECT =====
-app.post("/reject",(req,res)=>{
-  let {id} = req.body;
+app.get("/admin/reject/:id", (req, res) => {
 
-  let data = read("data.json");
+  let id = req.params.id;
+  let data = JSON.parse(fs.readFileSync("data.json"));
 
-  let index = data.requests.findIndex(r=>r.id==id);
-  data.requests[index].status="rejected";
+  if (!data[id]) return res.send("Invalid");
 
-  write("data.json",data);
+  data[id].status = "rejected";
 
-  res.json({msg:"Rejected"});
+  fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
+
+  res.send("Rejected");
 });
 
-// ===== USER KEY =====
-app.get("/get-key/:id",(req,res)=>{
-  let data = read("data.json");
-  let r = data.requests.find(x=>x.id==req.params.id);
-  res.json(r);
+// ===== CHECK STATUS (AUTO KEY DELIVERY) =====
+app.get("/status/:utr", (req, res) => {
+
+  let utr = req.params.utr;
+  let data = JSON.parse(fs.readFileSync("data.json"));
+
+  let found = data.find(x => x.utr == utr);
+
+  if (!found) return res.json({ status: "not_found" });
+
+  res.json(found);
 });
 
-// ===== SALES GRAPH DATA =====
-app.get("/sales-graph",(req,res)=>{
-  let data = read("data.json");
+// ===== OTP LOGIN =====
+let adminOTP = "1234";
 
-  let map = {};
-
-  data.requests.forEach(r=>{
-    if(r.status==="approved"){
-      let day = new Date(r.time).toDateString();
-      map[day] = (map[day] || 0) + 1;
-    }
-  });
-
-  res.json(map);
+app.get("/admin/send-otp", (req, res) => {
+  adminOTP = Math.floor(1000 + Math.random() * 9000).toString();
+  console.log("ADMIN OTP:", adminOTP);
+  res.json({ ok: true });
 });
 
-app.listen(3000,()=>console.log("🔥 FINAL PRO SERVER RUNNING"));
-// ===== OTP SYSTEM =====
-let adminOTP = "1234"; // demo OTP (later random kar sakte)
+app.post("/admin/login", (req, res) => {
 
-app.get("/admin/send-otp", (req,res)=>{
-  adminOTP = Math.floor(1000 + Math.random()*9000).toString();
-  console.log("ADMIN OTP:", adminOTP); // console me dikhega
-  res.json({ok:true});
-});
+  let { user, pass, otp } = req.body;
 
-app.post("/admin/login", (req,res)=>{
-  const {user, pass, otp} = req.body;
-
-  if(user==="COBRA SERVER" && pass==="SAMI9166" && otp===adminOTP){
-    res.json({status:"success"});
-  }else{
-    res.json({status:"fail"});
+  if (user === "COBRA SERVER" && pass === "SAMI9166" && otp === adminOTP) {
+    res.json({ status: "success" });
+  } else {
+    res.json({ status: "fail" });
   }
 });
 
+// ===== STATS =====
+app.get("/admin/stats", (req, res) => {
 
-// ===== SALES DATA =====
-app.get("/admin/stats",(req,res)=>{
   let data = JSON.parse(fs.readFileSync("data.json"));
 
   let total = data.length;
-  let approved = data.filter(x=>x.status==="approved").length;
-  let rejected = data.filter(x=>x.status==="rejected").length;
+  let approved = data.filter(x => x.status === "approved").length;
+  let rejected = data.filter(x => x.status === "rejected").length;
 
-  res.json({total, approved, rejected, data});
+  res.json({
+    total,
+    approved,
+    rejected,
+    data
+  });
 });
+
+// ===== START SERVER =====
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Server Running on " + PORT));
