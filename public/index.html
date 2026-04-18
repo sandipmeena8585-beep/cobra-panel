@@ -5,7 +5,6 @@
 <title>COBRA PANEL</title>
 
 <style>
-
 *{box-sizing:border-box;}
 
 body{
@@ -29,10 +28,7 @@ body{
   box-shadow:0 0 20px rgba(0,255,255,0.2);
 }
 
-h2{
-  text-align:center;
-  margin-bottom:20px;
-}
+h2{text-align:center;}
 
 select,input{
   width:100%;
@@ -40,7 +36,6 @@ select,input{
   margin:10px 0;
   border-radius:12px;
   border:none;
-  font-size:15px;
 }
 
 button{
@@ -50,18 +45,6 @@ button{
   border-radius:12px;
   background:linear-gradient(90deg,#00f2ff,#007bff);
   color:white;
-  font-size:16px;
-  margin-top:10px;
-}
-
-button:active{
-  transform:scale(0.97);
-}
-
-img{
-  display:block;
-  margin:auto;
-  border-radius:10px;
 }
 
 .hidden{display:none;}
@@ -70,9 +53,7 @@ img{
   text-align:center;
   margin-top:10px;
   color:#00f2ff;
-  font-size:14px;
 }
-
 </style>
 </head>
 
@@ -93,7 +74,7 @@ img{
 <option value="7day">7 Day - ₹400</option>
 </select>
 
-<button onclick="startBuy()">BUY KEY</button>
+<button id="buyBtn" onclick="startBuy()">BUY KEY</button>
 
 <div id="payment" class="hidden">
 
@@ -111,7 +92,7 @@ img{
 <input id="utr" placeholder="Enter UTR ID">
 <input type="file" id="file" class="hidden">
 
-<button onclick="submitPayment()">SUBMIT</button>
+<button id="submitBtn" onclick="submitPayment()">SUBMIT</button>
 
 <p class="status" id="status"></p>
 
@@ -127,6 +108,7 @@ let selectedPlan="";
 let interval;
 let timerInterval;
 let timeLeft=60;
+let isSubmitting=false;
 
 // START
 function startBuy(){
@@ -137,12 +119,11 @@ function startBuy(){
   document.getElementById("planShow").innerText="Selected: "+selectedPlan;
 }
 
-// METHOD SWITCH
+// METHOD
 function changeMethod(){
   let m=document.getElementById("method").value;
-
-  document.getElementById("utr").style.display = (m==="utr")?"block":"none";
-  document.getElementById("file").style.display = (m==="qr")?"block":"none";
+  document.getElementById("utr").style.display=(m==="utr")?"block":"none";
+  document.getElementById("file").style.display=(m==="qr")?"block":"none";
 }
 
 // TIMER
@@ -151,28 +132,50 @@ function startTimer(){
   clearInterval(timerInterval);
   timeLeft=60;
 
-  document.getElementById("status").innerText =
-    "⏳ Please wait admin verify...";
+  document.getElementById("status").innerText="⏳ Please wait admin verify...";
 
   timerInterval=setInterval(()=>{
-
     timeLeft--;
 
-    document.getElementById("status").innerText =
-      "⏳ Please wait admin verify ("+timeLeft+"s)";
+    document.getElementById("status").innerText=
+    "⏳ Please wait admin verify ("+timeLeft+"s)";
 
     if(timeLeft<=0){
       clearInterval(timerInterval);
-
-      document.getElementById("status").innerText =
-        "⚠️ Still waiting for admin...";
+      document.getElementById("status").innerText="⚠️ Still waiting for admin...";
     }
 
   },1000);
 }
 
+// SHOW KEY UI
+function showKeyUI(key){
+
+  document.getElementById("payment").innerHTML = `
+    <h3 style="text-align:center;">✅ PAYMENT VERIFIED</h3>
+
+    <div style="background:#071226;padding:15px;border-radius:12px;text-align:center;">
+
+      <p>🔑 Your Key:</p>
+      <h2 style="color:#00f2ff;">${key}</h2>
+
+      <p>📅 Expiry: As per plan</p>
+
+      <button onclick="window.open('https://t.me/GODx_COBRA')">
+      📲 Join Telegram
+      </button>
+
+    </div>
+  `;
+}
+
 // SUBMIT
 async function submitPayment(){
+
+  if(isSubmitting){
+    alert("Already submitted");
+    return;
+  }
 
   let utr=document.getElementById("utr").value.trim();
   let file=document.getElementById("file").files[0];
@@ -187,6 +190,13 @@ async function submitPayment(){
     return;
   }
 
+  if(localStorage.getItem("utr")){
+    alert("⚠️ Already submitted");
+    return;
+  }
+
+  isSubmitting=true;
+
   let finalUTR = utr || Date.now().toString();
 
   let form=new FormData();
@@ -196,18 +206,21 @@ async function submitPayment(){
   if(file) form.append("file",file);
 
   try{
-    await fetch(window.location.origin + "/buy",{
+    await fetch(window.location.origin+"/buy",{
       method:"POST",
       body:form
     });
 
     localStorage.setItem("utr",finalUTR);
 
+    document.getElementById("submitBtn").disabled=true;
+
     startTimer();
     check(finalUTR);
 
   }catch{
-    alert("Error sending request");
+    alert("Error");
+    isSubmitting=false;
   }
 }
 
@@ -227,9 +240,7 @@ function check(utr){
 
       localStorage.removeItem("utr");
 
-      alert("✅ KEY: "+data.key);
-
-      location.reload();
+      showKeyUI(data.key);
     }
 
     if(data.status==="rejected"){
@@ -238,22 +249,21 @@ function check(utr){
 
       localStorage.removeItem("utr");
 
-      alert("❌ Payment Rejected");
+      document.getElementById("status").innerText="❌ Payment Rejected";
 
-      setTimeout(()=>{
-        location.reload();
-      },3000);
+      setTimeout(()=>location.reload(),3000);
     }
 
   },2000);
 }
 
-// RESUME SYSTEM
+// RESUME
 window.onload=()=>{
   let utr=localStorage.getItem("utr");
 
   if(utr){
     document.getElementById("payment").classList.remove("hidden");
+    document.getElementById("submitBtn").disabled=true;
 
     startTimer();
     check(utr);
