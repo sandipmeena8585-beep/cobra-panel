@@ -1,79 +1,80 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>COBRA PANEL</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COBRA PANEL</title>
 
 <style>
 body{margin:0;background:#071226;color:white;font-family:sans-serif;}
-.container{max-width:420px;margin:auto;padding:20px;}
-.card{background:#0f1c2e;padding:20px;border-radius:20px;}
-select,input{width:100%;padding:14px;margin:10px 0;border-radius:12px;border:none;}
-button{width:100%;padding:15px;border:none;border-radius:12px;background:#00f2ff;}
+.box{max-width:420px;margin:auto;padding:20px;background:#0f1c2e;border-radius:20px;margin-top:20px;}
+select,input{width:100%;padding:12px;margin:10px 0;border-radius:10px;border:none;}
+button{width:100%;padding:12px;border:none;border-radius:10px;background:#00f2ff;}
 .hidden{display:none;}
 </style>
 </head>
 
 <body>
-<div class="container">
-<div class="card">
+
+<div class="box">
 
 <h2>BGMI PANEL</h2>
 
 <select id="plan">
-<option value="1hour">1 Hour</option>
-<option value="3hour">3 Hour</option>
-<option value="1day">1 Day</option>
-<option value="3day">3 Day</option>
-<option value="7day">7 Day</option>
+<option value="1hour">1 Hour - ₹30</option>
+<option value="3hour">3 Hour - ₹50</option>
+<option value="1day">1 Day - ₹110</option>
+<option value="3day">3 Day - ₹200</option>
+<option value="7day">7 Day - ₹400</option>
 </select>
 
-<button onclick="startBuy()">BUY</button>
+<button onclick="start()">BUY KEY</button>
 
 <div id="payment" class="hidden">
 
 <p>UPI: godxcobra@axl</p>
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl" width="200">
 
-<select id="method" onchange="changeMethod()">
+<p id="planShow"></p>
+
+<select id="method" onchange="change()">
 <option value="utr">UTR</option>
-<option value="qr">QR</option>
+<option value="qr">Screenshot</option>
 </select>
 
 <input id="utr" placeholder="Enter UTR">
 <input type="file" id="file" class="hidden">
 
-<button onclick="submit()">Submit</button>
+<button onclick="submit()">SUBMIT</button>
 
 <div id="status"></div>
 
 </div>
 
 </div>
-</div>
 
 <script>
 
-let selectedPlan="";
-let checkInterval;
+let plan="";
+let interval;
 
 window.onload=function(){
-  let saved=localStorage.getItem("utr");
-  if(saved){
+  let u=localStorage.getItem("utr");
+  if(u){
     document.getElementById("payment").classList.remove("hidden");
-    checkStatus(saved);
+    check(u);
   }
 };
 
-function startBuy(){
-  selectedPlan=document.getElementById("plan").value;
+function start(){
+  plan=document.getElementById("plan").value;
   document.getElementById("payment").classList.remove("hidden");
+  document.getElementById("planShow").innerText="Plan: "+plan;
 }
 
-function changeMethod(){
+function change(){
   let m=document.getElementById("method").value;
   document.getElementById("utr").style.display=m=="utr"?"block":"none";
-  document.getElementById("file").style.display=m=="qr"?"block":"block":"none";
+  document.getElementById("file").style.display=m=="qr"?"block":"none";
 }
 
 async function submit(){
@@ -82,50 +83,51 @@ async function submit(){
   let file=document.getElementById("file").files[0];
 
   let form=new FormData();
-  form.append("plan",selectedPlan);
+  form.append("plan",plan);
   form.append("utr",utr);
   if(file) form.append("file",file);
 
-  let res=await fetch("/buy",{method:"POST",body:form});
-  let d=await res.json();
-
-  if(d.risk==="high"){
-    alert("⚠️ Suspicious payment");
-  }
+  await fetch("/buy",{method:"POST",body:form});
 
   localStorage.setItem("utr",utr);
 
-  checkStatus(utr);
+  document.getElementById("status").innerText="⏳ Please wait admin verify";
+
+  check(utr);
 }
 
-function checkStatus(utr){
+function check(utr){
 
-  clearInterval(checkInterval);
+  clearInterval(interval);
 
-  checkInterval=setInterval(async()=>{
+  interval=setInterval(async()=>{
 
-    let res=await fetch("/status/"+utr);
-    let data=await res.json();
+    let r=await fetch("/status/"+utr);
+    let d=await r.json();
 
-    if(data.status=="approved"){
-      clearInterval(checkInterval);
+    if(d.status=="approved"){
+      clearInterval(interval);
       localStorage.removeItem("utr");
 
-      alert("KEY: "+data.key+"\nJoin: https://t.me/GODx_COBRA");
-      location.reload();
+      alert("KEY: "+d.key+
+      "\nJoin: https://t.me/GODx_COBRA\nExpire: 24h");
+
+      setTimeout(()=>location.reload(),1000);
     }
 
-    if(data.status=="rejected"){
-      clearInterval(checkInterval);
+    if(d.status=="rejected"){
+      clearInterval(interval);
       localStorage.removeItem("utr");
 
-      alert("Rejected");
-      setTimeout(()=>location.reload(),30000);
+      alert("Payment Rejected");
+
+      setTimeout(()=>location.reload(),60000);
     }
 
-  },3000);
+  },2000);
 }
 
 </script>
+
 </body>
 </html>
