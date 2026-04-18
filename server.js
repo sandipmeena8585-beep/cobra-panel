@@ -1,148 +1,117 @@
 const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
-
 const app = express();
 
 app.use(express.json());
 app.use(express.static("public"));
-app.use("/uploads", express.static("uploads"));
 
 const upload = multer({ dest: "uploads/" });
 
-// 📦 LOAD DATA
-let keys = require("./keys.json");
-let requests = require("./requests.json");
-
-let sold = 0;
-
-// 📊 ADMIN STATS (ADVANCED)
-app.get("/admin-stats",(req,res)=>{
-  let pending = requests.filter(x=>x.status=="pending").length;
-  let approved = requests.filter(x=>x.status=="approved").length;
-  let rejected = requests.filter(x=>x.status=="rejected").length;
-  let fake = requests.filter(x=>x.status=="fake").length;
-
-  res.json({
-    stock: keys,
-    sold,
-    total: requests.length,
-    pending,
-    approved,
-    rejected,
-    fake
-  });
-});
-
-// 💰 FAKE PAYMENT CHECK
-function isFakeUTR(utr){
-  if(!utr) return true;
-  if(utr.length < 6) return true;
-  if(utr.toLowerCase().includes("test")) return true;
-  return false;
+// ================= DATA =================
+function read(file){
+  return JSON.parse(fs.readFileSync(file));
 }
 
-// 🧾 BUY REQUEST
-app.post("/buy", upload.single("image"), (req,res)=>{
-  let { plan, utr } = req.body;
+function write(file,data){
+  fs.writeFileSync(file,JSON.stringify(data,null,2));
+}
 
-  let status = isFakeUTR(utr) ? "fake" : "pending";
+// ================= BUY REQUEST =================
+app.post("/buy", upload.single("screenshot"), (req,res)=>{
+  let data = read("data.json");
 
-  requests.push({
+  let plan = req.body.plan;
+  let utr = req.body.utr;
+
+  // 🔴 FAKE PAYMENT CHECK
+  if(!utr || utr.length < 8){
+    return res.json({msg:"Fake Payment Detected"});
+  }
+
+  data.requests.push({
     id: Date.now(),
     plan,
     utr,
-    image: req.file ? req.file.filename : "",
-    status,
-    key: null
+    file: req.file ? req.file.filename : null,
+    status:"pending"
   });
 
-  fs.writeFileSync("requests.json", JSON.stringify(requests,null,2));
+  write("data.json",data);
 
-  res.send("Request Saved");
+  res.json({msg:"Request Sent"});
 });
 
-// 📥 GET ALL REQUESTS
-app.get("/requests",(req,res)=>{
-  res.json(requests);
+// ================= ADMIN GET =================
+app.get("/admin-data",(req,res)=>{
+  let data = read("data.json");
+  let keys = read("keys.json");
+
+  let stock = {};
+  for(let p in keys){
+    stock[p] = keys[p].length;
+  }
+
+  res.json({
+    requests:data.requests,
+    totalSales:data.sales,
+    stock
+  });
 });
 
-// ➕ ADD KEY (PLAN WISE)
-app.post("/add-key",(req,res)=>{
-  let { plan, key } = req.body;
-
-  if(!keys[plan]) keys[plan] = [];
-
-  keys[plan].push(key);
-
-  fs.writeFileSync("keys.json", JSON.stringify(keys,null,2));
-
-  res.send("Key Added");
-});
-
-// ✅ VERIFY (NO DELETE — SAME DATA + KEY ASSIGN)
+// ================= VERIFY =================
 app.post("/verify",(req,res)=>{
-  let { id } = req.body;
+  let {id} = req.body;
 
-  let r = requests.find(x=>x.id==id);
+  let data = read("data.json");
+  let keys = read("keys.json");
 
-  if(!r) return res.send("Request not found");
+  let reqIndex = data.requests.findIndex(r=>r.id==id);
+  let request = data.requests[reqIndex];
 
-  if(r.status === "approved"){
-    return res.send("Already approved");
+  let plan = request.plan;
+
+  if(keys[plan].length === 0){
+    return res.json({msg:"No Stock"});
   }
 
-  let plan = r.plan;
+  let key = keys[plan].shift();
 
-  if(!keys[plan] || keys[plan].length === 0){
-    return res.send("No stock ❌");
-  }
+  data.requests[reqIndex].status = "approved";
+  data.requests[reqIndex].key = key;
 
-  let key = keys[plan].shift(); // 👈 PLAN-WISE KEY
+  data.sales++;
 
-  r.status = "approved";
-  r.key = key;
-
-  sold++;
-
-  fs.writeFileSync("keys.json", JSON.stringify(keys,null,2));
-  fs.writeFileSync("requests.json", JSON.stringify(requests,null,2));
+  write("data.json",data);
+  write("keys.json",keys);
 
   res.json({key});
 });
 
-// ❌ REJECT
+// ================= REJECT =================
 app.post("/reject",(req,res)=>{
-  let { id } = req.body;
+  let {id} = req.body;
 
-  let r = requests.find(x=>x.id==id);
+  let data = read("data.json");
 
-  if(!r) return res.send("Request not found");
+  let reqIndex = data.requests.findIndex(r=>r.id==id);
+  data.requests[reqIndex].status="rejected";
 
-  r.status = "rejected";
+  write("data.json",data);
 
-  fs.writeFileSync("requests.json", JSON.stringify(requests,null,2));
-
-  res.send("Rejected");
+  res.json({msg:"Rejected"});
 });
 
-// 🔍 CUSTOMER CHECK KEY (UTR BASED)
-app.get("/my-key/:utr",(req,res)=>{
-  let utr = req.params.utr;
+// ================= GET USER KEY =================
+app.get("/get-key/:id",(req,res)=>{
+  let data = read("data.json");
 
-  let r = requests.find(x=>x.utr==utr && x.status=="approved");
+  let r = data.requests.find(x=>x.id==req.params.id);
 
-  if(!r){
-    return res.json({status:"pending"});
-  }
-
-  res.json({
-    status:"approved",
-    key:r.key
-  });
+  res.json(r);
 });
 
-// 🚀 SERVER START
-app.listen(3000, ()=>{
-  console.log("🔥 COBRA FULL SYSTEM RUNNING");
+// ================= START =================
+app.listen(3000,()=>{
+  console.log("Server Running 🚀");
 });
