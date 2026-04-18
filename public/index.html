@@ -5,65 +5,21 @@
 <title>COBRA PANEL</title>
 
 <style>
-*{box-sizing:border-box;}
-
-body{
-  margin:0;
-  background:linear-gradient(135deg,#071226,#0f1c2e);
-  font-family:sans-serif;
-  color:white;
-}
-
-.container{
-  max-width:420px;
-  margin:auto;
-  padding:15px;
-}
-
-.card{
-  background:#0f1c2e;
-  border-radius:18px;
-  padding:20px;
-  margin-top:20px;
-  box-shadow:0 0 20px rgba(0,255,255,0.2);
-}
-
-h2{text-align:center;}
-
-select,input{
-  width:100%;
-  padding:14px;
-  margin:10px 0;
-  border-radius:12px;
-  border:none;
-}
-
-button{
-  width:100%;
-  padding:14px;
-  border:none;
-  border-radius:12px;
-  background:linear-gradient(90deg,#00f2ff,#007bff);
-  color:white;
-}
-
+body{margin:0;background:#071226;color:white;font-family:sans-serif;}
+.container{max-width:420px;margin:auto;padding:15px;}
+.card{background:#0f1c2e;border-radius:15px;padding:20px;margin-top:20px;}
+select,input,button{width:100%;padding:12px;margin:10px 0;border-radius:10px;border:none;}
+button{background:#00f2ff;color:black;}
 .hidden{display:none;}
-
-.status{
-  text-align:center;
-  margin-top:10px;
-  color:#00f2ff;
-}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-
 <div class="card">
 
-<h2>🎮 BGMI PANEL</h2>
+<h2>BGMI PANEL</h2>
 
 <select id="plan">
 <option value="">Select Plan</option>
@@ -74,41 +30,37 @@ button{
 <option value="7day">7 Day - ₹400</option>
 </select>
 
-<button id="buyBtn" onclick="startBuy()">BUY KEY</button>
+<button onclick="startBuy()">BUY KEY</button>
 
 <div id="payment" class="hidden">
 
-<p style="text-align:center;">💰 UPI: <b>godxcobra@axl</b></p>
+<p>UPI: godxcobra@axl</p>
 
 <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl" width="200">
 
-<p id="planShow" style="text-align:center;"></p>
+<p id="planShow"></p>
 
 <select id="method" onchange="changeMethod()">
-<option value="utr">Enter UTR ID</option>
+<option value="utr">Enter UTR</option>
 <option value="qr">Upload Screenshot</option>
 </select>
 
-<input id="utr" placeholder="Enter UTR ID">
+<input id="utr" placeholder="Enter UTR">
 <input type="file" id="file" class="hidden">
 
-<button id="submitBtn" onclick="submitPayment()">SUBMIT</button>
+<button onclick="submitPayment()">SUBMIT</button>
 
-<p class="status" id="status"></p>
-
-</div>
+<p id="status"></p>
 
 </div>
 
+</div>
 </div>
 
 <script>
 
 let selectedPlan="";
 let interval;
-let timerInterval;
-let timeLeft=60;
-let isSubmitting=false;
 
 // START
 function startBuy(){
@@ -116,7 +68,7 @@ function startBuy(){
   if(!selectedPlan){ alert("Select Plan"); return; }
 
   document.getElementById("payment").classList.remove("hidden");
-  document.getElementById("planShow").innerText="Selected: "+selectedPlan;
+  document.getElementById("planShow").innerText="Plan: "+selectedPlan;
 }
 
 // METHOD
@@ -126,78 +78,18 @@ function changeMethod(){
   document.getElementById("file").style.display=(m==="qr")?"block":"none";
 }
 
-// TIMER
-function startTimer(){
-
-  clearInterval(timerInterval);
-  timeLeft=60;
-
-  document.getElementById("status").innerText="⏳ Please wait admin verify...";
-
-  timerInterval=setInterval(()=>{
-    timeLeft--;
-
-    document.getElementById("status").innerText=
-    "⏳ Please wait admin verify ("+timeLeft+"s)";
-
-    if(timeLeft<=0){
-      clearInterval(timerInterval);
-      document.getElementById("status").innerText="⚠️ Still waiting for admin...";
-    }
-
-  },1000);
-}
-
-// SHOW KEY UI
-function showKeyUI(key){
-
-  document.getElementById("payment").innerHTML = `
-    <h3 style="text-align:center;">✅ PAYMENT VERIFIED</h3>
-
-    <div style="background:#071226;padding:15px;border-radius:12px;text-align:center;">
-
-      <p>🔑 Your Key:</p>
-      <h2 style="color:#00f2ff;">${key}</h2>
-
-      <p>📅 Expiry: As per plan</p>
-
-      <button onclick="window.open('https://t.me/GODx_COBRA')">
-      📲 Join Telegram
-      </button>
-
-    </div>
-  `;
-}
-
 // SUBMIT
 async function submitPayment(){
 
-  if(isSubmitting){
-    alert("Already submitted");
-    return;
-  }
-
   let utr=document.getElementById("utr").value.trim();
   let file=document.getElementById("file").files[0];
-
-  if(!selectedPlan){
-    alert("Select Plan First");
-    return;
-  }
 
   if(!utr && !file){
     alert("Enter UTR or Upload Screenshot");
     return;
   }
 
-  if(localStorage.getItem("utr")){
-    alert("⚠️ Already submitted");
-    return;
-  }
-
-  isSubmitting=true;
-
-  let finalUTR = utr || Date.now().toString();
+  let finalUTR = utr || Date.now();
 
   let form=new FormData();
   form.append("plan",selectedPlan);
@@ -205,53 +97,37 @@ async function submitPayment(){
 
   if(file) form.append("file",file);
 
-  try{
-    await fetch(window.location.origin+"/buy",{
-      method:"POST",
-      body:form
-    });
+  await fetch("/buy",{method:"POST",body:form});
 
-    localStorage.setItem("utr",finalUTR);
+  localStorage.setItem("utr",finalUTR);
 
-    document.getElementById("submitBtn").disabled=true;
+  document.getElementById("status").innerText="Please wait admin verify...";
 
-    startTimer();
-    check(finalUTR);
-
-  }catch{
-    alert("Error");
-    isSubmitting=false;
-  }
+  check(finalUTR);
 }
 
-// STATUS CHECK
+// CHECK
 function check(utr){
-
-  clearInterval(interval);
 
   interval=setInterval(async()=>{
 
     let res=await fetch("/status/"+utr);
-    let data=await res.json();
+    let d=await res.json();
 
-    if(data.status==="approved"){
+    if(d.status==="approved"){
       clearInterval(interval);
-      clearInterval(timerInterval);
-
       localStorage.removeItem("utr");
 
-      showKeyUI(data.key);
+      alert("KEY: "+d.key);
+      location.reload();
     }
 
-    if(data.status==="rejected"){
+    if(d.status==="rejected"){
       clearInterval(interval);
-      clearInterval(timerInterval);
-
       localStorage.removeItem("utr");
 
-      document.getElementById("status").innerText="❌ Payment Rejected";
-
-      setTimeout(()=>location.reload(),3000);
+      alert("Rejected");
+      location.reload();
     }
 
   },2000);
@@ -260,12 +136,9 @@ function check(utr){
 // RESUME
 window.onload=()=>{
   let utr=localStorage.getItem("utr");
-
   if(utr){
     document.getElementById("payment").classList.remove("hidden");
-    document.getElementById("submitBtn").disabled=true;
-
-    startTimer();
+    document.getElementById("status").innerText="Please wait admin verify...";
     check(utr);
   }
 };
