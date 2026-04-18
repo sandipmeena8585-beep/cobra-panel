@@ -4,23 +4,45 @@
 <title>ADMIN</title>
 
 <style>
-body{background:black;color:white;text-align:center;}
-.card{background:#111;margin:10px;padding:10px;}
+body{background:#050505;color:white;text-align:center;}
+
+.card{
+  background:#111;
+  margin:10px;
+  padding:15px;
+  border-radius:10px;
+}
+
+.stat{
+  display:inline-block;
+  margin:10px;
+  padding:15px;
+  background:#222;
+  border-radius:10px;
+  box-shadow:0 0 10px red;
+}
 </style>
 </head>
 
 <body>
 
+<h1>⚡ ADMIN PANEL</h1>
+
 <div id="login">
-<h2>Login</h2>
 <input id="u"><br>
 <input id="p" type="password"><br>
-<button onclick="l()">Login</button>
+<button onclick="l()">LOGIN</button>
 </div>
 
-<div id="panel" style="display:none;">
+<div id="panel" style="display:none">
 
-<h1>ADMIN PANEL</h1>
+<h2>📊 DASHBOARD</h2>
+
+<div id="stats"></div>
+
+<hr>
+
+<h3>Add Key</h3>
 
 <select id="plan">
 <option value="plan1">Plan1</option>
@@ -29,11 +51,22 @@ body{background:black;color:white;text-align:center;}
 <option value="plan4">Plan4</option>
 </select>
 
-<input id="key" placeholder="key">
+<input id="key">
 
-<button onclick="add()">Add</button>
+<button onclick="add()">ADD</button>
 
-<h2>Requests</h2>
+<hr>
+
+<h3>🔎 Search UTR</h3>
+
+<input id="search">
+<button onclick="search()">Search</button>
+
+<div id="searchRes"></div>
+
+<hr>
+
+<h2>📥 Requests</h2>
 
 <div id="r"></div>
 
@@ -46,19 +79,19 @@ if(u.value=="admin" && p.value=="1234"){
 login.style.display="none";
 panel.style.display="block";
 load();
-}else alert("wrong");
 }
-
-async function add(){
-await fetch("/add-key",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({plan:plan.value,key:key.value})
-});
-alert("added");
 }
 
 async function load(){
+
+let s=await fetch("/admin-stats");
+let st=await s.json();
+
+stats.innerHTML=
+`<div class="stat">Stock: ${JSON.stringify(st.stock)}</div>
+<div class="stat">Sold: ${st.sold}</div>
+<div class="stat">Requests: ${st.requests}</div>`;
+
 let res=await fetch("/requests");
 let data=await res.json();
 
@@ -67,19 +100,35 @@ let html="";
 data.forEach(x=>{
 html+=`
 <div class="card">
-${x.plan} <br>
-${x.utr} <br>
+${x.plan}<br>
+${x.utr}<br>
 <img src="/uploads/${x.image}" width="100"><br>
+${x.status}<br>
+${x.key||""}<br>
 
 <button onclick="v(${x.id})">✔</button>
 <button onclick="rj(${x.id})">❌</button>
-
-${x.status} <br>
-${x.key||""}
 </div>`;
 });
 
-document.getElementById("r").innerHTML=html;
+r.innerHTML=html;
+}
+
+async function add(){
+await fetch("/add-key",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({plan:plan.value,key:key.value})
+});
+alert("Added");
+}
+
+async function search(){
+let u=search.value;
+let res=await fetch("/my-key/"+u);
+let d=await res.json();
+
+searchRes.innerText=JSON.stringify(d);
 }
 
 async function v(id){
