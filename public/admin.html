@@ -1,37 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ADMIN</title>
+
 <style>
-body{background:#0f172a;color:white;text-align:center;}
-.card{background:#1e293b;margin:10px;padding:15px;border-radius:10px;}
-button{padding:6px 10px;border:none;border-radius:6px;}
+body{
+  background:#0f172a;
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
+}
+
+.card{
+  background:#1e293b;
+  margin:10px;
+  padding:15px;
+  border-radius:12px;
+}
+
+button{
+  padding:8px;
+  border:none;
+  border-radius:8px;
+}
+
+.verify{background:green;color:white;}
+.reject{background:red;color:white;}
+
+canvas{
+  background:#111;
+  border-radius:10px;
+  margin:10px;
+}
 </style>
 </head>
 
 <body>
 
 <div id="loginBox">
-<h2>🔐 OTP LOGIN</h2>
-<button onclick="getOTP()">GET OTP</button><br><br>
-<input id="otp" placeholder="Enter OTP"><br><br>
-<button onclick="login()">LOGIN</button>
+<h3>🔐 ADMIN LOGIN</h3>
+<input id="pass" placeholder="Password"><br><br>
+<button onclick="login()">NEXT</button>
+
+<div id="otpBox" style="display:none;">
+<input id="otp" placeholder="OTP"><br><br>
+<button onclick="verifyOTP()">LOGIN</button>
+</div>
 </div>
 
 <div id="panel" style="display:none;">
-<h2>ADMIN PANEL</h2>
+
+<h2>📊 DASHBOARD</h2>
 <div id="stats"></div>
+
+<canvas id="chart" width="300" height="200"></canvas>
+
+<h2>📜 USER HISTORY</h2>
+<div id="history"></div>
+
+<h2>📥 REQUESTS</h2>
 <div id="list"></div>
+
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 
-function getOTP(){
-  fetch("/get-otp");
-  alert("Check Render Logs");
+function login(){
+  fetch("/admin-login",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({password:pass.value})
+  })
+  .then(res=>res.json())
+  .then(d=>{
+    if(d.step==="otp_sent"){
+      otpBox.style.display="block";
+    } else alert("Wrong Password");
+  });
 }
 
-function login(){
+function verifyOTP(){
   fetch("/verify-otp",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -48,32 +99,54 @@ function login(){
 }
 
 function load(){
+
   fetch("/admin-data")
   .then(res=>res.json())
   .then(d=>{
 
-    let s=`Sales: ${d.totalSales}<br>`;
-    for(let p in d.stock){
-      s+=`${p}: ${d.stock[p]}<br>`;
-    }
-    stats.innerHTML=s;
+    stats.innerHTML = "Sales: "+d.totalSales;
+
+    let hist="";
+    d.requests.forEach(r=>{
+      if(r.status==="approved"){
+        hist+=`<div class="card">
+        Plan:${r.plan}<br>
+        Key:${r.key}
+        </div>`;
+      }
+    });
+    history.innerHTML=hist;
 
     let html="";
-
     d.requests.forEach(r=>{
-      html+=`
-      <div class="card">
+      html+=`<div class="card">
       Plan:${r.plan}<br>
       UTR:${r.utr}<br>
       Status:${r.status}<br>
       ${r.file?`<img src="/uploads/${r.file}" width="100">`:""}
       <br>
-      <button onclick="v(${r.id})">VERIFY</button>
-      <button onclick="rj(${r.id})">REJECT</button>
+      <button class="verify" onclick="v(${r.id})">VERIFY</button>
+      <button class="reject" onclick="rj(${r.id})">REJECT</button>
       </div>`;
     });
 
     list.innerHTML=html;
+  });
+
+  // 📊 GRAPH
+  fetch("/sales-graph")
+  .then(res=>res.json())
+  .then(data=>{
+    new Chart(chart,{
+      type:'line',
+      data:{
+        labels:Object.keys(data),
+        datasets:[{
+          label:"Sales",
+          data:Object.values(data)
+        }]
+      }
+    });
   });
 }
 
@@ -82,10 +155,7 @@ function v(id){
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify({id})})
   .then(res=>res.json())
-  .then(d=>{
-    alert("KEY: "+d.key);
-    load();
-  });
+  .then(()=>load());
 }
 
 function rj(id){
