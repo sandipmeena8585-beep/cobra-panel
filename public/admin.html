@@ -1,36 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADMIN PANEL</title>
+
+<style>
+body{
+  margin:0;
+  background:#071226;
+  color:white;
+  font-family:sans-serif;
+}
+
+.box{
+  max-width:420px;
+  margin:auto;
+  padding:20px;
+  background:#0f1c2e;
+  border-radius:20px;
+  margin-top:20px;
+}
+
+input,select{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border-radius:10px;
+  border:none;
+}
+
+button{
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:#00f2ff;
+  width:100%;
+  margin-top:5px;
+}
+
+.card{
+  background:#12243c;
+  padding:10px;
+  border-radius:10px;
+  margin:5px 0;
+  text-align:center;
+}
+
+.req{
+  border:1px solid white;
+  padding:10px;
+  margin:10px 0;
+  border-radius:10px;
+}
+
+.hidden{display:none;}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>🔐 ADMIN LOGIN</h2>
+
+<input id="user" placeholder="Username">
+<input id="pass" placeholder="Password">
+
+<button onclick="login()">LOGIN</button>
+
+<!-- DASHBOARD -->
+<div id="panel" class="hidden">
+
+<h3>📊 Dashboard</h3>
+
+<div class="card" id="sales">Sales: 0</div>
+<div class="card" id="stock">Stock: 0</div>
+<div class="card" id="pending">Pending: 0</div>
+
+<h3>📦 Add Stock</h3>
+
+<select id="plan">
+<option value="1hour">1 Hour</option>
+<option value="3hour">3 Hour</option>
+<option value="1day">1 Day</option>
+<option value="3day">3 Day</option>
+<option value="7day">7 Day</option>
+</select>
+
+<input id="newkey" placeholder="Enter New Key">
+
+<button onclick="addKey()">ADD KEY</button>
+
+<h3>📥 Requests</h3>
+<div id="data"></div>
+
+<h3>📜 History</h3>
+<div id="history"></div>
+
+</div>
+
+</div>
+
+<script>
+
+// LOGIN
+function login(){
+  let u=document.getElementById("user").value.trim();
+  let p=document.getElementById("pass").value.trim();
+
+  if(u==="COBRA SERVER" && p==="SAMI9166"){
+    document.getElementById("panel").style.display="block";
+    load();
+  }else{
+    alert("Wrong Login");
+  }
+}
+
+// LOAD DATA
 async function load(){
 
   let res = await fetch("/admin/data");
   let data = await res.json();
 
-  console.log("ADMIN DATA:", data); // 🔥 DEBUG
+  let pendingHTML="";
+  let historyHTML="";
 
-  let html="";
-
-  if(data.length === 0){
-    html = "<p>No Requests Found</p>";
-  }
+  let sales=0;
+  let pending=0;
 
   data.forEach(x=>{
 
-    // 🔥 REMOVE status check (temporary debug)
-    html+=`
-    <div class="req">
+    if(x.status==="pending"){
+      pending++;
 
-    <b>Plan:</b> ${x.plan}<br>
-    <b>UTR:</b> ${x.utr}<br>
-    <b>Status:</b> ${x.status}<br>
+      pendingHTML+=`
+      <div class="req">
+      Plan: ${x.plan}<br>
+      UTR: ${x.utr}<br>
+      ${x.file ? `<img src="${x.file}" width="100">` : ""}
+      <br>
+      <button onclick="verify(${x.id})">VERIFY</button>
+      <button onclick="reject(${x.id})">REJECT</button>
+      </div>`;
+    }
 
-    ${x.file ? `<img src="${x.file}" width="100">` : ""}
+    if(x.status==="approved"){
+      sales++;
 
-    <br>
+      historyHTML+=`
+      <div class="req">
+      ✅ ${x.plan} → ${x.key}
+      </div>`;
+    }
 
-    <button onclick="verify(${x.id})">VERIFY</button>
-    <button onclick="reject(${x.id})">REJECT</button>
-
-    </div>
-    `;
   });
 
-  document.getElementById("data").innerHTML = html;
+  document.getElementById("data").innerHTML=pendingHTML;
+  document.getElementById("history").innerHTML=historyHTML;
+
+  document.getElementById("sales").innerText="Sales: "+sales;
+  document.getElementById("pending").innerText="Pending: "+pending;
+
 }
+
+// VERIFY
+async function verify(id){
+  await fetch("/admin/verify/"+id);
+  load();
+}
+
+// REJECT
+async function reject(id){
+  await fetch("/admin/reject/"+id);
+  load();
+}
+
+// ADD KEY
+async function addKey(){
+
+  let plan=document.getElementById("plan").value;
+  let key=document.getElementById("newkey").value;
+
+  await fetch("/admin/addkey",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({plan,key})
+  });
+
+  alert("Key Added");
+  load();
+}
+
+// AUTO REFRESH
+setInterval(load,3000);
+
+</script>
+
+</body>
+</html>
