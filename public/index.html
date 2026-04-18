@@ -5,12 +5,74 @@
 <title>COBRA PANEL</title>
 
 <style>
-body{margin:0;background:#071226;color:white;font-family:sans-serif;}
-.container{max-width:420px;margin:auto;padding:15px;}
-.card{background:#0f1c2e;border-radius:15px;padding:20px;margin-top:20px;}
-select,input,button{width:100%;padding:12px;margin:10px 0;border-radius:10px;border:none;}
-button{background:#00f2ff;color:black;}
+*{box-sizing:border-box;}
+
+body{
+  margin:0;
+  background:linear-gradient(135deg,#071226,#0f1c2e);
+  font-family:sans-serif;
+  color:white;
+}
+
+.container{
+  max-width:420px;
+  margin:auto;
+  padding:15px;
+}
+
+.card{
+  background:#0f1c2e;
+  border-radius:18px;
+  padding:20px;
+  margin-top:20px;
+  box-shadow:0 0 15px rgba(0,255,255,0.2);
+}
+
+h2{text-align:center;}
+
+select,input{
+  width:100%;
+  padding:14px;
+  margin:10px 0;
+  border-radius:12px;
+  border:none;
+}
+
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(90deg,#00f2ff,#007bff);
+  color:white;
+}
+
+.mono{
+  background:#000;
+  padding:10px;
+  border-radius:8px;
+  text-align:center;
+  font-family:monospace;
+  margin-top:10px;
+}
+
 .hidden{display:none;}
+
+.status{
+  text-align:center;
+  margin-top:10px;
+  color:#00f2ff;
+}
+
+/* animation */
+.successBox{
+  animation:pop 0.6s ease;
+}
+@keyframes pop{
+  0%{transform:scale(0.6);opacity:0;}
+  100%{transform:scale(1);opacity:1;}
+}
+.glow{box-shadow:0 0 25px #00f2ff;}
 </style>
 </head>
 
@@ -19,7 +81,7 @@ button{background:#00f2ff;color:black;}
 <div class="container">
 <div class="card">
 
-<h2>BGMI PANEL</h2>
+<h2>🎮 BGMI PANEL</h2>
 
 <select id="plan">
 <option value="">Select Plan</option>
@@ -34,11 +96,12 @@ button{background:#00f2ff;color:black;}
 
 <div id="payment" class="hidden">
 
-<p>UPI: godxcobra@axl</p>
+<p id="planShow" style="text-align:center;"></p>
 
-<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl" width="200">
+<div class="mono">UPI: godxcobra@axl</div>
 
-<p id="planShow"></p>
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl"
+width="200" style="display:block;margin:auto;margin-top:10px;">
 
 <select id="method" onchange="changeMethod()">
 <option value="utr">Enter UTR</option>
@@ -48,9 +111,9 @@ button{background:#00f2ff;color:black;}
 <input id="utr" placeholder="Enter UTR">
 <input type="file" id="file" class="hidden">
 
-<button onclick="submitPayment()">SUBMIT</button>
+<button id="submitBtn" onclick="submitPayment()">SUBMIT</button>
 
-<p id="status"></p>
+<p id="status" class="status"></p>
 
 </div>
 
@@ -61,14 +124,18 @@ button{background:#00f2ff;color:black;}
 
 let selectedPlan="";
 let interval;
+let lock=false;
 
 // START
 function startBuy(){
   selectedPlan=document.getElementById("plan").value;
   if(!selectedPlan){ alert("Select Plan"); return; }
 
-  document.getElementById("payment").classList.remove("hidden");
-  document.getElementById("planShow").innerText="Plan: "+selectedPlan;
+  let pay=document.getElementById("payment");
+  pay.classList.remove("hidden");
+
+  document.getElementById("planShow").innerText="Selected: "+selectedPlan;
+  pay.scrollIntoView({behavior:"smooth"});
 }
 
 // METHOD
@@ -80,6 +147,11 @@ function changeMethod(){
 
 // SUBMIT
 async function submitPayment(){
+
+  if(lock){
+    alert("Already submitted");
+    return;
+  }
 
   let utr=document.getElementById("utr").value.trim();
   let file=document.getElementById("file").files[0];
@@ -99,15 +171,19 @@ async function submitPayment(){
 
   await fetch("/buy",{method:"POST",body:form});
 
+  lock=true;
   localStorage.setItem("utr",finalUTR);
 
-  document.getElementById("status").innerText="Please wait admin verify...";
+  document.getElementById("submitBtn").disabled=true;
+  document.getElementById("status").innerText="⏳ Please wait admin verify...";
 
   check(finalUTR);
 }
 
 // CHECK
 function check(utr){
+
+  clearInterval(interval);
 
   interval=setInterval(async()=>{
 
@@ -118,27 +194,92 @@ function check(utr){
       clearInterval(interval);
       localStorage.removeItem("utr");
 
-      alert("KEY: "+d.key);
-      location.reload();
+      showSuccess(d.key);
+
+      setTimeout(()=>{
+        window.open("https://t.me/GODx_COBRA","_blank");
+      },1500);
     }
 
     if(d.status==="rejected"){
       clearInterval(interval);
       localStorage.removeItem("utr");
 
-      alert("Rejected");
-      location.reload();
+      document.getElementById("status").innerText="❌ Payment Rejected";
+      setTimeout(()=>location.reload(),3000);
     }
 
   },2000);
 }
 
+// 🔥 SUCCESS UI + COPY + TIMER
+function showSuccess(key){
+
+  let expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour demo
+
+  document.getElementById("payment").innerHTML=`
+  <div class="successBox glow">
+
+  <h3 style="text-align:center;">🎉 PAYMENT SUCCESS 🎉</h3>
+
+  <div style="background:#071226;padding:15px;border-radius:12px;text-align:center;">
+
+  <p>🔑 Your Key:</p>
+  <h2 id="keyText" style="color:#00f2ff;">${key}</h2>
+
+  <button onclick="copyKey()">📋 Copy Key</button>
+
+  <p id="timer">⏳ Expiry loading...</p>
+
+  <button onclick="window.open('https://t.me/GODx_COBRA')">
+  📲 Join Telegram
+  </button>
+
+  </div>
+  </div>
+  `;
+
+  startExpiryTimer(expiryTime);
+}
+
+// COPY
+function copyKey(){
+  let text=document.getElementById("keyText").innerText;
+  navigator.clipboard.writeText(text);
+  alert("Key copied!");
+}
+
+// TIMER
+function startExpiryTimer(end){
+
+  let t=setInterval(()=>{
+
+    let diff=end-Date.now();
+
+    if(diff<=0){
+      clearInterval(t);
+      document.getElementById("timer").innerText="❌ Expired";
+      return;
+    }
+
+    let m=Math.floor(diff/60000);
+    let s=Math.floor((diff%60000)/1000);
+
+    document.getElementById("timer").innerText=
+    "⏳ Expiry: "+m+"m "+s+"s";
+
+  },1000);
+}
+
 // RESUME
 window.onload=()=>{
   let utr=localStorage.getItem("utr");
+
   if(utr){
     document.getElementById("payment").classList.remove("hidden");
-    document.getElementById("status").innerText="Please wait admin verify...";
+    document.getElementById("submitBtn").disabled=true;
+    document.getElementById("status").innerText="⏳ Please wait admin verify...";
+
     check(utr);
   }
 };
