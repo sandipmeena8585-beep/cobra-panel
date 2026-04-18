@@ -1,3 +1,4 @@
+app.use(express.static("public"));
 app.post("/buy", upload.single("file"), (req, res) => {
 
   let { plan, utr } = req.body;
