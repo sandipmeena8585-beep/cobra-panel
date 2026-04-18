@@ -1,58 +1,86 @@
-<h2>ADMIN PANEL</h2>
+<!DOCTYPE html>
+<html>
+<head>
+<title>ADMIN</title>
+<style>
+body{background:#0f172a;color:white;text-align:center;}
+.card{background:#1e293b;margin:10px;padding:15px;border-radius:10px;}
+button{padding:6px 10px;border:none;border-radius:6px;}
+</style>
+</head>
 
+<body>
+
+<div id="loginBox">
+<h2>🔐 OTP LOGIN</h2>
+<button onclick="getOTP()">GET OTP</button><br><br>
+<input id="otp" placeholder="Enter OTP"><br><br>
+<button onclick="login()">LOGIN</button>
+</div>
+
+<div id="panel" style="display:none;">
+<h2>ADMIN PANEL</h2>
 <div id="stats"></div>
-<div id="requests"></div>
+<div id="list"></div>
+</div>
 
 <script>
+
+function getOTP(){
+  fetch("/get-otp");
+  alert("Check Render Logs");
+}
+
+function login(){
+  fetch("/verify-otp",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({otp:otp.value})
+  })
+  .then(res=>res.json())
+  .then(d=>{
+    if(d.success){
+      loginBox.style.display="none";
+      panel.style.display="block";
+      load();
+    } else alert("Wrong OTP");
+  });
+}
 
 function load(){
   fetch("/admin-data")
   .then(res=>res.json())
-  .then(data=>{
+  .then(d=>{
 
-    // 📊 DASHBOARD
-    let html = `
-      <h3>📊 Dashboard</h3>
-      Total Sales: ${data.totalSales}<br><br>
-    `;
-
-    for(let p in data.stock){
-      html += `${p} Stock: ${data.stock[p]}<br>`;
+    let s=`Sales: ${d.totalSales}<br>`;
+    for(let p in d.stock){
+      s+=`${p}: ${d.stock[p]}<br>`;
     }
+    stats.innerHTML=s;
 
-    document.getElementById("stats").innerHTML = html;
+    let html="";
 
-    // 📥 REQUESTS
-    let rhtml = "<h3>Requests</h3>";
-
-    data.requests.forEach(r=>{
-      rhtml += `
-        <div style="border:1px solid #ccc;margin:10px;padding:10px">
-          Plan: ${r.plan}<br>
-          UTR: ${r.utr}<br>
-          Status: ${r.status}<br>
-
-          ${r.file ? `<img src="/uploads/${r.file}" width="100">` : ""}
-
-          <br>
-
-          <button onclick="verify(${r.id})">✅ Verify</button>
-          <button onclick="reject(${r.id})">❌ Reject</button>
-        </div>
-      `;
+    d.requests.forEach(r=>{
+      html+=`
+      <div class="card">
+      Plan:${r.plan}<br>
+      UTR:${r.utr}<br>
+      Status:${r.status}<br>
+      ${r.file?`<img src="/uploads/${r.file}" width="100">`:""}
+      <br>
+      <button onclick="v(${r.id})">VERIFY</button>
+      <button onclick="rj(${r.id})">REJECT</button>
+      </div>`;
     });
 
-    document.getElementById("requests").innerHTML = rhtml;
-
+    list.innerHTML=html;
   });
 }
 
-function verify(id){
-  fetch("/verify",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({id})
-  })
+function v(id){
+  fetch("/verify",{method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({id})})
   .then(res=>res.json())
   .then(d=>{
     alert("KEY: "+d.key);
@@ -60,17 +88,14 @@ function verify(id){
   });
 }
 
-function reject(id){
-  fetch("/reject",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({id})
-  })
-  .then(()=>{
-    load();
-  });
+function rj(id){
+  fetch("/reject",{method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({id})})
+  .then(()=>load());
 }
 
-load();
-
 </script>
+
+</body>
+</html>
