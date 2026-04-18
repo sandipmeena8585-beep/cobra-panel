@@ -9,7 +9,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
-// ===== FILE INIT =====
 if (!fs.existsSync("data.json")) fs.writeFileSync("data.json", "[]");
 
 if (!fs.existsSync("keys.json")) {
@@ -22,105 +21,39 @@ if (!fs.existsSync("keys.json")) {
   }, null, 2));
 }
 
-// ===== UPLOAD =====
-const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + ".jpg");
-  }
-});
-const upload = multer({ storage });
+const upload = multer({ dest: "uploads/" });
 
-// ===== OTP =====
-let adminOTP = "0000";
-
-// ===== SEND OTP =====
-app.get("/admin/send-otp", (req, res) => {
-  adminOTP = Math.floor(1000 + Math.random() * 9000).toString();
-  res.json({ otp: adminOTP }); // 👈 screen pe show
-});
-
-// ===== LOGIN =====
-app.post("/admin/login", (req, res) => {
-  const { user, pass, otp } = req.body;
-
-  if (
-    user === "COBRA SERVER" &&
-    pass === "SAMI9166" &&
-    otp === adminOTP
-  ) {
-    res.json({ status: "success" });
-  } else {
-    res.json({ status: "fail" });
-  }
-});
-
-// ===== BUY =====
+// ===== BUY + AI =====
 app.post("/buy", upload.single("file"), (req, res) => {
 
   let { plan, utr } = req.body;
-
-  if (!utr || utr.length < 5) {
-    return res.json({ status: "rejected", msg: "Fake Payment" });
-  }
-
   let data = JSON.parse(fs.readFileSync("data.json"));
 
+  let risk = "low";
+
+  if (!utr || utr.length < 8) risk = "high";
+
+  if (data.some(x => x.utr === utr)) risk = "high";
+
+  let recent = data.filter(x => Date.now() - new Date(x.time).getTime() < 120000);
+  if (recent.length > 3) risk = "medium";
+
+  let id = Date.now();
+
   data.push({
+    id,
     plan,
     utr,
     file: req.file ? "/uploads/" + req.file.filename : "",
     status: "pending",
-    key: ""
+    key: "",
+    risk,
+    time: new Date()
   });
 
   fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
 
-  res.json({ status: "pending" });
-});
-
-// ===== ADMIN REQUEST =====
-app.get("/admin/requests", (req, res) => {
-  res.json(JSON.parse(fs.readFileSync("data.json")));
-});
-
-// ===== VERIFY =====
-app.get("/admin/verify/:id", (req, res) => {
-
-  let id = req.params.id;
-  let data = JSON.parse(fs.readFileSync("data.json"));
-  let keys = JSON.parse(fs.readFileSync("keys.json"));
-
-  if (!data[id]) return res.send("Invalid");
-
-  let plan = data[id].plan;
-
-  if (keys[plan] && keys[plan].length > 0) {
-    let key = keys[plan].shift();
-
-    data[id].status = "approved";
-    data[id].key = key;
-
-    fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
-    fs.writeFileSync("keys.json", JSON.stringify(keys, null, 2));
-
-    res.send("Approved");
-  } else {
-    res.send("No Stock");
-  }
-});
-
-// ===== REJECT =====
-app.get("/admin/reject/:id", (req, res) => {
-  let data = JSON.parse(fs.readFileSync("data.json"));
-
-  if (!data[req.params.id]) return res.send("Invalid");
-
-  data[req.params.id].status = "rejected";
-
-  fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
-
-  res.send("Rejected");
+  res.json({ ok: true, risk });
 });
 
 // ===== STATUS =====
@@ -128,23 +61,57 @@ app.get("/status/:utr", (req, res) => {
 
   let data = JSON.parse(fs.readFileSync("data.json"));
 
-  let found = data.find(x => x.utr == req.params.utr);
+  let r = data.find(x => x.utr == req.params.utr);
 
-  if (!found) return res.json({ status: "not_found" });
+  if (!r) return res.json({ status: "none" });
 
-  res.json(found);
+  res.json(r);
 });
 
-// ===== STATS =====
-app.get("/admin/stats", (req, res) => {
+// ===== ADMIN DATA =====
+app.get("/admin/data", (req, res) => {
+  res.json(JSON.parse(fs.readFileSync("data.json")));
+});
+
+// ===== VERIFY =====
+app.get("/admin/verify/:id", (req, res) => {
+
+  let data = JSON.parse(fs.readFileSync("data.json"));
+  let keys = JSON.parse(fs.readFileSync("keys.json"));
+
+  let index = data.findIndex(x => x.id == req.params.id);
+  if (index === -1) return res.send("Invalid");
+
+  let plan = data[index].plan;
+
+  if (!keys[plan] || keys[plan].length === 0) {
+    return res.send("No Stock");
+  }
+
+  let key = keys[plan].shift();
+
+  data[index].status = "approved";
+  data[index].key = key;
+
+  fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
+  fs.writeFileSync("keys.json", JSON.stringify(keys, null, 2));
+
+  res.send("OK");
+});
+
+// ===== REJECT =====
+app.get("/admin/reject/:id", (req, res) => {
 
   let data = JSON.parse(fs.readFileSync("data.json"));
 
-  let total = data.length;
-  let approved = data.filter(x => x.status === "approved").length;
-  let rejected = data.filter(x => x.status === "rejected").length;
+  let index = data.findIndex(x => x.id == req.params.id);
+  if (index === -1) return res.send("Invalid");
 
-  res.json({ total, approved, rejected, data });
+  data[index].status = "rejected";
+
+  fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
+
+  res.send("OK");
 });
 
-app.listen(3000, () => console.log("🚀 FULL SYSTEM RUNNING"));
+app.listen(3000, () => console.log("🚀 FINAL SYSTEM RUNNING"));
