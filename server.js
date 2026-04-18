@@ -10,38 +10,55 @@ app.use("/uploads", express.static("uploads"));
 
 const upload = multer({ dest: "uploads/" });
 
-// 📦 LOAD
+// 📦 DATA
 let keys = require("./keys.json");
 let requests = require("./requests.json");
 
 let sold = 0;
 
-// 📊 STATS
+// 📊 ADVANCED STATS
 app.get("/admin-stats",(req,res)=>{
+  let pending = requests.filter(x=>x.status=="pending").length;
+  let approved = requests.filter(x=>x.status=="approved").length;
+  let rejected = requests.filter(x=>x.status=="rejected").length;
+
   res.json({
     stock: keys,
     sold,
-    requests: requests.length
+    totalRequests: requests.length,
+    pending,
+    approved,
+    rejected
   });
 });
 
-// 🧾 BUY
+// 💰 FAKE PAYMENT CHECK (basic)
+function isFakeUTR(utr){
+  if(!utr) return true;
+  if(utr.length < 6) return true;
+  if(utr.includes("test")) return true;
+  return false;
+}
+
+// 🧾 BUY REQUEST
 app.post("/buy", upload.single("image"), (req,res)=>{
   let { plan, utr } = req.body;
+
+  let fake = isFakeUTR(utr);
 
   requests.push({
     id: Date.now(),
     plan,
     utr,
     image: req.file.filename,
-    status: "pending"
+    status: fake ? "fake" : "pending"
   });
 
   fs.writeFileSync("requests.json", JSON.stringify(requests,null,2));
   res.send("OK");
 });
 
-// 📥 REQUESTS
+// 📥 GET REQUESTS
 app.get("/requests",(req,res)=>{
   res.json(requests);
 });
@@ -50,7 +67,7 @@ app.get("/requests",(req,res)=>{
 app.post("/add-key",(req,res)=>{
   let { plan, key } = req.body;
 
-  if(!keys[plan]) keys[plan] = [];
+  if(!keys[plan]) keys[plan]=[];
 
   keys[plan].push(key);
 
@@ -59,11 +76,12 @@ app.post("/add-key",(req,res)=>{
   res.send("Added");
 });
 
-// ✅ VERIFY
+// ✅ VERIFY → KEY AUTO SEND + REMOVE REQUEST
 app.post("/verify",(req,res)=>{
   let { id } = req.body;
 
-  let r = requests.find(x=>x.id==id);
+  let index = requests.findIndex(x=>x.id==id);
+  let r = requests[index];
 
   if(!r) return res.send("Not found");
 
@@ -73,48 +91,32 @@ app.post("/verify",(req,res)=>{
     return res.send("No stock");
   }
 
-  let key = keys[plan].shift();
-
-  r.status = "approved";
-  r.key = key;
-
+  let key = keys[plan].shift(); // 👈 single key
   sold++;
+
+  // 👇 remove request (IMPORTANT)
+  requests.splice(index,1);
 
   fs.writeFileSync("keys.json", JSON.stringify(keys,null,2));
   fs.writeFileSync("requests.json", JSON.stringify(requests,null,2));
 
-  res.send("Approved");
+  res.json({
+    key
+  });
 });
 
 // ❌ REJECT
 app.post("/reject",(req,res)=>{
   let { id } = req.body;
 
-  let r = requests.find(x=>x.id==id);
+  let index = requests.findIndex(x=>x.id==id);
+  if(index==-1) return res.send("Not found");
 
-  if(!r) return res.send("Not found");
-
-  r.status = "rejected";
+  requests.splice(index,1);
 
   fs.writeFileSync("requests.json", JSON.stringify(requests,null,2));
 
   res.send("Rejected");
 });
 
-// 🔍 CUSTOMER KEY CHECK
-app.get("/my-key/:utr",(req,res)=>{
-  let utr = req.params.utr;
-
-  let r = requests.find(x=>x.utr==utr && x.status=="approved");
-
-  if(!r){
-    return res.json({status:"pending"});
-  }
-
-  res.json({
-    status:"approved",
-    key:r.key
-  });
-});
-
-app.listen(3000, ()=>console.log("🔥 RUNNING"));
+app.listen(3000, ()=>console.log("🔥 PRO MAX RUNNING"));
