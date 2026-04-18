@@ -1,79 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ADMIN PANEL</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<input id="user" placeholder="Username">
-<input id="pass" placeholder="Password">
-<input id="otp" placeholder="OTP">
+<style>
+*{box-sizing:border-box;}
 
-<button onclick="sendOTP()">GET OTP</button>
+body{
+  margin:0;
+  background:#071226;
+  font-family:sans-serif;
+  color:white;
+}
+
+/* SAME UI */
+.wrapper{
+  display:flex;
+  justify-content:center;
+  padding:20px;
+}
+
+.card{
+  width:100%;
+  max-width:420px;
+  background:#0f1c2e;
+  border-radius:20px;
+  padding:25px;
+  box-shadow:0 0 25px rgba(0,255,255,0.2);
+}
+
+/* TITLE */
+h2{
+  text-align:center;
+}
+
+/* INPUT */
+input{
+  width:100%;
+  padding:14px;
+  margin:10px 0;
+  border-radius:12px;
+  border:none;
+}
+
+/* BUTTON */
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(90deg,#00f2ff,#0072ff);
+  color:white;
+  font-weight:bold;
+  box-shadow:0 0 20px #00f2ff;
+  margin-top:8px;
+}
+
+/* REQUEST BOX */
+.req{
+  background:#14243d;
+  padding:12px;
+  border-radius:10px;
+  margin-top:10px;
+}
+
+img{
+  width:100%;
+  border-radius:10px;
+  margin-top:6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+<div class="card">
+
+<h2>🔐 ADMIN LOGIN</h2>
+
+<input id="user" placeholder="Username">
+<input id="pass" type="password" placeholder="Password">
+<input id="otp" placeholder="Enter OTP">
+
+<button onclick="sendOTP()">📲 GET OTP</button>
 <button onclick="login()">LOGIN</button>
 
+<!-- PANEL -->
+<div id="panel" style="display:none;">
+
+<h2>📊 DASHBOARD</h2>
+
+<p>Total: <span id="t">0</span></p>
+<p>Approved: <span id="a">0</span></p>
+<p>Rejected: <span id="r">0</span></p>
+
 <canvas id="chart"></canvas>
+
+<h2>📦 REQUESTS</h2>
 <div id="data"></div>
+
+</div>
+
+</div>
+</div>
 
 <script>
 
+// ===== OTP =====
 async function sendOTP(){
-  let r = await fetch("/admin/send-otp");
-  let d = await r.json();
-  alert("OTP: "+d.otp);
+  let res = await fetch("/admin/send-otp");
+  let data = await res.json();
+
+  alert("OTP: " + data.otp); // ✔ screen pe
 }
 
+// ===== LOGIN =====
 async function login(){
 
-  let r = await fetch("/admin/login",{
+  let user = document.getElementById("user").value;
+  let pass = document.getElementById("pass").value;
+  let otp = document.getElementById("otp").value;
+
+  let res = await fetch("/admin/login",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      user:user.value,
-      pass:pass.value,
-      otp:otp.value
-    })
+    body: JSON.stringify({user,pass,otp})
   });
 
-  let d = await r.json();
+  let data = await res.json();
 
-  if(d.status==="success"){
-    load();
-  } else alert("Wrong");
+  if(data.status === "success"){
+
+    document.getElementById("panel").style.display = "block";
+
+    load(); // 🔥 IMPORTANT
+
+  } else {
+    alert("Wrong Login");
+  }
 }
 
+// ===== LOAD DATA =====
 async function load(){
 
-  let r = await fetch("/admin/stats");
-  let d = await r.json();
+  let res = await fetch("/admin/stats");
+  let d = await res.json();
 
-  new Chart(chart,{
+  document.getElementById("t").innerText = d.total;
+  document.getElementById("a").innerText = d.approved;
+  document.getElementById("r").innerText = d.rejected;
+
+  // GRAPH
+  new Chart(document.getElementById("chart"),{
     type:"bar",
     data:{
       labels:["Approved","Rejected"],
-      datasets:[{data:[d.approved,d.rejected]}]
+      datasets:[{
+        data:[d.approved,d.rejected]
+      }]
     }
   });
 
-  let html="";
+  // REQUEST LIST
+  let html = "";
 
   d.data.forEach((x,i)=>{
-    html+=`
-    <div>
-      Plan:${x.plan}<br>
-      UTR:${x.utr}<br>
-      <img src="${x.file}" width="100"><br>
-      <button onclick="v(${i})">Verify</button>
-      <button onclick="rj(${i})">Reject</button>
-    </div>`;
+
+    html += `
+    <div class="req">
+      <p><b>Plan:</b> ${x.plan}</p>
+      <p><b>UTR:</b> ${x.utr}</p>
+
+      ${x.file ? `<img src="${x.file}">` : ""}
+
+      <button onclick="verify(${i})">✅ VERIFY</button>
+      <button onclick="reject(${i})">❌ REJECT</button>
+    </div>
+    `;
   });
 
-  data.innerHTML=html;
+  document.getElementById("data").innerHTML = html;
 }
 
-async function v(i){
-  await fetch("/admin/verify/"+i);
+// ===== VERIFY =====
+async function verify(i){
+  await fetch("/admin/verify/" + i);
   load();
 }
 
-async function rj(i){
-  await fetch("/admin/reject/"+i);
+// ===== REJECT =====
+async function reject(i){
+  await fetch("/admin/reject/" + i);
   load();
 }
 
 </script>
+
+</body>
+</html>
