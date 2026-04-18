@@ -1,164 +1,144 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>COBRA VIP PANEL</title>
+  <title>COBRA PANEL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body{
+      margin:0;
+      font-family:sans-serif;
+      background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+      color:white;
+      text-align:center;
+    }
 
-<style>
-body{
-  background:#050505;
-  color:white;
-  font-family:sans-serif;
-  text-align:center;
-}
+    .box{
+      margin:60px auto;
+      width:90%;
+      max-width:400px;
+      padding:25px;
+      border-radius:20px;
+      background:rgba(255,255,255,0.08);
+      backdrop-filter:blur(15px);
+      box-shadow:0 0 25px rgba(0,255,255,0.2);
+    }
 
-.glow{
-  text-shadow:0 0 10px red,0 0 20px red;
-}
+    h2{
+      margin-bottom:20px;
+      font-size:22px;
+      letter-spacing:1px;
+    }
 
-.card{
-  background:#111;
-  margin:15px;
-  padding:20px;
-  border-radius:12px;
-  box-shadow:0 0 20px rgba(255,0,0,0.2);
-}
+    select, input{
+      width:100%;
+      padding:12px;
+      margin:10px 0;
+      border-radius:10px;
+      border:none;
+      outline:none;
+      font-size:15px;
+    }
 
-select,input{
-  padding:10px;
-  margin:10px;
-  width:240px;
-  border-radius:8px;
-  border:none;
-}
+    .btn{
+      width:100%;
+      padding:14px;
+      border:none;
+      border-radius:12px;
+      font-size:16px;
+      cursor:pointer;
+      background:linear-gradient(90deg,#00c6ff,#0072ff);
+      color:white;
+      box-shadow:0 0 15px #00c6ff;
+      transition:0.3s;
+    }
 
-button{
-  padding:12px;
-  background:linear-gradient(45deg,#ff0000,#ff6600);
-  color:white;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  transition:0.3s;
-}
+    .btn:hover{
+      transform:scale(1.05);
+      box-shadow:0 0 25px #00c6ff;
+    }
 
-button:hover{
-  transform:scale(1.1);
-  box-shadow:0 0 25px red;
-}
+    .qrBox{
+      display:none;
+      margin-top:20px;
+      animation:fade 0.5s ease;
+    }
 
-/* Telegram button */
-.tg{
-  position:fixed;
-  bottom:20px;
-  right:20px;
-  background:#0088cc;
-  padding:15px;
-  border-radius:50%;
-  box-shadow:0 0 15px #0088cc;
-  cursor:pointer;
-}
-</style>
+    @keyframes fade{
+      from{opacity:0; transform:translateY(20px);}
+      to{opacity:1;}
+    }
+
+    img{
+      width:200px;
+      border-radius:10px;
+      margin:10px 0;
+    }
+
+  </style>
 </head>
 
 <body>
 
-<h1 class="glow">🔥 COBRA VIP PANEL 🔥</h1>
+<div class="box">
 
-<div class="card">
+  <h2>🔑 Purchase Your Key</h2>
 
-<h3>🎮 BGMI SELECTED</h3>
+  <!-- GAME -->
+  <select id="game">
+    <option value="bgmi">BGMI</option>
+  </select>
 
-<select id="plan">
-<option value="plan1">1 DAY - ₹120</option>
-<option value="plan2">7 DAY - ₹500</option>
-<option value="plan3">15 DAY - ₹800</option>
-<option value="plan4">30 DAY - ₹1000</option>
-</select>
+  <!-- PLAN -->
+  <select id="plan">
+    <option value="1hour">1 Hour - ₹30</option>
+    <option value="3hour">3 Hour - ₹50</option>
+    <option value="1day">1 Day - ₹110</option>
+    <option value="3day">3 Day - ₹200</option>
+    <option value="7day">7 Day - ₹400</option>
+  </select>
 
-<br>
+  <!-- BUY BUTTON -->
+  <button class="btn" onclick="showPayment()">💳 BUY KEY</button>
 
-<button onclick="buy()">🔥 BUY KEY</button>
+  <!-- PAYMENT UI -->
+  <div class="qrBox" id="paymentBox">
 
-</div>
+    <h3>📲 Scan & Pay</h3>
 
-<!-- PAYMENT BOX -->
-<div class="card" id="payBox" style="display:none">
+    <!-- QR IMAGE -->
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl">
 
-<h2>💳 PAYMENT</h2>
+    <p>UPI: <b>godxcobra@axl</b></p>
 
-<img src="upi_qr.png" width="200">
+    <input id="utr" placeholder="Enter UTR ID">
+    <input type="file" id="file">
 
-<p>UPI: godxcobra@axl</p>
+    <button class="btn" onclick="buy()">Submit Payment</button>
 
-<input id="utr" placeholder="Enter UTR ID">
-<input type="file" id="img">
-
-<br>
-
-<button onclick="send()">SUBMIT PAYMENT</button>
-
-<br><br>
-
-<button onclick="check()">🔍 CHECK MY KEY</button>
-
-<p id="res"></p>
+  </div>
 
 </div>
-
-<!-- TELEGRAM BUTTON -->
-<div class="tg" onclick="tg()">📩</div>
 
 <script>
 
-// BUY CLICK → PAYMENT SHOW
+function showPayment(){
+  document.getElementById("paymentBox").style.display="block";
+}
+
 function buy(){
-  document.getElementById("payBox").style.display="block";
-  window.scrollTo(0, document.body.scrollHeight);
-}
+  let form = new FormData();
 
-// SEND REQUEST
-async function send(){
+  form.append("plan", document.getElementById("plan").value);
+  form.append("utr", document.getElementById("utr").value);
+  form.append("screenshot", document.getElementById("file").files[0]);
 
-  let plan = document.getElementById("plan").value;
-  let utr = document.getElementById("utr").value;
-  let file = document.getElementById("img").files[0];
-
-  if(!utr || !file){
-    alert("Fill all details ❌");
-    return;
-  }
-
-  let f = new FormData();
-  f.append("plan",plan);
-  f.append("utr",utr);
-  f.append("image",file);
-
-  await fetch("/buy",{method:"POST",body:f});
-
-  alert("✅ Request Sent\nWait for admin verify");
-}
-
-// CHECK KEY
-async function check(){
-
-  let utr = document.getElementById("utr").value;
-
-  let r = await fetch("/my-key/"+utr);
-  let d = await r.json();
-
-  if(d.status=="pending"){
-    res.innerText="⏳ Pending / Not Approved";
-  }else{
-    res.innerText="🔑 YOUR KEY: " + d.key;
-  }
-}
-
-// TELEGRAM AUTO MESSAGE
-function tg(){
-  let msg = encodeURIComponent("Hello, I need help for BGMI panel");
-  window.open("https://t.me/GODx_COBRA?text="+msg,"_blank");
+  fetch("/buy",{method:"POST",body:form})
+  .then(res=>res.json())
+  .then(()=>{
+    alert("✅ Request Sent To Admin");
+    location.reload();
+  });
 }
 
 </script>
