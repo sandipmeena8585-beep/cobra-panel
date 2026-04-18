@@ -10,9 +10,18 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 🔥 STATIC
+// 🔥 STATIC FILES
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
+
+// 🔥 FILE PATH (IMPORTANT FIX)
+const DATA_FILE = path.join(__dirname, "data.json");
+const KEY_FILE = path.join(__dirname, "keys.json");
+
+// 🔥 CREATE FILES IF NOT EXIST
+if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, "[]");
+if (!fs.existsSync(KEY_FILE)) fs.writeFileSync(KEY_FILE, "{}");
+if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
 
 // 🔥 FILE UPLOAD
 const storage = multer.diskStorage({
@@ -25,22 +34,25 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// 🔥 CREATE FILES IF NOT EXIST
-if (!fs.existsSync("data.json")) fs.writeFileSync("data.json", "[]");
-if (!fs.existsSync("keys.json")) fs.writeFileSync("keys.json", "{}");
-if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
-
 // 🔥 ROOT
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
+  res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
-// 🔥 BUY (CUSTOMER SUBMIT)
+// 🔥 BUY (CUSTOMER → ADMIN REQUEST)
 app.post("/buy", upload.single("file"), (req, res) => {
 
   let { plan, utr } = req.body;
 
-  let data = JSON.parse(fs.readFileSync("data.json"));
+  console.log("RECEIVED:", plan, utr);
+
+  let data = [];
+
+  try{
+    data = JSON.parse(fs.readFileSync(DATA_FILE));
+  }catch{
+    data = [];
+  }
 
   let newEntry = {
     id: Date.now(),
@@ -54,43 +66,52 @@ app.post("/buy", upload.single("file"), (req, res) => {
 
   data.push(newEntry);
 
-  fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 
-  console.log("NEW ORDER:", newEntry);
+  console.log("SAVED:", newEntry);
 
   res.json({ success: true });
 });
 
-// 🔥 STATUS CHECK
+// 🔥 STATUS CHECK (CUSTOMER)
 app.get("/status/:utr", (req, res) => {
 
-  let utr = req.params.utr;
+  let data = [];
 
-  let data = JSON.parse(fs.readFileSync("data.json"));
-
-  let find = data.find(x => x.utr == utr);
-
-  if (!find) {
-    return res.json({ status: "notfound" });
+  try{
+    data = JSON.parse(fs.readFileSync(DATA_FILE));
+  }catch{
+    data = [];
   }
+
+  let find = data.find(x => x.utr == req.params.utr);
+
+  if (!find) return res.json({ status: "notfound" });
 
   res.json(find);
 });
 
-// 🔥 ADMIN DATA
+// 🔥 ADMIN DATA (FIXED)
 app.get("/admin/data", (req, res) => {
 
-  let data = JSON.parse(fs.readFileSync("data.json"));
+  let data = [];
+
+  try{
+    data = JSON.parse(fs.readFileSync(DATA_FILE));
+  }catch{
+    data = [];
+  }
+
   res.json(data);
 });
 
-// 🔥 VERIFY (GIVE KEY)
+// 🔥 VERIFY (KEY ASSIGN + STOCK REMOVE)
 app.get("/admin/verify/:id", (req, res) => {
 
-  let id = Number(req.params.id);
+  let data = JSON.parse(fs.readFileSync(DATA_FILE));
+  let keys = JSON.parse(fs.readFileSync(KEY_FILE));
 
-  let data = JSON.parse(fs.readFileSync("data.json"));
-  let keys = JSON.parse(fs.readFileSync("keys.json"));
+  let id = Number(req.params.id);
 
   let order = data.find(x => x.id === id);
 
@@ -98,17 +119,17 @@ app.get("/admin/verify/:id", (req, res) => {
 
   let planKeys = keys[order.plan] || [];
 
-  if (planKeys.length === 0) {
-    order.key = "NO KEY AVAILABLE";
-  } else {
-    order.key = planKeys.shift(); // 🔥 remove key from stock
+  if (planKeys.length > 0) {
+    order.key = planKeys.shift();
     keys[order.plan] = planKeys;
+  } else {
+    order.key = "NO KEY AVAILABLE";
   }
 
   order.status = "approved";
 
-  fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
-  fs.writeFileSync("keys.json", JSON.stringify(keys, null, 2));
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  fs.writeFileSync(KEY_FILE, JSON.stringify(keys, null, 2));
 
   res.send("Verified");
 });
@@ -116,17 +137,15 @@ app.get("/admin/verify/:id", (req, res) => {
 // 🔥 REJECT
 app.get("/admin/reject/:id", (req, res) => {
 
-  let id = Number(req.params.id);
+  let data = JSON.parse(fs.readFileSync(DATA_FILE));
 
-  let data = JSON.parse(fs.readFileSync("data.json"));
+  let id = Number(req.params.id);
 
   let order = data.find(x => x.id === id);
 
-  if (order) {
-    order.status = "rejected";
-  }
+  if (order) order.status = "rejected";
 
-  fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 
   res.send("Rejected");
 });
@@ -136,18 +155,18 @@ app.post("/admin/addkey", (req, res) => {
 
   let { plan, key } = req.body;
 
-  let keys = JSON.parse(fs.readFileSync("keys.json"));
+  let keys = JSON.parse(fs.readFileSync(KEY_FILE));
 
   if (!keys[plan]) keys[plan] = [];
 
   keys[plan].push(key);
 
-  fs.writeFileSync("keys.json", JSON.stringify(keys, null, 2));
+  fs.writeFileSync(KEY_FILE, JSON.stringify(keys, null, 2));
 
   res.send("Key Added");
 });
 
 // 🔥 START SERVER
 app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log("🔥 SERVER RUNNING ON PORT " + PORT);
 });
