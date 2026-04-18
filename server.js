@@ -8,7 +8,11 @@ app.use(express.static("public"));
 
 const upload = multer({ dest: "uploads/" });
 
-// ===== FILE FUNCTIONS =====
+// ===== ADMIN SECURITY =====
+const ADMIN_PASS = "cobra123"; // 🔒 password
+let currentOTP = null;
+
+// ===== FILE HELPERS =====
 function read(file){
   return JSON.parse(fs.readFileSync(file));
 }
@@ -16,13 +20,16 @@ function write(file,data){
   fs.writeFileSync(file, JSON.stringify(data,null,2));
 }
 
-// ===== OTP SYSTEM =====
-let currentOTP = null;
+// ===== PASSWORD + OTP =====
+app.post("/admin-login",(req,res)=>{
+  if(req.body.password !== ADMIN_PASS){
+    return res.json({step:"wrong_pass"});
+  }
 
-app.get("/get-otp",(req,res)=>{
   currentOTP = Math.floor(100000 + Math.random()*900000);
-  console.log("ADMIN OTP:", currentOTP);
-  res.json({msg:"OTP GENERATED"});
+  console.log("OTP:", currentOTP);
+
+  res.json({step:"otp_sent"});
 });
 
 app.post("/verify-otp",(req,res)=>{
@@ -51,7 +58,8 @@ app.post("/buy", upload.single("screenshot"), (req,res)=>{
     plan,
     utr,
     file: req.file ? req.file.filename : null,
-    status:"pending"
+    status:"pending",
+    time: new Date()
   });
 
   write("data.json",data);
@@ -119,11 +127,27 @@ app.post("/reject",(req,res)=>{
   res.json({msg:"Rejected"});
 });
 
-// ===== GET KEY =====
+// ===== USER KEY =====
 app.get("/get-key/:id",(req,res)=>{
   let data = read("data.json");
   let r = data.requests.find(x=>x.id==req.params.id);
   res.json(r);
 });
 
-app.listen(3000,()=>console.log("🚀 Server Running"));
+// ===== SALES GRAPH DATA =====
+app.get("/sales-graph",(req,res)=>{
+  let data = read("data.json");
+
+  let map = {};
+
+  data.requests.forEach(r=>{
+    if(r.status==="approved"){
+      let day = new Date(r.time).toDateString();
+      map[day] = (map[day] || 0) + 1;
+    }
+  });
+
+  res.json(map);
+});
+
+app.listen(3000,()=>console.log("🔥 FINAL PRO SERVER RUNNING"));
