@@ -1,195 +1,76 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>ADMIN PANEL</title>
+<h2>ADMIN PANEL</h2>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-body{
-  background:#050505;
-  color:white;
-  font-family:sans-serif;
-  text-align:center;
-}
-
-.glow{
-  text-shadow:0 0 10px red;
-}
-
-.card{
-  background:#111;
-  margin:10px;
-  padding:15px;
-  border-radius:10px;
-}
-
-.stat{
-  display:inline-block;
-  margin:8px;
-  padding:12px;
-  background:#222;
-  border-radius:8px;
-  box-shadow:0 0 10px red;
-}
-
-button{
-  padding:8px 12px;
-  margin:5px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-.ok{background:green;color:white;}
-.no{background:red;color:white;}
-.add{background:orange;color:black;}
-</style>
-
-</head>
-
-<body>
-
-<h1 class="glow">⚡ ADMIN PANEL</h1>
-
-<!-- LOGIN -->
-<div id="loginBox">
-  <h3>🔐 Login</h3>
-  <input id="u" placeholder="Username"><br>
-  <input id="p" type="password" placeholder="Password"><br>
-  <button onclick="login()">LOGIN</button>
-</div>
-
-<!-- PANEL -->
-<div id="panel" style="display:none">
-
-<h2>📊 DASHBOARD</h2>
 <div id="stats"></div>
-
-<hr>
-
-<h3>➕ ADD KEY</h3>
-
-<select id="plan">
-<option value="plan1">Plan1</option>
-<option value="plan2">Plan2</option>
-<option value="plan3">Plan3</option>
-<option value="plan4">Plan4</option>
-</select>
-
-<input id="key" placeholder="Enter key">
-
-<button class="add" onclick="add()">ADD KEY</button>
-
-<hr>
-
-<h3>🔎 SEARCH (UTR)</h3>
-
-<input id="search" placeholder="Enter UTR">
-<button onclick="searchUTR()">Search</button>
-
-<div id="searchRes"></div>
-
-<hr>
-
-<h2>📥 ALL REQUESTS</h2>
-
-<div id="list"></div>
-
-</div>
+<div id="requests"></div>
 
 <script>
 
-// 🔐 LOGIN
-function login(){
-  if(u.value==="admin" && p.value==="1234"){
-    loginBox.style.display="none";
-    panel.style.display="block";
-    load();
-  } else {
-    alert("Wrong login ❌");
-  }
-}
+function load(){
+  fetch("/admin-data")
+  .then(res=>res.json())
+  .then(data=>{
 
-// 📊 LOAD DATA
-async function load(){
-
-  let s = await fetch("/admin-stats");
-  let st = await s.json();
-
-  stats.innerHTML = `
-  <div class="stat">Stock: ${JSON.stringify(st.stock)}</div>
-  <div class="stat">Sold: ${st.sold}</div>
-  <div class="stat">Total: ${st.total}</div>
-  <div class="stat">Pending: ${st.pending}</div>
-  <div class="stat">Approved: ${st.approved}</div>
-  <div class="stat">Rejected: ${st.rejected}</div>
-  <div class="stat">Fake: ${st.fake}</div>
-  `;
-
-  let r = await fetch("/requests");
-  let data = await r.json();
-
-  let html = "";
-
-  data.forEach(x=>{
-    html += `
-    <div class="card">
-      <b>Plan:</b> ${x.plan}<br>
-      <b>UTR:</b> ${x.utr}<br>
-      <img src="/uploads/${x.image}" width="120"><br>
-      <b>Status:</b> ${x.status}<br>
-      <b>Key:</b> ${x.key || "-"}<br>
-
-      ${x.status==="pending" ? `
-      <button class="ok" onclick="verify(${x.id})">VERIFY</button>
-      <button class="no" onclick="reject(${x.id})">REJECT</button>
-      ` : ""}
-    </div>
+    // 📊 DASHBOARD
+    let html = `
+      <h3>📊 Dashboard</h3>
+      Total Sales: ${data.totalSales}<br><br>
     `;
+
+    for(let p in data.stock){
+      html += `${p} Stock: ${data.stock[p]}<br>`;
+    }
+
+    document.getElementById("stats").innerHTML = html;
+
+    // 📥 REQUESTS
+    let rhtml = "<h3>Requests</h3>";
+
+    data.requests.forEach(r=>{
+      rhtml += `
+        <div style="border:1px solid #ccc;margin:10px;padding:10px">
+          Plan: ${r.plan}<br>
+          UTR: ${r.utr}<br>
+          Status: ${r.status}<br>
+
+          ${r.file ? `<img src="/uploads/${r.file}" width="100">` : ""}
+
+          <br>
+
+          <button onclick="verify(${r.id})">✅ Verify</button>
+          <button onclick="reject(${r.id})">❌ Reject</button>
+        </div>
+      `;
+    });
+
+    document.getElementById("requests").innerHTML = rhtml;
+
   });
-
-  list.innerHTML = html;
 }
 
-// ➕ ADD KEY
-async function add(){
-  await fetch("/add-key",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      plan:plan.value,
-      key:key.value
-    })
-  });
-
-  alert("Key Added ✅");
-}
-
-// 🔎 SEARCH UTR
-async function searchUTR(){
-  let utr = document.getElementById("search").value;
-
-  let res = await fetch("/my-key/"+utr);
-  let data = await res.json();
-
-  searchRes.innerText = JSON.stringify(data);
-}
-
-// ✅ VERIFY
-async function verify(id){
-
-  let res = await fetch("/verify",{
+function verify(id){
+  fetch("/verify",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({id})
+  })
+  .then(res=>res.json())
+  .then(d=>{
+    alert("KEY: "+d.key);
+    load();
   });
-
-  let data = await res.json();
-
-  alert("🔑 KEY: " + data.key);
-
-  load();
 }
 
-// ❌ RE
+function reject(id){
+  fetch("/reject",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({id})
+  })
+  .then(()=>{
+    load();
+  });
+}
+
+load();
+
+</script>
