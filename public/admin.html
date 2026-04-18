@@ -5,9 +5,46 @@
 <title>ADMIN</title>
 
 <style>
-body{background:#071226;color:white;font-family:sans-serif;}
-.box{max-width:420px;margin:auto;padding:20px;background:#0f1c2e;border-radius:20px;}
-button{padding:8px;margin:5px;}
+body{
+  margin:0;
+  background:#071226;
+  color:white;
+  font-family:sans-serif;
+}
+
+.box{
+  max-width:420px;
+  margin:auto;
+  padding:20px;
+  background:#0f1c2e;
+  border-radius:20px;
+  margin-top:20px;
+}
+
+input{
+  width:48%;
+  padding:10px;
+  margin:5px;
+  border-radius:8px;
+  border:none;
+}
+
+button{
+  padding:10px 15px;
+  border:none;
+  border-radius:8px;
+  background:#00f2ff;
+  margin:5px;
+}
+
+.hidden{display:none;}
+
+.req{
+  border:1px solid white;
+  padding:10px;
+  margin:10px 0;
+  border-radius:10px;
+}
 </style>
 </head>
 
@@ -15,13 +52,16 @@ button{padding:8px;margin:5px;}
 
 <div class="box">
 
-<h2>ADMIN LOGIN</h2>
+<h2>🔐 ADMIN LOGIN</h2>
 
 <input id="user" placeholder="Username">
 <input id="pass" placeholder="Password">
 
+<br>
+
 <button onclick="login()">LOGIN</button>
 
+<!-- PANEL -->
 <div id="panel" class="hidden">
 
 <h3>Requests</h3>
@@ -33,55 +73,81 @@ button{padding:8px;margin:5px;}
 
 <script>
 
-function login(){
-  if(user.value==="COBRA SERVER" && pass.value==="SAMI9166"){
-    panel.classList.remove("hidden");
+// ✅ AUTO LOGIN
+window.onload = function(){
+  if(localStorage.getItem("admin")==="yes"){
+    document.getElementById("panel").classList.remove("hidden");
     load();
-  }else alert("Wrong");
+  }
+};
+
+// ✅ LOGIN FIXED
+function login(){
+
+  let u = document.getElementById("user").value.trim();
+  let p = document.getElementById("pass").value.trim();
+
+  if(u === "COBRA SERVER" && p === "SAMI9166"){
+
+    localStorage.setItem("admin","yes");
+
+    document.getElementById("panel").classList.remove("hidden");
+
+    load();
+
+  }else{
+    alert("❌ Wrong Username or Password");
+  }
 }
 
+// ✅ LOAD REQUESTS
 async function load(){
 
-  let r=await fetch("/admin/data");
-  let d=await r.json();
+  let res = await fetch("/admin/data");
+  let data = await res.json();
 
   let html="";
 
-  d.forEach(x=>{
+  data.forEach(x=>{
 
     if(x.status==="pending"){
+
       html+=`
-      <div style="border:1px solid white;margin:10px;padding:10px">
+      <div class="req">
 
-      Plan: ${x.plan}<br>
-      UTR: ${x.utr}<br>
-      Time: ${x.time}<br>
+      <b>Plan:</b> ${x.plan}<br>
+      <b>UTR:</b> ${x.utr}<br>
+      <b>Time:</b> ${new Date(x.time).toLocaleString()}<br>
 
-      ${x.file?`<img src="${x.file}" width="100">`:""}
+      ${x.file ? `<img src="${x.file}" width="100">` : ""}
 
       <br>
 
-      <button onclick="v(${x.id})">VERIFY</button>
-      <button onclick="rj(${x.id})">REJECT</button>
+      <button onclick="verify(${x.id})">✅ VERIFY</button>
+      <button onclick="reject(${x.id})">❌ REJECT</button>
 
-      </div>`;
+      </div>
+      `;
     }
 
   });
 
-  data.innerHTML=html;
+  document.getElementById("data").innerHTML = html;
 }
 
-async function v(id){
+// ✅ VERIFY
+async function verify(id){
   await fetch("/admin/verify/"+id);
   load();
 }
 
-async function rj(id){
+// ✅ REJECT
+async function reject(id){
   await fetch("/admin/reject/"+id);
   load();
 }
 
+// ✅ LIVE AUTO REFRESH
 setInterval(load,3000);
 
 </script>
