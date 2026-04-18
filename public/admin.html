@@ -1,10 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>ADMIN</title>
+<title>ADMIN PANEL</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{background:#050505;color:white;text-align:center;}
+body{
+  background:#050505;
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
+}
+
+.glow{
+  text-shadow:0 0 10px red;
+}
 
 .card{
   background:#111;
@@ -15,34 +26,49 @@ body{background:#050505;color:white;text-align:center;}
 
 .stat{
   display:inline-block;
-  margin:10px;
-  padding:15px;
+  margin:8px;
+  padding:12px;
   background:#222;
-  border-radius:10px;
+  border-radius:8px;
   box-shadow:0 0 10px red;
 }
+
+button{
+  padding:8px 12px;
+  margin:5px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.ok{background:green;color:white;}
+.no{background:red;color:white;}
+.add{background:orange;color:black;}
 </style>
+
 </head>
 
 <body>
 
-<h1>⚡ ADMIN PANEL</h1>
+<h1 class="glow">⚡ ADMIN PANEL</h1>
 
-<div id="login">
-<input id="u"><br>
-<input id="p" type="password"><br>
-<button onclick="l()">LOGIN</button>
+<!-- LOGIN -->
+<div id="loginBox">
+  <h3>🔐 Login</h3>
+  <input id="u" placeholder="Username"><br>
+  <input id="p" type="password" placeholder="Password"><br>
+  <button onclick="login()">LOGIN</button>
 </div>
 
+<!-- PANEL -->
 <div id="panel" style="display:none">
 
 <h2>📊 DASHBOARD</h2>
-
 <div id="stats"></div>
 
 <hr>
 
-<h3>Add Key</h3>
+<h3>➕ ADD KEY</h3>
 
 <select id="plan">
 <option value="plan1">Plan1</option>
@@ -51,97 +77,119 @@ body{background:#050505;color:white;text-align:center;}
 <option value="plan4">Plan4</option>
 </select>
 
-<input id="key">
+<input id="key" placeholder="Enter key">
 
-<button onclick="add()">ADD</button>
+<button class="add" onclick="add()">ADD KEY</button>
 
 <hr>
 
-<h3>🔎 Search UTR</h3>
+<h3>🔎 SEARCH (UTR)</h3>
 
-<input id="search">
-<button onclick="search()">Search</button>
+<input id="search" placeholder="Enter UTR">
+<button onclick="searchUTR()">Search</button>
 
 <div id="searchRes"></div>
 
 <hr>
 
-<h2>📥 Requests</h2>
+<h2>📥 ALL REQUESTS</h2>
 
-<div id="r"></div>
+<div id="list"></div>
 
 </div>
 
 <script>
 
-function l(){
-if(u.value=="admin" && p.value=="1234"){
-login.style.display="none";
-panel.style.display="block";
-load();
-}
+// 🔐 LOGIN
+function login(){
+  if(u.value==="admin" && p.value==="1234"){
+    loginBox.style.display="none";
+    panel.style.display="block";
+    load();
+  } else {
+    alert("Wrong login ❌");
+  }
 }
 
+// 📊 LOAD DATA
 async function load(){
 
-let s=await fetch("/admin-stats");
-let st=await s.json();
+  let s = await fetch("/admin-stats");
+  let st = await s.json();
 
-stats.innerHTML=
-`<div class="stat">Stock: ${JSON.stringify(st.stock)}</div>
-<div class="stat">Sold: ${st.sold}</div>
-<div class="stat">Requests: ${st.requests}</div>`;
+  stats.innerHTML = `
+  <div class="stat">Stock: ${JSON.stringify(st.stock)}</div>
+  <div class="stat">Sold: ${st.sold}</div>
+  <div class="stat">Total: ${st.total}</div>
+  <div class="stat">Pending: ${st.pending}</div>
+  <div class="stat">Approved: ${st.approved}</div>
+  <div class="stat">Rejected: ${st.rejected}</div>
+  <div class="stat">Fake: ${st.fake}</div>
+  `;
 
-let res=await fetch("/requests");
-let data=await res.json();
+  let r = await fetch("/requests");
+  let data = await r.json();
 
-let html="";
+  let html = "";
 
-data.forEach(x=>{
-html+=`
-<div class="card">
-${x.plan}<br>
-${x.utr}<br>
-<img src="/uploads/${x.image}" width="100"><br>
-${x.status}<br>
-${x.key||""}<br>
+  data.forEach(x=>{
+    html += `
+    <div class="card">
+      <b>Plan:</b> ${x.plan}<br>
+      <b>UTR:</b> ${x.utr}<br>
+      <img src="/uploads/${x.image}" width="120"><br>
+      <b>Status:</b> ${x.status}<br>
+      <b>Key:</b> ${x.key || "-"}<br>
 
-<button onclick="v(${x.id})">✔</button>
-<button onclick="rj(${x.id})">❌</button>
-</div>`;
-});
+      ${x.status==="pending" ? `
+      <button class="ok" onclick="verify(${x.id})">VERIFY</button>
+      <button class="no" onclick="reject(${x.id})">REJECT</button>
+      ` : ""}
+    </div>
+    `;
+  });
 
-r.innerHTML=html;
+  list.innerHTML = html;
 }
 
+// ➕ ADD KEY
 async function add(){
-await fetch("/add-key",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({plan:plan.value,key:key.value})
-});
-alert("Added");
+  await fetch("/add-key",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      plan:plan.value,
+      key:key.value
+    })
+  });
+
+  alert("Key Added ✅");
 }
 
-async function search(){
-let u=search.value;
-let res=await fetch("/my-key/"+u);
-let d=await res.json();
+// 🔎 SEARCH UTR
+async function searchUTR(){
+  let utr = document.getElementById("search").value;
 
-searchRes.innerText=JSON.stringify(d);
+  let res = await fetch("/my-key/"+utr);
+  let data = await res.json();
+
+  searchRes.innerText = JSON.stringify(data);
 }
 
-async function v(id){
-await fetch("/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});
-load();
+// ✅ VERIFY
+async function verify(id){
+
+  let res = await fetch("/verify",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({id})
+  });
+
+  let data = await res.json();
+
+  alert("🔑 KEY: " + data.key);
+
+  load();
 }
 
-async function rj(id){
-await fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});
-load();
-}
-
-</script>
-
-</body>
-</html>
+// ❌ RE
