@@ -6,179 +6,206 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-*{box-sizing:border-box;}
-
 body{
   margin:0;
-  padding:0;
-  background:#071226;
   font-family:sans-serif;
+  background:#071226;
   color:white;
 }
 
-/* WRAPPER */
-.wrapper{
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
-  min-height:100vh;
+.container{
+  max-width:420px;
+  margin:auto;
   padding:20px;
 }
 
-/* CARD */
 .card{
-  width:100%;
-  max-width:420px;
   background:#0f1c2e;
+  padding:20px;
   border-radius:20px;
-  padding:25px;
   box-shadow:0 0 25px rgba(0,255,255,0.2);
-  animation:fadeIn 0.6s ease;
 }
 
-@keyframes fadeIn{
-  from{opacity:0; transform:translateY(20px);}
-  to{opacity:1; transform:translateY(0);}
-}
-
-/* TITLE */
 h2{
   text-align:center;
-  margin-bottom:20px;
-  font-size:22px;
 }
 
-/* INPUT */
 select,input{
   width:100%;
   padding:14px;
-  margin:12px 0;
+  margin:10px 0;
   border-radius:12px;
   border:none;
-  font-size:15px;
-  background:#eaeaea;
 }
 
-/* FILE */
-input[type="file"]{
-  background:none;
-  color:white;
-}
-
-/* BUTTON */
 button{
   width:100%;
   padding:15px;
   border:none;
-  border-radius:15px;
-  font-size:16px;
-  font-weight:bold;
+  border-radius:12px;
   background:linear-gradient(90deg,#00f2ff,#0072ff);
   color:white;
+  font-weight:bold;
   box-shadow:0 0 20px #00f2ff;
-  margin-top:10px;
-  transition:0.3s;
 }
 
-button:active{
-  transform:scale(0.95);
-  box-shadow:0 0 30px #00f2ff;
+.qr{
+  width:200px;
+  display:block;
+  margin:auto;
 }
 
-/* STATUS */
-#statusBox{
-  margin-top:15px;
+.timer{
   text-align:center;
-  font-size:14px;
-}
-
-/* TELEGRAM BUTTON */
-.telegram{
-  margin-top:15px;
-  text-align:center;
-}
-
-.telegram a{
-  text-decoration:none;
-  color:white;
-  font-size:14px;
-  opacity:0.8;
+  font-size:18px;
+  margin:10px;
 }
 </style>
-
 </head>
 
 <body>
 
-<div class="wrapper">
-<div class="card">
+<div class="container">
+
+<div class="card" id="page1">
 
 <h2>🎮 BGMI PANEL</h2>
 
-<select id="plan">
-  <option value="1h">1 Hour - ₹30</option>
-  <option value="3h">3 Hour - ₹50</option>
-  <option value="1d">1 Day - ₹110</option>
-  <option value="3d">3 Day - ₹200</option>
-  <option value="7d">7 Day - ₹400</option>
+<select id="game">
+<option>BGMI</option>
 </select>
 
-<input type="text" id="utr" placeholder="Enter UTR ID">
+<select id="plan">
+<option value="1hour">1 Hour - ₹30</option>
+<option value="3hour">3 Hour - ₹50</option>
+<option value="1day">1 DAY - ₹110</option>
+<option value="3day">3 DAY - ₹200</option>
+<option value="7day">7 DAY - ₹400</option>
+</select>
+
+<button onclick="buy()">💳 BUY KEY</button>
+
+</div>
+
+<!-- PAYMENT PAGE -->
+<div class="card" id="page2" style="display:none;">
+
+<h2>💰 PAYMENT</h2>
+
+<p>UPI ID: <b>godxcobra@axl</b></p>
+
+<img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl">
+
+<div class="timer" id="timer">30</div>
+
+</div>
+
+<!-- SUBMIT PAGE -->
+<div class="card" id="page3" style="display:none;">
+
+<h2>📤 SUBMIT PAYMENT</h2>
+
+<input id="utr" placeholder="Enter UTR ID">
 
 <input type="file" id="file">
 
-<button onclick="buyKey()">💳 BUY KEY</button>
-
-<div id="statusBox"></div>
-
-<div class="telegram">
-  <a href="https://t.me/GODx_COBRA" target="_blank">
-    💬 Need Help? Contact Telegram
-  </a>
-</div>
+<button onclick="submit()">SUBMIT</button>
 
 </div>
+
 </div>
 
 <script>
-async function buyKey(){
 
-  let plan = document.getElementById("plan").value;
+let selectedPlan = "";
+
+// BUY CLICK
+function buy(){
+
+  selectedPlan = document.getElementById("plan").value;
+
+  document.getElementById("page1").style.display="none";
+  document.getElementById("page2").style.display="block";
+
+  startTimer();
+}
+
+// TIMER 1
+function startTimer(){
+
+  let t = 30;
+
+  let interval = setInterval(()=>{
+
+    document.getElementById("timer").innerText = t;
+
+    t--;
+
+    if(t<0){
+      clearInterval(interval);
+
+      document.getElementById("page2").style.display="none";
+      document.getElementById("page3").style.display="block";
+    }
+
+  },1000);
+}
+
+// SUBMIT
+async function submit(){
+
   let utr = document.getElementById("utr").value;
   let file = document.getElementById("file").files[0];
 
-  if(!utr || !file){
-    alert("UTR + Screenshot required");
+  if(!utr){
+    alert("Enter UTR");
     return;
   }
 
-  let formData = new FormData();
-  formData.append("plan", plan);
-  formData.append("utr", utr);
-  formData.append("file", file);
+  let form = new FormData();
+  form.append("utr", utr);
+  form.append("plan", selectedPlan);
+  form.append("file", file);
 
-  document.getElementById("statusBox").innerHTML = "⏳ Please wait...";
-
-  let res = await fetch("/buy",{
+  await fetch("/buy",{
     method:"POST",
-    body:formData
+    body:form
   });
 
-  let data = await res.json();
+  alert("⏳ Please wait admin verify");
 
-  if(data.status=="pending"){
-    document.getElementById("statusBox").innerHTML = "⏳ Waiting for admin verification...";
-  }
-
-  if(data.status=="approved"){
-    document.getElementById("statusBox").innerHTML = "✅ Key: "+data.key;
-  }
-
-  if(data.status=="rejected"){
-    document.getElementById("statusBox").innerHTML = "❌ Fake payment detected";
-  }
-
+  checkStatus(utr);
 }
+
+// AUTO CHECK STATUS
+function checkStatus(utr){
+
+  let interval = setInterval(async ()=>{
+
+    let res = await fetch("/status/"+utr);
+    let data = await res.json();
+
+    if(data.status === "approved"){
+
+      clearInterval(interval);
+
+      alert("✅ KEY: " + data.key);
+
+      location.reload();
+    }
+
+    if(data.status === "rejected"){
+
+      clearInterval(interval);
+
+      alert("❌ Fake Payment");
+
+      location.reload();
+    }
+
+  },3000);
+}
+
 </script>
 
 </body>
