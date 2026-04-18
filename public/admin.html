@@ -1,9 +1,161 @@
 <!DOCTYPE html>
 <html>
+<head>
+<title>ADMIN PANEL</title>
+
+<style>
+body{
+  background:#0a0a0a;
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
+}
+
+.card{
+  background:#111;
+  margin:10px;
+  padding:10px;
+  border-radius:10px;
+}
+
+button{
+  padding:8px 15px;
+  margin:5px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.approve{
+  background:green;
+  color:white;
+}
+
+.reject{
+  background:red;
+  color:white;
+}
+
+.add{
+  background:orange;
+  color:black;
+}
+</style>
+
+</head>
 <body>
 
-<h1>COBRA PANEL</h1>
-<p>Panel loading...</p>
+<h1>⚡ ADMIN PANEL</h1>
+
+<h3 id="stats"></h3>
+
+<!-- ADD KEY -->
+<div class="card">
+  <h2>Add Key</h2>
+
+  <select id="plan">
+    <option value="plan1">Plan 1</option>
+    <option value="plan2">Plan 2</option>
+    <option value="plan3">Plan 3</option>
+    <option value="plan4">Plan 4</option>
+  </select>
+
+  <input type="text" id="newKey" placeholder="Enter key">
+
+  <br>
+
+  <button class="add" onclick="addKey()">ADD KEY</button>
+</div>
+
+<hr>
+
+<h2>📥 Requests</h2>
+
+<div id="requests"></div>
+
+<script>
+
+// 📊 LOAD STATS
+async function loadStats(){
+  let res = await fetch("/admin-stats");
+  let data = await res.json();
+
+  document.getElementById("stats").innerText =
+    "Stock: " + JSON.stringify(data.stock) +
+    " | Sold: " + data.sold +
+    " | Requests: " + data.requests;
+}
+
+// 📥 LOAD REQUESTS
+async function loadRequests(){
+  let res = await fetch("/requests");
+  let data = await res.json();
+
+  let html = "";
+
+  data.forEach(r=>{
+    html += `
+    <div class="card">
+      <p>Plan: ${r.plan}</p>
+      <p>UTR: ${r.utr}</p>
+      <img src="/uploads/${r.image}" width="150"><br>
+
+      <button class="approve" onclick="verify(${r.id})">VERIFY</button>
+      <button class="reject" onclick="reject(${r.id})">REJECT</button>
+
+      <p>Status: ${r.status}</p>
+      <p>Key: ${r.key || "-"}</p>
+    </div>
+    `;
+  });
+
+  document.getElementById("requests").innerHTML = html;
+}
+
+// ✅ VERIFY
+async function verify(id){
+  await fetch("/verify",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({id})
+  });
+
+  loadRequests();
+  loadStats();
+}
+
+// ❌ REJECT
+async function reject(id){
+  await fetch("/reject",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({id})
+  });
+
+  loadRequests();
+  loadStats();
+}
+
+// ➕ ADD KEY
+async function addKey(){
+  let plan = document.getElementById("plan").value;
+  let key = document.getElementById("newKey").value;
+
+  await fetch("/add-key",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({plan,key})
+  });
+
+  alert("Key Added ✅");
+  loadStats();
+}
+
+// AUTO LOAD
+loadRequests();
+loadStats();
+
+</script>
 
 </body>
 </html>
