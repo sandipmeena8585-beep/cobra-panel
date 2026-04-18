@@ -22,19 +22,19 @@ body{
 }
 
 input{
-  width:48%;
-  padding:10px;
-  margin:5px;
-  border-radius:8px;
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border-radius:10px;
   border:none;
 }
 
 button{
-  padding:10px 15px;
+  padding:12px;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
   background:#00f2ff;
-  margin:5px;
+  width:100%;
 }
 
 .hidden{display:none;}
@@ -57,52 +57,38 @@ button{
 <input id="user" placeholder="Username">
 <input id="pass" placeholder="Password">
 
-<br>
-
 <button onclick="login()">LOGIN</button>
 
+<!-- PANEL -->
 <div id="panel" class="hidden">
-
 <h3>Requests</h3>
 <div id="data"></div>
-
 </div>
 
 </div>
 
 <script>
 
-// 🔥 AUTO LOGIN
-window.onload = function(){
-  if(localStorage.getItem("admin")==="yes"){
-    document.getElementById("panel").classList.remove("hidden");
-    load();
-  }
-};
-
-// 🔥 LOGIN FIXED (SMART MATCH)
+// 🔥 LOGIN (FORCE WORKING)
 function login(){
 
-  let u = document.getElementById("user").value.trim().toLowerCase();
+  let u = document.getElementById("user").value.trim();
   let p = document.getElementById("pass").value.trim();
 
-  // remove spaces
-  let cleanU = u.replace(/\s+/g,'');
+  console.log("USER:",u);
+  console.log("PASS:",p);
 
-  if(
-    (cleanU === "cobraserver" || u === "cobra server") 
-    && p === "SAMI9166"
-  ){
+  if(u === "COBRA SERVER" && p === "SAMI9166"){
 
-    localStorage.setItem("admin","yes");
+    alert("✅ Login Success");
 
-    document.getElementById("panel").classList.remove("hidden");
+    document.getElementById("panel").style.display="block";
 
     load();
 
   }else{
 
-    alert("❌ Wrong Login\n\nCheck:\nUsername: COBRA SERVER\nPassword: SAMI9166");
+    alert("❌ Wrong Login");
   }
 }
 
@@ -123,7 +109,6 @@ async function load(){
 
       <b>Plan:</b> ${x.plan}<br>
       <b>UTR:</b> ${x.utr}<br>
-      <b>Time:</b> ${new Date(x.time).toLocaleString()}<br>
 
       ${x.file ? `<img src="${x.file}" width="100">` : ""}
 
@@ -153,7 +138,7 @@ async function reject(id){
   load();
 }
 
-// 🔥 LIVE UPDATE
+// 🔥 AUTO REFRESH
 setInterval(load,3000);
 
 </script>
