@@ -61,7 +61,6 @@ button{
 
 <button onclick="login()">LOGIN</button>
 
-<!-- PANEL -->
 <div id="panel" class="hidden">
 
 <h3>Requests</h3>
@@ -73,7 +72,7 @@ button{
 
 <script>
 
-// ✅ AUTO LOGIN
+// 🔥 AUTO LOGIN
 window.onload = function(){
   if(localStorage.getItem("admin")==="yes"){
     document.getElementById("panel").classList.remove("hidden");
@@ -81,13 +80,19 @@ window.onload = function(){
   }
 };
 
-// ✅ LOGIN FIXED
+// 🔥 LOGIN FIXED (SMART MATCH)
 function login(){
 
-  let u = document.getElementById("user").value.trim();
+  let u = document.getElementById("user").value.trim().toLowerCase();
   let p = document.getElementById("pass").value.trim();
 
-  if(u === "COBRA SERVER" && p === "SAMI9166"){
+  // remove spaces
+  let cleanU = u.replace(/\s+/g,'');
+
+  if(
+    (cleanU === "cobraserver" || u === "cobra server") 
+    && p === "SAMI9166"
+  ){
 
     localStorage.setItem("admin","yes");
 
@@ -96,11 +101,12 @@ function login(){
     load();
 
   }else{
-    alert("❌ Wrong Username or Password");
+
+    alert("❌ Wrong Login\n\nCheck:\nUsername: COBRA SERVER\nPassword: SAMI9166");
   }
 }
 
-// ✅ LOAD REQUESTS
+// 🔥 LOAD DATA
 async function load(){
 
   let res = await fetch("/admin/data");
@@ -135,19 +141,19 @@ async function load(){
   document.getElementById("data").innerHTML = html;
 }
 
-// ✅ VERIFY
+// 🔥 VERIFY
 async function verify(id){
   await fetch("/admin/verify/"+id);
   load();
 }
 
-// ✅ REJECT
+// 🔥 REJECT
 async function reject(id){
   await fetch("/admin/reject/"+id);
   load();
 }
 
-// ✅ LIVE AUTO REFRESH
+// 🔥 LIVE UPDATE
 setInterval(load,3000);
 
 </script>
