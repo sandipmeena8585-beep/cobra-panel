@@ -23,48 +23,32 @@ if (!fs.existsSync("keys.json")) {
 
 const upload = multer({ dest: "uploads/" });
 
-// ===== BUY + AI =====
+// ===== BUY =====
 app.post("/buy", upload.single("file"), (req, res) => {
-
   let { plan, utr } = req.body;
+
   let data = JSON.parse(fs.readFileSync("data.json"));
 
-  let risk = "low";
-
-  if (!utr || utr.length < 8) risk = "high";
-
-  if (data.some(x => x.utr === utr)) risk = "high";
-
-  let recent = data.filter(x => Date.now() - new Date(x.time).getTime() < 120000);
-  if (recent.length > 3) risk = "medium";
-
-  let id = Date.now();
-
   data.push({
-    id,
+    id: Date.now(),
     plan,
     utr,
     file: req.file ? "/uploads/" + req.file.filename : "",
     status: "pending",
     key: "",
-    risk,
     time: new Date()
   });
 
   fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
 
-  res.json({ ok: true, risk });
+  res.json({ ok: true });
 });
 
 // ===== STATUS =====
 app.get("/status/:utr", (req, res) => {
-
   let data = JSON.parse(fs.readFileSync("data.json"));
-
   let r = data.find(x => x.utr == req.params.utr);
-
   if (!r) return res.json({ status: "none" });
-
   res.json(r);
 });
 
@@ -101,17 +85,14 @@ app.get("/admin/verify/:id", (req, res) => {
 
 // ===== REJECT =====
 app.get("/admin/reject/:id", (req, res) => {
-
   let data = JSON.parse(fs.readFileSync("data.json"));
-
   let index = data.findIndex(x => x.id == req.params.id);
   if (index === -1) return res.send("Invalid");
 
   data[index].status = "rejected";
 
   fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
-
   res.send("OK");
 });
 
-app.listen(3000, () => console.log("🚀 FINAL SYSTEM RUNNING"));
+app.listen(3000, () => console.log("🔥 SYSTEM RUNNING"));
