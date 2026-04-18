@@ -1,17 +1,28 @@
 const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
-const path = require("path");
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ===== STATIC =====
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
-// ===== FILE UPLOAD =====
+// ===== FILE INIT =====
+if (!fs.existsSync("data.json")) fs.writeFileSync("data.json", "[]");
+
+if (!fs.existsSync("keys.json")) {
+  fs.writeFileSync("keys.json", JSON.stringify({
+    "1hour": ["KEY-1H-001","KEY-1H-002"],
+    "3hour": ["KEY-3H-001"],
+    "1day": ["KEY-1D-001"],
+    "3day": [],
+    "7day": []
+  }, null, 2));
+}
+
+// ===== UPLOAD =====
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
@@ -20,23 +31,38 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ===== FILE INIT =====
-if (!fs.existsSync("data.json")) fs.writeFileSync("data.json", "[]");
+// ===== OTP =====
+let adminOTP = "0000";
 
-if (!fs.existsSync("keys.json")) {
-  fs.writeFileSync("keys.json", JSON.stringify({
-    "1h": ["KEY-1H-001","KEY-1H-002"],
-    "3h": ["KEY-3H-001"],
-    "1d": ["KEY-1D-001"],
-    "3d": [],
-    "7d": []
-  }, null, 2));
-}
+// ===== SEND OTP =====
+app.get("/admin/send-otp", (req, res) => {
+  adminOTP = Math.floor(1000 + Math.random() * 9000).toString();
+  res.json({ otp: adminOTP }); // 👈 screen pe show
+});
 
-// ===== BUY REQUEST =====
+// ===== LOGIN =====
+app.post("/admin/login", (req, res) => {
+  const { user, pass, otp } = req.body;
+
+  if (
+    user === "COBRA SERVER" &&
+    pass === "SAMI9166" &&
+    otp === adminOTP
+  ) {
+    res.json({ status: "success" });
+  } else {
+    res.json({ status: "fail" });
+  }
+});
+
+// ===== BUY =====
 app.post("/buy", upload.single("file"), (req, res) => {
 
   let { plan, utr } = req.body;
+
+  if (!utr || utr.length < 5) {
+    return res.json({ status: "rejected", msg: "Fake Payment" });
+  }
 
   let data = JSON.parse(fs.readFileSync("data.json"));
 
@@ -53,10 +79,9 @@ app.post("/buy", upload.single("file"), (req, res) => {
   res.json({ status: "pending" });
 });
 
-// ===== ADMIN REQUEST LIST =====
+// ===== ADMIN REQUEST =====
 app.get("/admin/requests", (req, res) => {
-  let data = JSON.parse(fs.readFileSync("data.json"));
-  res.json(data);
+  res.json(JSON.parse(fs.readFileSync("data.json")));
 });
 
 // ===== VERIFY =====
@@ -71,7 +96,7 @@ app.get("/admin/verify/:id", (req, res) => {
   let plan = data[id].plan;
 
   if (keys[plan] && keys[plan].length > 0) {
-    let key = keys[plan].shift(); // remove 1 key
+    let key = keys[plan].shift();
 
     data[id].status = "approved";
     data[id].key = key;
@@ -87,50 +112,27 @@ app.get("/admin/verify/:id", (req, res) => {
 
 // ===== REJECT =====
 app.get("/admin/reject/:id", (req, res) => {
-
-  let id = req.params.id;
   let data = JSON.parse(fs.readFileSync("data.json"));
 
-  if (!data[id]) return res.send("Invalid");
+  if (!data[req.params.id]) return res.send("Invalid");
 
-  data[id].status = "rejected";
+  data[req.params.id].status = "rejected";
 
   fs.writeFileSync("data.json", JSON.stringify(data, null, 2));
 
   res.send("Rejected");
 });
 
-// ===== CHECK STATUS (AUTO KEY DELIVERY) =====
+// ===== STATUS =====
 app.get("/status/:utr", (req, res) => {
 
-  let utr = req.params.utr;
   let data = JSON.parse(fs.readFileSync("data.json"));
 
-  let found = data.find(x => x.utr == utr);
+  let found = data.find(x => x.utr == req.params.utr);
 
   if (!found) return res.json({ status: "not_found" });
 
   res.json(found);
-});
-
-// ===== OTP LOGIN =====
-let adminOTP = "1234";
-
-app.get("/admin/send-otp", (req, res) => {
-  adminOTP = Math.floor(1000 + Math.random() * 9000).toString();
-  console.log("ADMIN OTP:", adminOTP);
-  res.json({ ok: true });
-});
-
-app.post("/admin/login", (req, res) => {
-
-  let { user, pass, otp } = req.body;
-
-  if (user === "COBRA SERVER" && pass === "SAMI9166" && otp === adminOTP) {
-    res.json({ status: "success" });
-  } else {
-    res.json({ status: "fail" });
-  }
 });
 
 // ===== STATS =====
@@ -142,14 +144,7 @@ app.get("/admin/stats", (req, res) => {
   let approved = data.filter(x => x.status === "approved").length;
   let rejected = data.filter(x => x.status === "rejected").length;
 
-  res.json({
-    total,
-    approved,
-    rejected,
-    data
-  });
+  res.json({ total, approved, rejected, data });
 });
 
-// ===== START SERVER =====
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Server Running on " + PORT));
+app.listen(3000, () => console.log("🚀 FULL SYSTEM RUNNING"));
