@@ -5,17 +5,81 @@
 <title>COBRA PANEL</title>
 
 <style>
-body{margin:0;background:#071226;color:white;font-family:sans-serif;}
-.box{max-width:420px;margin:auto;padding:20px;background:#0f1c2e;border-radius:20px;margin-top:20px;}
-select,input{width:100%;padding:12px;margin:10px 0;border-radius:10px;border:none;}
-button{width:100%;padding:12px;border:none;border-radius:10px;background:#00f2ff;}
+
+*{box-sizing:border-box;}
+
+body{
+  margin:0;
+  background:linear-gradient(135deg,#071226,#0f1c2e);
+  font-family:sans-serif;
+  color:white;
+}
+
+.container{
+  max-width:420px;
+  margin:auto;
+  padding:15px;
+}
+
+.card{
+  background:#0f1c2e;
+  border-radius:18px;
+  padding:20px;
+  margin-top:20px;
+  box-shadow:0 0 20px rgba(0,255,255,0.2);
+}
+
+h2{
+  text-align:center;
+  margin-bottom:20px;
+}
+
+select,input{
+  width:100%;
+  padding:14px;
+  margin:10px 0;
+  border-radius:12px;
+  border:none;
+  font-size:15px;
+}
+
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(90deg,#00f2ff,#007bff);
+  color:white;
+  font-size:16px;
+  margin-top:10px;
+}
+
+button:active{
+  transform:scale(0.97);
+}
+
+img{
+  display:block;
+  margin:auto;
+  border-radius:10px;
+}
+
 .hidden{display:none;}
+
+.status{
+  text-align:center;
+  margin-top:10px;
+  color:#00f2ff;
+}
+
 </style>
 </head>
 
 <body>
 
-<div class="box">
+<div class="container">
+
+<div class="card">
 
 <h2>🎮 BGMI PANEL</h2>
 
@@ -32,11 +96,11 @@ button{width:100%;padding:12px;border:none;border-radius:10px;background:#00f2ff
 
 <div id="payment" class="hidden">
 
-<p>💰 UPI: godxcobra@axl</p>
+<p style="text-align:center;">💰 UPI: <b>godxcobra@axl</b></p>
 
 <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl" width="200">
 
-<p id="planShow"></p>
+<p id="planShow" style="text-align:center;"></p>
 
 <select id="method" onchange="changeMethod()">
 <option value="utr">Enter UTR ID</option>
@@ -48,7 +112,9 @@ button{width:100%;padding:12px;border:none;border-radius:10px;background:#00f2ff
 
 <button onclick="submitPayment()">SUBMIT</button>
 
-<p id="status"></p>
+<p class="status" id="status"></p>
+
+</div>
 
 </div>
 
@@ -59,27 +125,23 @@ button{width:100%;padding:12px;border:none;border-radius:10px;background:#00f2ff
 let selectedPlan="";
 let interval;
 
-// START BUY
+// START
 function startBuy(){
   selectedPlan=document.getElementById("plan").value;
   if(!selectedPlan){ alert("Select Plan"); return; }
+
   document.getElementById("payment").classList.remove("hidden");
-  document.getElementById("planShow").innerText="Plan: "+selectedPlan;
+  document.getElementById("planShow").innerText="Selected: "+selectedPlan;
 }
 
 // METHOD
 function changeMethod(){
   let m=document.getElementById("method").value;
-  if(m==="utr"){
-    document.getElementById("utr").style.display="block";
-    document.getElementById("file").style.display="none";
-  }else{
-    document.getElementById("utr").style.display="none";
-    document.getElementById("file").style.display="block";
-  }
+  document.getElementById("utr").style.display = (m==="utr")?"block":"none";
+  document.getElementById("file").style.display = (m==="qr")?"block":"none";
 }
 
-// SUBMIT (🔥 FIXED)
+// SUBMIT
 async function submitPayment(){
 
   let utr=document.getElementById("utr").value.trim();
@@ -101,25 +163,23 @@ async function submitPayment(){
   form.append("plan",selectedPlan);
   form.append("utr",finalUTR);
 
-  if(file){
-    form.append("file",file);
+  if(file) form.append("file",file);
+
+  try{
+    await fetch(window.location.origin + "/buy",{
+      method:"POST",
+      body:form
+    });
+
+    localStorage.setItem("utr",finalUTR);
+
+    document.getElementById("status").innerText="⏳ Waiting for admin...";
+
+    check(finalUTR);
+
+  }catch{
+    alert("Error sending request");
   }
-
-  console.log("SENDING:", selectedPlan, finalUTR);
-
-  // 🔥 IMPORTANT FIX
-  await fetch(window.location.origin + "/buy",{
-    method:"POST",
-    body:form
-  });
-
-  alert("Request Sent");
-
-  localStorage.setItem("utr",finalUTR);
-
-  document.getElementById("status").innerText="⏳ Waiting for admin verification...";
-
-  check(finalUTR);
 }
 
 // STATUS CHECK
@@ -129,25 +189,39 @@ function check(utr){
 
   interval=setInterval(async()=>{
 
-    let res=await fetch(window.location.origin + "/status/"+utr);
+    let res=await fetch("/status/"+utr);
     let data=await res.json();
 
     if(data.status==="approved"){
       clearInterval(interval);
       localStorage.removeItem("utr");
+
       alert("✅ KEY: "+data.key);
+
       location.reload();
     }
 
     if(data.status==="rejected"){
       clearInterval(interval);
       localStorage.removeItem("utr");
+
       alert("❌ Rejected");
+
       location.reload();
     }
 
   },2000);
 }
+
+// RESUME
+window.onload=()=>{
+  let utr=localStorage.getItem("utr");
+  if(utr){
+    document.getElementById("payment").classList.remove("hidden");
+    document.getElementById("status").innerText="⏳ Waiting...";
+    check(utr);
+  }
+};
 
 </script>
 
