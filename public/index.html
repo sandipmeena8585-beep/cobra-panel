@@ -1,159 +1,184 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <title>COBRA PANEL</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+*{box-sizing:border-box;}
+
 body{
   margin:0;
   padding:0;
-  background:#0f172a;
-  color:white;
+  background:#071226;
   font-family:sans-serif;
-  text-align:center;
+  color:white;
+}
+
+/* WRAPPER */
+.wrapper{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  min-height:100vh;
+  padding:20px;
 }
 
 /* CARD */
 .card{
-  width:95%;
+  width:100%;
   max-width:420px;
-  margin:auto;
-  margin-top:20px;
-  padding:20px;
-  border-radius:15px;
-  background:#1e293b;
-  box-shadow:0 0 15px rgba(0,255,255,0.2);
+  background:#0f1c2e;
+  border-radius:20px;
+  padding:25px;
+  box-shadow:0 0 25px rgba(0,255,255,0.2);
+  animation:fadeIn 0.6s ease;
 }
 
-/* INPUTS */
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(20px);}
+  to{opacity:1; transform:translateY(0);}
+}
+
+/* TITLE */
+h2{
+  text-align:center;
+  margin-bottom:20px;
+  font-size:22px;
+}
+
+/* INPUT */
 select,input{
   width:100%;
-  padding:12px;
-  margin:10px 0;
-  border-radius:10px;
+  padding:14px;
+  margin:12px 0;
+  border-radius:12px;
   border:none;
-  outline:none;
   font-size:15px;
+  background:#eaeaea;
+}
+
+/* FILE */
+input[type="file"]{
+  background:none;
+  color:white;
 }
 
 /* BUTTON */
 button{
   width:100%;
-  padding:14px;
+  padding:15px;
   border:none;
-  border-radius:12px;
-  background:linear-gradient(90deg,#00f2ff,#0072ff);
-  color:white;
+  border-radius:15px;
   font-size:16px;
   font-weight:bold;
-  cursor:pointer;
-  box-shadow:0 0 15px #00f2ff;
+  background:linear-gradient(90deg,#00f2ff,#0072ff);
+  color:white;
+  box-shadow:0 0 20px #00f2ff;
+  margin-top:10px;
   transition:0.3s;
 }
 
-button:hover{
-  transform:scale(1.05);
+button:active{
+  transform:scale(0.95);
+  box-shadow:0 0 30px #00f2ff;
 }
 
 /* STATUS */
 #statusBox{
   margin-top:15px;
+  text-align:center;
   font-size:14px;
 }
 
+/* TELEGRAM BUTTON */
+.telegram{
+  margin-top:15px;
+  text-align:center;
+}
+
+.telegram a{
+  text-decoration:none;
+  color:white;
+  font-size:14px;
+  opacity:0.8;
+}
 </style>
 
 </head>
 
 <body>
 
+<div class="wrapper">
 <div class="card">
 
 <h2>🎮 BGMI PANEL</h2>
 
-<!-- PLAN -->
 <select id="plan">
-<option value="1hour">1 Hour - ₹30</option>
-<option value="3hour">3 Hour - ₹50</option>
-<option value="1day">1 Day - ₹110</option>
-<option value="3day">3 Day - ₹200</option>
-<option value="7day">7 Day - ₹400</option>
+  <option value="1h">1 Hour - ₹30</option>
+  <option value="3h">3 Hour - ₹50</option>
+  <option value="1d">1 Day - ₹110</option>
+  <option value="3d">3 Day - ₹200</option>
+  <option value="7d">7 Day - ₹400</option>
 </select>
 
-<!-- UTR -->
-<input id="utr" placeholder="Enter UTR ID">
+<input type="text" id="utr" placeholder="Enter UTR ID">
 
-<!-- SCREENSHOT -->
 <input type="file" id="file">
 
-<!-- BUTTON -->
-<button onclick="buy()">💳 BUY KEY</button>
+<button onclick="buyKey()">💳 BUY KEY</button>
 
-<!-- STATUS -->
 <div id="statusBox"></div>
 
+<div class="telegram">
+  <a href="https://t.me/GODx_COBRA" target="_blank">
+    💬 Need Help? Contact Telegram
+  </a>
+</div>
+
+</div>
 </div>
 
 <script>
-
-let requestId = null;
-
-// BUY REQUEST
-function buy(){
+async function buyKey(){
 
   let plan = document.getElementById("plan").value;
   let utr = document.getElementById("utr").value;
   let file = document.getElementById("file").files[0];
 
   if(!utr || !file){
-    alert("Fill all details ❌");
+    alert("UTR + Screenshot required");
     return;
   }
 
-  let form = new FormData();
-  form.append("plan", plan);
-  form.append("utr", utr);
-  form.append("screenshot", file);
+  let formData = new FormData();
+  formData.append("plan", plan);
+  formData.append("utr", utr);
+  formData.append("file", file);
 
-  fetch("/buy",{method:"POST",body:form})
-  .then(res=>res.json())
-  .then(d=>{
-    alert(d.msg);
-    requestId = d.id;
+  document.getElementById("statusBox").innerHTML = "⏳ Please wait...";
+
+  let res = await fetch("/buy",{
+    method:"POST",
+    body:formData
   });
+
+  let data = await res.json();
+
+  if(data.status=="pending"){
+    document.getElementById("statusBox").innerHTML = "⏳ Waiting for admin verification...";
+  }
+
+  if(data.status=="approved"){
+    document.getElementById("statusBox").innerHTML = "✅ Key: "+data.key;
+  }
+
+  if(data.status=="rejected"){
+    document.getElementById("statusBox").innerHTML = "❌ Fake payment detected";
+  }
+
 }
-
-// AUTO STATUS CHECK (NO REFRESH)
-setInterval(()=>{
-
-  if(!requestId) return;
-
-  fetch("/get-key/"+requestId)
-  .then(res=>res.json())
-  .then(data=>{
-
-    if(!data) return;
-
-    if(data.status === "pending"){
-      statusBox.innerHTML = "⏳ PLEASE WAIT... ADMIN VERIFY";
-    }
-
-    if(data.status === "rejected"){
-      statusBox.innerHTML = "❌ FAKE PAYMENT / REJECTED";
-      requestId = null;
-    }
-
-    if(data.status === "approved"){
-      statusBox.innerHTML = "🔑 YOUR KEY: " + data.key;
-      requestId = null;
-    }
-
-  });
-
-},2000);
-
 </script>
 
 </body>
