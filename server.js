@@ -1,108 +1,85 @@
-<script>
+const express = require("express");
+const fs = require("fs");
+const multer = require("multer");
 
-let selectedPlan="";
-let interval;
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-// START BUY
-function startBuy(){
-  selectedPlan=document.getElementById("plan").value;
-  if(!selectedPlan){ alert("Select Plan"); return; }
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
+app.use("/uploads", express.static("uploads"));
 
-  document.getElementById("payment").classList.remove("hidden");
-  document.getElementById("planShow").innerText="Plan: "+selectedPlan;
-}
+// CREATE FILE
+if (!fs.existsSync("data.json")) fs.writeFileSync("data.json", "[]");
+if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
 
-// METHOD
-function changeMethod(){
-  let m=document.getElementById("method").value;
-  if(m==="utr"){
-    document.getElementById("utr").style.display="block";
-    document.getElementById("file").style.display="none";
-  }else{
-    document.getElementById("utr").style.display="none";
-    document.getElementById("file").style.display="block";
-  }
-}
+// UPLOAD
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) => cb(null, Date.now() + ".jpg")
+});
+const upload = multer({ storage });
 
-// 🔥 SUBMIT (FINAL FIX)
-async function submitPayment(){
+// BUY
+app.post("/buy", upload.single("file"), (req,res)=>{
 
-  let utr=document.getElementById("utr").value.trim();
-  let file=document.getElementById("file").files[0];
+  let data = JSON.parse(fs.readFileSync("data.json"));
 
-  if(!selectedPlan){
-    alert("Select Plan First");
-    return;
-  }
+  let newOrder = {
+    id: Date.now(),
+    plan: req.body.plan,
+    utr: req.body.utr,
+    file: req.file ? "/uploads/"+req.file.filename : "",
+    status: "pending",
+    key: ""
+  };
 
-  if(!utr && !file){
-    alert("Enter UTR or Upload Screenshot");
-    return;
-  }
+  data.push(newOrder);
 
-  let finalUTR = utr || Date.now().toString();
+  fs.writeFileSync("data.json", JSON.stringify(data,null,2));
 
-  let form=new FormData();
-  form.append("plan",selectedPlan);
-  form.append("utr",finalUTR);
-
-  if(file){
-    form.append("file",file);
-  }
-
-  console.log("SENDING:", selectedPlan, finalUTR);
-
-  try{
-
-    let res = await fetch(window.location.origin + "/buy",{
-      method:"POST",
-      body:form
-    });
-
-    let data = await res.json();
-
-    console.log("SERVER RESPONSE:", data);
-
-    alert("✅ Request Sent");
-
-  }catch(err){
-    alert("❌ Error sending request");
-    console.log(err);
-    return;
-  }
-
-  localStorage.setItem("utr",finalUTR);
-
-  document.getElementById("status").innerText="⏳ Waiting for admin verification...";
-
-  check(finalUTR);
-}
+  res.json({ok:true});
+});
 
 // STATUS
-function check(utr){
+app.get("/status/:utr",(req,res)=>{
+  let data = JSON.parse(fs.readFileSync("data.json"));
+  let find = data.find(x=>x.utr==req.params.utr);
+  res.json(find || {status:"notfound"});
+});
 
-  clearInterval(interval);
+// ADMIN DATA
+app.get("/admin/data",(req,res)=>{
+  let data = JSON.parse(fs.readFileSync("data.json"));
+  res.json(data);
+});
 
-  interval=setInterval(async()=>{
+// VERIFY
+app.get("/admin/verify/:id",(req,res)=>{
+  let data = JSON.parse(fs.readFileSync("data.json"));
 
-    let res=await fetch(window.location.origin + "/status/"+utr);
-    let data=await res.json();
+  let order = data.find(x=>x.id==req.params.id);
 
-    if(data.status==="approved"){
-      clearInterval(interval);
-      localStorage.removeItem("utr");
-      alert("✅ KEY: "+data.key);
-      location.reload();
-    }
+  order.status="approved";
+  order.key="COBRA-"+Math.floor(Math.random()*999999);
 
-    if(data.status==="rejected"){
-      clearInterval(interval);
-      localStorage.removeItem("utr");
-      alert("❌ Rejected");
-      location.reload();
-    }
+  fs.writeFileSync("data.json", JSON.stringify(data,null,2));
 
-  },2000);
-}
+  res.send("done");
+});
 
-</script>
+// REJECT
+app.get("/admin/reject/:id",(req,res)=>{
+  let data = JSON.parse(fs.readFileSync("data.json"));
+
+  let order = data.find(x=>x.id==req.params.id);
+
+  order.status="rejected";
+
+  fs.writeFileSync("data.json", JSON.stringify(data,null,2));
+
+  res.send("done");
+});
+
+app.listen(PORT,()=>console.log("RUNNING"));
