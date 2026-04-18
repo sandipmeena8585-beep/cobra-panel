@@ -5,69 +5,91 @@
 
 <style>
 body{
-  background:#0a0a0a;
+  background:#050505;
   color:white;
   font-family:sans-serif;
   text-align:center;
 }
 
+.glow{
+  text-shadow:0 0 10px red,0 0 20px red;
+}
+
+.card{
+  background:#111;
+  margin:15px;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 0 20px rgba(255,0,0,0.2);
+}
+
 select,input{
   padding:10px;
   margin:10px;
-  width:220px;
+  width:230px;
+  border-radius:8px;
+  border:none;
 }
 
 button{
   padding:12px;
-  background:red;
+  background:linear-gradient(45deg,#ff0000,#ff6600);
   color:white;
   border:none;
   border-radius:8px;
   cursor:pointer;
+  transition:0.3s;
 }
 
 button:hover{
-  box-shadow:0 0 20px red;
   transform:scale(1.1);
+  box-shadow:0 0 25px red;
 }
 
-#payBox{
-  display:none;
+/* Telegram button */
+.tg{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#0088cc;
+  padding:15px;
+  border-radius:50%;
+  box-shadow:0 0 15px #0088cc;
+  cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🔥 COBRA PANEL</h1>
+<h1 class="glow">🔥 COBRA VIP PANEL</h1>
 
-<select>
-  <option>BGMI</option>
-</select>
+<div class="card">
 
-<br>
+<h3>🎮 BGMI SELECTED</h3>
 
 <select id="plan">
-  <option value="plan1">1 DAY - ₹120</option>
-  <option value="plan2">7 DAY - ₹500</option>
-  <option value="plan3">15 DAY - ₹800</option>
-  <option value="plan4">30 DAY - ₹1000</option>
+<option value="plan1">1 DAY - ₹120</option>
+<option value="plan2">7 DAY - ₹500</option>
+<option value="plan3">15 DAY - ₹800</option>
+<option value="plan4">30 DAY - ₹1000</option>
 </select>
 
 <br>
 
-<button onclick="buy()">BUY KEY</button>
+<button onclick="buy()">🔥 BUY KEY</button>
 
-<div id="payBox">
+</div>
 
-<h2>PAYMENT</h2>
+<div class="card" id="payBox" style="display:none">
+
+<h2>💳 PAYMENT</h2>
 
 <img src="upi_qr.png" width="200">
 
 <p>UPI: godxcobra@axl</p>
 
 <input id="utr" placeholder="Enter UTR">
-
 <input type="file" id="img">
 
 <br>
@@ -82,15 +104,23 @@ button:hover{
 
 </div>
 
+<!-- TELEGRAM HELP -->
+<div class="tg" onclick="tg()">
+📩
+</div>
+
 <script>
+
+function tg(){
+  window.open("https://t.me/GODx_COBRA","_blank");
+}
 
 function buy(){
   document.getElementById("payBox").style.display="block";
 }
 
 async function send(){
-
-  let plan = document.getElementById("plan").value;
+  let plan = plan.value;
   let utr = document.getElementById("utr").value;
   let file = document.getElementById("img").files[0];
 
@@ -101,23 +131,21 @@ async function send(){
 
   await fetch("/buy",{method:"POST",body:f});
 
-  alert("Request Sent");
+  alert("Request Sent ✅");
 }
 
 async function check(){
-
   let utr = document.getElementById("utr").value;
 
   let r = await fetch("/my-key/"+utr);
   let d = await r.json();
 
   if(d.status=="pending"){
-    document.getElementById("res").innerText="Pending...";
+    res.innerText="⏳ Pending";
   }else{
-    document.getElementById("res").innerText="KEY: "+d.key;
+    res.innerText="🔑 "+d.key;
   }
 }
-
 </script>
 
 </body>
