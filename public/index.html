@@ -11,55 +11,42 @@ body{
   text-align:center;
 }
 
-.box{
-  margin-top:40px;
-}
-
-select, input{
+select,input{
   padding:10px;
   margin:10px;
   width:220px;
-  border-radius:8px;
-  border:none;
 }
 
 button{
-  padding:12px 20px;
+  padding:12px;
+  background:red;
+  color:white;
   border:none;
   border-radius:8px;
-  background:linear-gradient(45deg,#ff0000,#ff5e00);
-  color:white;
-  font-weight:bold;
   cursor:pointer;
-  transition:0.3s;
 }
 
 button:hover{
-  transform:scale(1.1);
   box-shadow:0 0 20px red;
+  transform:scale(1.1);
 }
 
 #payBox{
   display:none;
-  margin-top:20px;
 }
 </style>
-
 </head>
+
 <body>
 
 <h1>🔥 COBRA PANEL</h1>
 
-<div class="box">
-
-<!-- BGMI -->
-<select id="game">
+<select>
   <option>BGMI</option>
 </select>
 
 <br>
 
-<!-- PLAN -->
 <select id="plan">
   <option value="plan1">1 DAY - ₹120</option>
   <option value="plan2">7 DAY - ₹500</option>
@@ -71,52 +58,66 @@ button:hover{
 
 <button onclick="buy()">BUY KEY</button>
 
-</div>
-
-<!-- PAYMENT BOX -->
 <div id="payBox">
 
-<h2>💳 Payment</h2>
+<h2>PAYMENT</h2>
 
 <img src="upi_qr.png" width="200">
 
 <p>UPI: godxcobra@axl</p>
 
-<input type="text" id="utr" placeholder="Enter UTR ID">
+<input id="utr" placeholder="Enter UTR">
+
+<input type="file" id="img">
 
 <br>
 
-<input type="file" id="image">
+<button onclick="send()">SUBMIT</button>
 
-<br>
+<br><br>
 
-<button onclick="submitPay()">SUBMIT</button>
+<button onclick="check()">CHECK KEY</button>
+
+<p id="res"></p>
 
 </div>
 
 <script>
+
 function buy(){
   document.getElementById("payBox").style.display="block";
 }
 
-async function submitPay(){
+async function send(){
 
   let plan = document.getElementById("plan").value;
   let utr = document.getElementById("utr").value;
-  let file = document.getElementById("image").files[0];
+  let file = document.getElementById("img").files[0];
 
-  let formData = new FormData();
-  formData.append("plan",plan);
-  formData.append("utr",utr);
-  formData.append("image",file);
+  let f = new FormData();
+  f.append("plan",plan);
+  f.append("utr",utr);
+  f.append("image",file);
 
-  await fetch("/buy",{
-    method:"POST",
-    body:formData
-  });
+  await fetch("/buy",{method:"POST",body:f});
 
-  alert("Request Sent ✅");
+  alert("Request Sent");
 }
+
+async function check(){
+
+  let utr = document.getElementById("utr").value;
+
+  let r = await fetch("/my-key/"+utr);
+  let d = await r.json();
+
+  if(d.status=="pending"){
+    document.getElementById("res").innerText="Pending...";
+  }else{
+    document.getElementById("res").innerText="KEY: "+d.key;
+  }
+}
+
 </script>
 
 </body>
