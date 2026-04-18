@@ -1,128 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>COBRA PANEL</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{margin:0;background:#071226;color:white;font-family:sans-serif;}
+.container{max-width:420px;margin:auto;padding:20px;}
+.card{background:#0f1c2e;padding:20px;border-radius:20px;}
+select,input{width:100%;padding:14px;margin:10px 0;border-radius:12px;border:none;}
+button{width:100%;padding:15px;border:none;border-radius:12px;background:#00f2ff;}
+.hidden{display:none;}
+</style>
+</head>
+
+<body>
+<div class="container">
+<div class="card">
+
+<h2>BGMI PANEL</h2>
+
+<select id="plan">
+<option value="1hour">1 Hour</option>
+<option value="3hour">3 Hour</option>
+<option value="1day">1 Day</option>
+<option value="3day">3 Day</option>
+<option value="7day">7 Day</option>
+</select>
+
+<button onclick="startBuy()">BUY</button>
+
+<div id="payment" class="hidden">
+
+<p>UPI: godxcobra@axl</p>
+
+<select id="method" onchange="changeMethod()">
+<option value="utr">UTR</option>
+<option value="qr">QR</option>
+</select>
+
+<input id="utr" placeholder="Enter UTR">
+<input type="file" id="file" class="hidden">
+
+<button onclick="submit()">Submit</button>
+
+<div id="status"></div>
+
+</div>
+
+</div>
+</div>
+
 <script>
 
 let selectedPlan="";
 let checkInterval;
-let timerInterval;
 
-// ===== PAGE LOAD CHECK =====
-window.onload = function(){
-
-  let savedUTR = localStorage.getItem("utr");
-
-  if(savedUTR){
+window.onload=function(){
+  let saved=localStorage.getItem("utr");
+  if(saved){
     document.getElementById("payment").classList.remove("hidden");
-    document.getElementById("status").innerText = "⏳ Restoring session...";
-    checkStatus(savedUTR);
+    checkStatus(saved);
   }
 };
 
-// ===== START BUY =====
 function startBuy(){
-  selectedPlan = document.getElementById("plan").value;
+  selectedPlan=document.getElementById("plan").value;
   document.getElementById("payment").classList.remove("hidden");
 }
 
-// ===== METHOD SWITCH =====
 function changeMethod(){
-  let m = document.getElementById("method").value;
-
-  if(m=="utr"){
-    document.getElementById("utr").style.display="block";
-    document.getElementById("file").style.display="none";
-  }else{
-    document.getElementById("utr").style.display="none";
-    document.getElementById("file").style.display="block";
-  }
+  let m=document.getElementById("method").value;
+  document.getElementById("utr").style.display=m=="utr"?"block":"none";
+  document.getElementById("file").style.display=m=="qr"?"block":"block":"none";
 }
 
-// ===== SUBMIT =====
 async function submit(){
 
-  let utr = document.getElementById("utr").value;
-  let file = document.getElementById("file").files[0];
-  let method = document.getElementById("method").value;
+  let utr=document.getElementById("utr").value||Date.now().toString();
+  let file=document.getElementById("file").files[0];
 
-  if(method=="utr" && !utr){
-    alert("Enter UTR");
-    return;
+  let form=new FormData();
+  form.append("plan",selectedPlan);
+  form.append("utr",utr);
+  if(file) form.append("file",file);
+
+  let res=await fetch("/buy",{method:"POST",body:form});
+  let d=await res.json();
+
+  if(d.risk==="high"){
+    alert("⚠️ Suspicious payment");
   }
 
-  if(method=="qr" && !file){
-    alert("Upload Screenshot");
-    return;
-  }
+  localStorage.setItem("utr",utr);
 
-  let finalUTR = utr || Date.now().toString();
-
-  let form = new FormData();
-  form.append("plan", selectedPlan);
-  form.append("utr", finalUTR);
-  if(file) form.append("file", file);
-
-  await fetch("/buy",{method:"POST",body:form});
-
-  // 🔥 SAVE SESSION
-  localStorage.setItem("utr", finalUTR);
-
-  document.getElementById("status").innerText = "⏳ Please wait admin verify";
-
-  startTimer(60);
-  checkStatus(finalUTR);
+  checkStatus(utr);
 }
 
-// ===== TIMER =====
-function startTimer(t){
-  clearInterval(timerInterval);
-
-  timerInterval = setInterval(()=>{
-    document.getElementById("status").innerText =
-    "⏳ Waiting... " + t + "s";
-
-    t--;
-
-    if(t<0){
-      clearInterval(timerInterval);
-      document.getElementById("status").innerText =
-      "⏳ Still waiting admin...";
-    }
-  },1000);
-}
-
-// ===== STATUS CHECK =====
 function checkStatus(utr){
 
   clearInterval(checkInterval);
 
-  checkInterval = setInterval(async ()=>{
+  checkInterval=setInterval(async()=>{
 
-    let res = await fetch("/status/"+utr);
-    let data = await res.json();
-
-    if(!data) return;
+    let res=await fetch("/status/"+utr);
+    let data=await res.json();
 
     if(data.status=="approved"){
       clearInterval(checkInterval);
-      clearInterval(timerInterval);
+      localStorage.removeItem("utr");
 
-      localStorage.removeItem("utr"); // 🔥 CLEAR
-
-      alert("✅ KEY: "+data.key);
-
+      alert("KEY: "+data.key+"\nJoin: https://t.me/GODx_COBRA");
       location.reload();
     }
 
     if(data.status=="rejected"){
       clearInterval(checkInterval);
-      clearInterval(timerInterval);
-
       localStorage.removeItem("utr");
 
-      alert("❌ Fake Payment");
-
-      location.reload();
+      alert("Rejected");
+      setTimeout(()=>location.reload(),30000);
     }
 
   },3000);
 }
 
 </script>
+</body>
+</html>
