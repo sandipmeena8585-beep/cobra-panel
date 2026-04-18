@@ -151,3 +151,33 @@ app.get("/sales-graph",(req,res)=>{
 });
 
 app.listen(3000,()=>console.log("🔥 FINAL PRO SERVER RUNNING"));
+// ===== OTP SYSTEM =====
+let adminOTP = "1234"; // demo OTP (later random kar sakte)
+
+app.get("/admin/send-otp", (req,res)=>{
+  adminOTP = Math.floor(1000 + Math.random()*9000).toString();
+  console.log("ADMIN OTP:", adminOTP); // console me dikhega
+  res.json({ok:true});
+});
+
+app.post("/admin/login", (req,res)=>{
+  const {user, pass, otp} = req.body;
+
+  if(user==="COBRA SERVER" && pass==="SAMI9166" && otp===adminOTP){
+    res.json({status:"success"});
+  }else{
+    res.json({status:"fail"});
+  }
+});
+
+
+// ===== SALES DATA =====
+app.get("/admin/stats",(req,res)=>{
+  let data = JSON.parse(fs.readFileSync("data.json"));
+
+  let total = data.length;
+  let approved = data.filter(x=>x.status==="approved").length;
+  let rejected = data.filter(x=>x.status==="rejected").length;
+
+  res.json({total, approved, rejected, data});
+});
