@@ -44,6 +44,7 @@ button{
 <h2>🎮 BGMI PANEL</h2>
 
 <select id="plan">
+<option value="">Select Plan</option>
 <option value="1hour">1 Hour - ₹30</option>
 <option value="3hour">3 Hour - ₹50</option>
 <option value="1day">1 Day - ₹110</option>
@@ -55,23 +56,23 @@ button{
 
 <div id="payment" class="hidden">
 
-<p>UPI: godxcobra@axl</p>
+<p>💰 UPI: godxcobra@axl</p>
 
 <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl" width="200">
 
 <p id="planShow"></p>
 
 <select id="method" onchange="changeMethod()">
-<option value="utr">Enter UTR</option>
+<option value="utr">Enter UTR ID</option>
 <option value="qr">Upload Screenshot</option>
 </select>
 
-<input id="utr" placeholder="Enter UTR">
+<input id="utr" placeholder="Enter UTR ID">
 <input type="file" id="file" class="hidden">
 
-<button onclick="submit()">SUBMIT</button>
+<button onclick="submitPayment()">SUBMIT</button>
 
-<div id="status"></div>
+<p id="status"></p>
 
 </div>
 
@@ -80,33 +81,41 @@ button{
 <script>
 
 let selectedPlan="";
-let interval;
+let checkInterval;
 
-// PAGE LOAD
-window.onload=function(){
-  let saved=localStorage.getItem("utr");
+// PAGE LOAD (resume system)
+window.onload = function(){
 
-  if(saved){
+  let savedUTR = localStorage.getItem("utr");
+
+  if(savedUTR){
     document.getElementById("payment").classList.remove("hidden");
-    document.getElementById("status").innerText="⏳ Please wait admin verify";
-    checkStatus(saved);
+    document.getElementById("status").innerText="⏳ Please wait admin verify...";
+    startChecking(savedUTR);
   }
 };
 
-// START
+// START BUY
 function startBuy(){
-  selectedPlan=document.getElementById("plan").value;
+
+  selectedPlan = document.getElementById("plan").value;
+
+  if(!selectedPlan){
+    alert("⚠️ Select Plan First");
+    return;
+  }
 
   document.getElementById("payment").classList.remove("hidden");
 
-  document.getElementById("planShow").innerText="Plan: "+selectedPlan;
+  document.getElementById("planShow").innerText="Plan: " + selectedPlan;
 }
 
-// METHOD CHANGE
+// METHOD SWITCH
 function changeMethod(){
-  let m=document.getElementById("method").value;
 
-  if(m==="utr"){
+  let method = document.getElementById("method").value;
+
+  if(method === "utr"){
     document.getElementById("utr").style.display="block";
     document.getElementById("file").style.display="none";
   }else{
@@ -115,11 +124,11 @@ function changeMethod(){
   }
 }
 
-// SUBMIT
-async function submit(){
+// SUBMIT PAYMENT
+async function submitPayment(){
 
-  let utr=document.getElementById("utr").value.trim();
-  let file=document.getElementById("file").files[0];
+  let utr = document.getElementById("utr").value.trim();
+  let file = document.getElementById("file").files[0];
 
   if(!selectedPlan){
     alert("Select Plan First");
@@ -127,18 +136,18 @@ async function submit(){
   }
 
   if(!utr && !file){
-    alert("Enter UTR or Upload Screenshot");
+    alert("Enter UTR OR Upload Screenshot");
     return;
   }
 
   let finalUTR = utr || Date.now().toString();
 
-  let form=new FormData();
-  form.append("plan",selectedPlan);
-  form.append("utr",finalUTR);
+  let form = new FormData();
+  form.append("plan", selectedPlan);
+  form.append("utr", finalUTR);
 
   if(file){
-    form.append("file",file);
+    form.append("file", file);
   }
 
   await fetch("/buy",{
@@ -146,45 +155,47 @@ async function submit(){
     body:form
   });
 
-  localStorage.setItem("utr",finalUTR);
+  localStorage.setItem("utr", finalUTR);
 
-  document.getElementById("status").innerText="⏳ Please wait admin verify";
+  document.getElementById("status").innerText="⏳ Waiting for admin verification...";
 
-  checkStatus(finalUTR);
+  startChecking(finalUTR);
 }
 
-// STATUS CHECK
-function checkStatus(utr){
+// STATUS CHECK LOOP
+function startChecking(utr){
 
-  clearInterval(interval);
+  clearInterval(checkInterval);
 
-  interval=setInterval(async()=>{
+  checkInterval = setInterval(async()=>{
 
-    let res=await fetch("/status/"+utr);
-    let data=await res.json();
+    let res = await fetch("/status/" + utr);
+    let data = await res.json();
 
-    if(data.status==="approved"){
+    if(data.status === "approved"){
 
-      clearInterval(interval);
+      clearInterval(checkInterval);
       localStorage.removeItem("utr");
 
       alert(
-        "KEY: "+data.key+
-        "\nJoin: https://t.me/GODx_COBRA"+
-        "\nExpire: 24h"
+        "✅ KEY: " + data.key +
+        "\n\n📢 Join: https://t.me/GODx_COBRA" +
+        "\n⏳ Validity: As per plan"
       );
 
-      setTimeout(()=>location.reload(),1000);
+      location.reload();
     }
 
-    if(data.status==="rejected"){
+    if(data.status === "rejected"){
 
-      clearInterval(interval);
+      clearInterval(checkInterval);
       localStorage.removeItem("utr");
 
       alert("❌ Payment Rejected");
 
-      setTimeout(()=>location.reload(),60000);
+      setTimeout(()=>{
+        location.reload();
+      }, 5000);
     }
 
   },2000);
