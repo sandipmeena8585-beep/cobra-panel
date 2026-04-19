@@ -14,6 +14,9 @@ const upload = multer({dest:"uploads/"});
 const FILE="data.json";
 const SETTINGS_FILE="settings.json";
 
+// ✅ IMPORTANT (Render PORT FIX)
+const PORT = process.env.PORT || 3000;
+
 // 🔥 TELEGRAM
 const BOT_TOKEN="PUT_TOKEN";
 const CHAT_ID="PUT_CHAT_ID";
@@ -23,7 +26,9 @@ async function sendTelegram(msg){
     await axios.get(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
       params:{chat_id:CHAT_ID,text:msg}
     });
-  }catch(e){}
+  }catch(e){
+    console.log("Telegram Error:", e.message);
+  }
 }
 
 // ================= SETTINGS =================
@@ -32,7 +37,11 @@ if(!fs.existsSync(SETTINGS_FILE)){
 }
 
 function loadSettings(){
-  return JSON.parse(fs.readFileSync(SETTINGS_FILE));
+  try{
+    return JSON.parse(fs.readFileSync(SETTINGS_FILE));
+  }catch{
+    return {customerEnabled:true};
+  }
 }
 
 function saveSettings(d){
@@ -41,18 +50,25 @@ function saveSettings(d){
 
 // ================= DATA =================
 function loadData(){
-  if(!fs.existsSync(FILE)){
-    fs.writeFileSync(FILE,JSON.stringify({
-      stock:{ "1hour":[], "3hour":[], "1day":[], "3day":[], "7day":[] },
-      requests:[],
-      devices:{},
-
-      // 🔥 NEW
+  try{
+    if(!fs.existsSync(FILE)){
+      fs.writeFileSync(FILE,JSON.stringify({
+        stock:{ "1hour":[], "3hour":[], "1day":[], "3day":[], "7day":[] },
+        requests:[],
+        devices:{},
+        stats:{ sold:0, added:0, deleted:0 },
+        history:[]
+      }));
+    }
+    return JSON.parse(fs.readFileSync(FILE));
+  }catch(e){
+    console.log("Data error:", e.message);
+    return {
+      stock:{},requests:[],devices:{},
       stats:{ sold:0, added:0, deleted:0 },
       history:[]
-    }));
+    };
   }
-  return JSON.parse(fs.readFileSync(FILE));
 }
 
 function saveData(d){
@@ -64,8 +80,7 @@ function addHistory(text){
   let d = loadData();
 
   d.history.unshift(text);
-
-  if(d.history.length > 5) d.history.pop(); // only 5
+  if(d.history.length > 5) d.history.pop();
 
   saveData(d);
 }
@@ -78,7 +93,7 @@ app.use((req,res,next)=>{
   let s = loadSettings();
 
   if(!s.customerEnabled){
-    return res.send("<h2 style='text-align:center;margin-top:60px'>🚫 SERVER OFF</h2>");
+    return res.send("<h2 style='text-align:center;margin-top:60px'>🚫 PLEASE WAIT UPDATE COBRA SERVER PRICE</h2>");
   }
 
   next();
@@ -118,7 +133,7 @@ app.post("/login", async (req,res)=>{
   res.json({status:"fail"});
 });
 
-// ================= DATA =================
+// ================= APIs =================
 app.get("/admin/data",(req,res)=>{
   res.json(loadData().requests);
 });
@@ -127,19 +142,15 @@ app.get("/admin/stock",(req,res)=>{
   res.json(loadData().stock);
 });
 
-// 👉 NEW STATS API
 app.get("/admin/stats",(req,res)=>{
-  let d = loadData();
-  res.json(d.stats);
+  res.json(loadData().stats);
 });
 
-// 👉 NEW HISTORY API
 app.get("/admin/history",(req,res)=>{
-  let d = loadData();
-  res.json(d.history);
+  res.json(loadData().history);
 });
 
-// ================= ADD KEY =================
+// ================= ADD =================
 app.post("/admin/addkey",(req,res)=>{
   let d=loadData();
   let {plan,key}=req.body;
@@ -147,8 +158,7 @@ app.post("/admin/addkey",(req,res)=>{
   if(!d.stock[plan]) d.stock[plan]=[];
 
   d.stock[plan].push(key);
-  d.stats.added++; // ✅ count
-
+  d.stats.added++;
   addHistory(`➕ Added ${key}`);
 
   saveData(d);
@@ -163,8 +173,7 @@ app.post("/admin/deletekey",(req,res)=>{
   if(!d.stock[plan]) return res.send("no plan");
 
   d.stock[plan]=d.stock[plan].filter(k=>k!==key);
-  d.stats.deleted++; // ✅ count
-
+  d.stats.deleted++;
   addHistory(`❌ Deleted ${key}`);
 
   saveData(d);
@@ -172,7 +181,7 @@ app.post("/admin/deletekey",(req,res)=>{
 });
 
 // ================= BUY =================
-app.post("/buy",upload.single("file"), async (req,res)=>{
+app.post("/buy",upload.single("file"),(req,res)=>{
   let d=loadData();
 
   let r={
@@ -202,7 +211,7 @@ app.get("/admin/verify/:id",(req,res)=>{
   r.status="approved";
   r.key=key;
 
-  d.stats.sold++; // ✅ count
+  d.stats.sold++;
   addHistory(`💰 Sold ${key}`);
 
   saveData(d);
@@ -221,4 +230,4 @@ app.get("/admin/reject/:id",(req,res)=>{
 });
 
 // ================= START =================
-app.listen(3000,()=>console.log("🚀 SERVER RUNNING"));
+app.listen(PORT,()=>console.log("🚀 SERVER RUNNING ON", PORT));
