@@ -7,21 +7,37 @@
 <style>
 body{
   margin:0;
-  background:#030a14;
+  background:#020814;
   color:white;
   font-family:system-ui;
 }
 
-.box{
-  max-width:420px;
-  margin:auto;
-  padding:15px;
+/* VIP LOGIN */
+.loginBox{
+  max-width:320px;
+  margin:80px auto;
+  padding:20px;
   background:#081426;
   border-radius:18px;
-  margin-top:15px;
+  text-align:center;
+  box-shadow:0 0 25px rgba(0,255,255,0.15);
 }
 
-h2,h3{
+.container{
+  max-width:420px;
+  margin:auto;
+  padding:12px;
+}
+
+.card{
+  background:#081426;
+  border-radius:16px;
+  padding:12px;
+  margin:10px 0;
+  box-shadow:0 0 10px rgba(0,255,255,0.08);
+}
+
+h3{
   text-align:center;
   color:#00f2ff;
 }
@@ -29,7 +45,7 @@ h2,h3{
 input,select{
   width:100%;
   padding:12px;
-  margin:8px 0;
+  margin:6px 0;
   border-radius:10px;
   border:none;
   background:#0c1d33;
@@ -37,37 +53,20 @@ input,select{
 }
 
 button{
-  padding:10px;
+  width:100%;
+  padding:12px;
   border:none;
   border-radius:10px;
   background:linear-gradient(90deg,#00f2ff,#007bff);
-  width:100%;
-  margin-top:5px;
   color:white;
-}
-
-.card{
-  background:#0c1d33;
-  padding:10px;
-  border-radius:10px;
-  margin:6px 0;
-  text-align:center;
+  margin-top:6px;
 }
 
 .req{
   border:1px solid #00f2ff;
   padding:10px;
-  margin:10px 0;
   border-radius:10px;
-}
-
-.topActions{
-  display:flex;
-  gap:10px;
-}
-
-.topActions button{
-  flex:1;
+  margin-top:10px;
 }
 
 .hidden{display:none;}
@@ -76,47 +75,39 @@ button{
 
 <body>
 
-<div class="box">
-
 <!-- LOGIN -->
-<div id="loginBox">
-<h2>🔐 ADMIN LOGIN</h2>
+<div id="loginBox" class="loginBox">
+<h3>🔐 ADMIN LOGIN</h3>
 <input id="user" placeholder="Username">
 <input id="pass" placeholder="Password">
 <button onclick="login()">LOGIN</button>
 </div>
 
-<!-- PANEL -->
-<div id="panel" class="hidden">
+<div id="panel" class="container hidden">
 
-<h3>📊 Dashboard</h3>
+<h3>📊 DASHBOARD</h3>
 
-<div class="card" onclick="openStock()">📦 STOCK (CLICK)</div>
+<div class="card" onclick="openStock()">📦 STOCK PANEL</div>
+
 <div class="card" id="sales">Sales: 0</div>
 <div class="card" id="pending">Pending: 0</div>
 
-<h3>📥 Requests</h3>
+<h3>📊 ANALYTICS</h3>
+<div id="analytics"></div>
+
+<h3>📥 REQUESTS</h3>
 <div id="data"></div>
 
 </div>
 
-<!-- 🔥 STOCK FLOOR -->
-<div id="stockPage" class="hidden">
+<!-- STOCK PAGE -->
+<div id="stockPage" class="container hidden">
 
 <button onclick="back()">⬅ BACK</button>
 
 <h3>📦 STOCK PANEL</h3>
 
-<!-- 🔥 TOP OPTIONS -->
-<div class="topActions">
-<button onclick="focusAdd()">➕ ADD</button>
-<button onclick="loadStock()">🔄 REFRESH</button>
-</div>
-
-<!-- 🔥 ADD SECTION -->
-<div class="card" id="addSection">
-
-<h3>➕ Add Key</h3>
+<button onclick="openAvailable()">📦 VIEW ALL KEYS</button>
 
 <select id="plan">
 <option value="1hour">1 Hour</option>
@@ -129,25 +120,27 @@ button{
 <input id="newkey" placeholder="Enter Key">
 <button onclick="addKey(event)">ADD KEY</button>
 
-</div>
+<h3>🔥 TEMP KEYS</h3>
+<div id="tempKeys"></div>
 
-<!-- 🔥 SUMMARY -->
-<h3>📊 SUMMARY</h3>
-<div id="summary"></div>
-
-<!-- 🔥 STOCK LIST -->
-<h3>📦 AVAILABLE KEYS</h3>
+<h3>📦 STOCK</h3>
 <div id="stockList"></div>
 
-<!-- 🔥 SOLD -->
-<h3>📤 SOLD KEYS</h3>
-<div id="soldList"></div>
-
 </div>
+
+<!-- FLOOR 4 -->
+<div id="availablePage" class="container hidden">
+
+<button onclick="backToStock()">⬅ BACK</button>
+
+<h3>📦 ALL KEYS</h3>
+<div id="allKeys"></div>
 
 </div>
 
 <script>
+
+let temp=[];
 
 // LOGIN
 function login(){
@@ -155,6 +148,7 @@ function login(){
     loginBox.style.display="none";
     panel.classList.remove("hidden");
     load();
+    loadAnalytics();
   }else alert("Wrong Login");
 }
 
@@ -170,30 +164,40 @@ function back(){
   panel.classList.remove("hidden");
 }
 
-// SCROLL TO ADD
-function focusAdd(){
-  document.getElementById("addSection").scrollIntoView({behavior:"smooth"});
+function openAvailable(){
+  stockPage.classList.add("hidden");
+  availablePage.classList.remove("hidden");
+  loadAll();
 }
 
-// DASHBOARD
+function backToStock(){
+  availablePage.classList.add("hidden");
+  stockPage.classList.remove("hidden");
+}
+
+// REQUEST LOAD
 async function load(){
 
-  let res = await fetch("/admin/data?time="+Date.now());
-  let arr = await res.json();
+  let res=await fetch("/admin/data?"+Date.now());
+  let arr=await res.json();
 
-  let html="";
-  let sales=0,pending=0;
+  let html="",sales=0,pending=0;
 
   arr.forEach(x=>{
+
     if(x.status==="pending"){
       pending++;
 
       html+=`
       <div class="req">
       📦 ${x.plan}<br>
-      🧾 ${x.utr}<br>
-      <button onclick="verify(${x.id})">VERIFY</button>
-      <button onclick="reject(${x.id})">REJECT</button>
+      🧾 ${x.utr || "N/A"}<br>
+      ⏰ ${x.time || ""}<br>
+
+      ${x.file ? `<img src="/uploads/${x.file}" width="100"><br>`:""}
+
+      <button onclick="verify(${x.id},this)">VERIFY</button>
+      <button onclick="reject(${x.id},this)">REJECT</button>
       </div>`;
     }
 
@@ -205,68 +209,80 @@ async function load(){
   pending.innerText="Pending: "+pending;
 }
 
+// ANALYTICS
+async function loadAnalytics(){
+
+  let res=await fetch("/admin/data");
+  let arr=await res.json();
+
+  let total=0;
+  let stats={"1hour":0,"3hour":0,"1day":0,"3day":0,"7day":0};
+
+  arr.forEach(x=>{
+    if(x.status==="approved"){
+      total++;
+      stats[x.plan]++;
+    }
+  });
+
+  let html=`<div class="card">Total Sales: ${total}</div><div class="card">`;
+
+  for(let p in stats){
+    html+=`${p} → ${stats[p]}<br>`;
+  }
+
+  html+="</div>";
+
+  analytics.innerHTML=html;
+}
+
+// VERIFY
+async function verify(id,btn){
+  await fetch("/admin/verify/"+id);
+  btn.parentElement.style.display="none";
+  load();
+  loadAnalytics();
+}
+
+// REJECT
+async function reject(id,btn){
+  await fetch("/admin/reject/"+id);
+  btn.parentElement.style.display="none";
+  load();
+}
+
 // STOCK
 async function loadStock(){
 
-  let s = await fetch("/admin/stock?time="+Date.now());
-  let st = await s.json();
+  let s=await fetch("/admin/stock?"+Date.now());
+  let st=await s.json();
 
   let html="";
-  let total=0;
 
   for(let p in st.stock){
 
-    let keys = st.stock[p];
-    total+=keys.length;
+    html+=`<div class="card">${p}<br>`;
 
-    html+=`<div class="card"><b>${p} (${keys.length})</b><br>`;
-
-    keys.forEach(key=>{
-      html+=`
-      <div style="margin:5px 0;border:1px solid #00f2ff;padding:6px;border-radius:8px;">
-      ${key}
-      <button onclick="deleteKey('${p}','${key}')">❌ DELETE</button>
-      </div>`;
+    st.stock[p].forEach(k=>{
+      html+=`${k}<br>
+      <button onclick="del('${p}','${k}')">❌</button>`;
     });
 
-    html+=`</div>`;
+    html+="</div>";
   }
 
   stockList.innerHTML=html;
 
-  // SOLD
-  let h = await fetch("/admin/data?time="+Date.now());
-  let arr = await h.json();
+  // TEMP
+  let now=Date.now();
+  temp=temp.filter(t=>now-t.time<30000);
 
-  let sold=0, soldHTML="";
-
-  arr.forEach(x=>{
-    if(x.status==="approved"){
-      sold++;
-      soldHTML+=`<div class="req">${x.plan} → ${x.key}</div>`;
-    }
+  let tHTML="";
+  temp.forEach(t=>{
+    tHTML+=`<div class="card">${t.key}</div>`;
   });
 
-  summary.innerHTML=`
-  <div class="card">
-  📦 Total: ${total}<br>
-  💰 Sold: ${sold}<br>
-  🔄 Remaining: ${total}
-  </div>`;
-
-  soldList.innerHTML=soldHTML;
-}
-
-// VERIFY
-async function verify(id){
-  await fetch("/admin/verify/"+id);
-  load();
-}
-
-// REJECT
-async function reject(id){
-  await fetch("/admin/reject/"+id);
-  load();
+  tempKeys.innerHTML=tHTML;
 }
 
 // ADD
@@ -275,9 +291,7 @@ async function addKey(e){
   let p=plan.value;
   let k=newkey.value.trim();
 
-  if(!k){ alert("Enter key"); return; }
-
-  e.target.disabled=true;
+  if(!k) return;
 
   await fetch("/admin/addkey",{
     method:"POST",
@@ -285,32 +299,46 @@ async function addKey(e){
     body:JSON.stringify({plan:p,key:k})
   });
 
-  newkey.value="";
-  setTimeout(loadStock,300);
+  temp.push({key:k,time:Date.now()});
 
-  e.target.disabled=false;
+  newkey.value="";
+  loadStock();
 }
 
 // DELETE
-async function deleteKey(plan,key){
-
-  if(!confirm("Delete key?")) return;
-
+async function del(p,k){
   await fetch("/admin/deletekey",{
     method:"POST",
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({plan,key})
+    body:JSON.stringify({plan:p,key:k})
   });
 
   loadStock();
 }
 
-// AUTO REFRESH
+// FLOOR 4
+async function loadAll(){
+  let s=await fetch("/admin/stock");
+  let st=await s.json();
+
+  let html="";
+
+  for(let p in st.stock){
+    html+=`<div class="card">${p}<br>`;
+    st.stock[p].forEach(k=>html+=k+"<br>");
+    html+="</div>";
+  }
+
+  allKeys.innerHTML=html;
+}
+
+// AUTO
 setInterval(()=>{
   if(!stockPage.classList.contains("hidden")){
     loadStock();
   }else{
     load();
+    loadAnalytics();
   }
 },2000);
 
