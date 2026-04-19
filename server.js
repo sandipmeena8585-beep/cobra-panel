@@ -1,6 +1,8 @@
 const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
+const fetch = require("node-fetch");
+
 const app = express();
 
 app.use(express.json());
@@ -8,6 +10,10 @@ app.use(express.urlencoded({extended:true}));
 app.use(express.static("public"));
 
 const upload = multer({dest:"uploads/"});
+
+// 🔥 TELEGRAM CONFIG
+const BOT_TOKEN = "8390006157:AAHEljV65Rrb-hieT-Opl4H5W_qRM-SHIN8";
+const CHAT_ID = "7707237527";
 
 // 🔥 DATA FILE
 const FILE = "data.json";
@@ -32,10 +38,28 @@ function saveData(data){
   fs.writeFileSync(FILE, JSON.stringify(data,null,2));
 }
 
+// 🔥 TELEGRAM SEND
+async function sendTelegram(msg){
+  try{
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
+      method:"POST",
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        chat_id: CHAT_ID,
+        text: msg
+      })
+    });
+  }catch(e){
+    console.log("Telegram Error",e.message);
+  }
+}
+
 // 🔥 ADD KEY
 app.post("/admin/addkey",(req,res)=>{
   let data = loadData();
   let {plan,key} = req.body;
+
+  if(!data.stock[plan]) data.stock[plan]=[];
 
   data.stock[plan].push(key);
 
@@ -62,23 +86,36 @@ app.get("/admin/stock",(req,res)=>{
   res.json({stock:data.stock});
 });
 
-// 🔥 BUY REQUEST
-app.post("/buy", upload.single("file"), (req,res)=>{
+// 🔥 BUY REQUEST + TELEGRAM ALERT
+app.post("/buy", upload.single("file"), async (req,res)=>{
 
   let data = loadData();
 
   let id = Date.now();
 
-  data.requests.push({
+  let request = {
     id,
     plan:req.body.plan,
     utr:req.body.utr,
     time:req.body.time,
     status:"pending",
     file:req.file ? req.file.filename : null
-  });
+  };
+
+  data.requests.push(request);
 
   saveData(data);
+
+  // 🔥 TELEGRAM ALERT
+  let msg = `
+🔥 NEW PAYMENT REQUEST
+
+📦 Plan: ${request.plan}
+🧾 UTR: ${request.utr || "N/A"}
+⏰ Time: ${request.time}
+`;
+
+  await sendTelegram(msg);
 
   res.send("ok");
 });
@@ -90,18 +127,20 @@ app.get("/admin/data",(req,res)=>{
 });
 
 // 🔥 VERIFY
-app.get("/admin/verify/:id",(req,res)=>{
+app.get("/admin/verify/:id", async (req,res)=>{
 
   let data = loadData();
   let id = parseInt(req.params.id);
 
   let reqItem = data.requests.find(x=>x.id===id);
-
   if(!reqItem) return res.send("not found");
 
   let plan = reqItem.plan;
 
-  let key = data.stock[plan].shift(); // 🔥 REMOVE FROM STOCK
+  // 🔥 SAFE STOCK REMOVE
+  let key = data.stock[plan] && data.stock[plan].length
+    ? data.stock[plan].shift()
+    : null;
 
   reqItem.status = "approved";
   reqItem.key = key || "NO KEY";
@@ -110,16 +149,38 @@ app.get("/admin/verify/:id",(req,res)=>{
 
   saveData(data);
 
+  // 🔥 TELEGRAM VERIFY ALERT
+  let msg = `
+✅ PAYMENT VERIFIED
+
+📦 Plan: ${reqItem.plan}
+🔑 Key: ${reqItem.key}
+⏰ Time: ${reqItem.time}
+`;
+
+  await sendTelegram(msg);
+
   res.send("verified");
 });
 
 // 🔥 REJECT
-app.get("/admin/reject/:id",(req,res)=>{
+app.get("/admin/reject/:id", async (req,res)=>{
   let data = loadData();
   let id = parseInt(req.params.id);
 
   let reqItem = data.requests.find(x=>x.id===id);
-  if(reqItem) reqItem.status="rejected";
+
+  if(reqItem){
+    reqItem.status="rejected";
+
+    // 🔥 TELEGRAM REJECT ALERT
+    await sendTelegram(`
+❌ PAYMENT REJECTED
+
+📦 Plan: ${reqItem.plan}
+⏰ Time: ${reqItem.time}
+`);
+  }
 
   saveData(data);
 
@@ -139,4 +200,4 @@ app.get("/status/:utr",(req,res)=>{
   res.json(r);
 });
 
-app.listen(3000,()=>console.log("SERVER RUNNING"));
+app.listen(3000,()=>console.log("🚀 SERVER RUNNING"));
