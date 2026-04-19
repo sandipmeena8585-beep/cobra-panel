@@ -45,7 +45,7 @@ async function login(){
   }
 }
 
-// STOCK LOAD
+// ✅ STOCK LOAD FIXED
 async function loadStock(){
   let res = await fetch("/admin/stock");
   let data = await res.json();
@@ -54,14 +54,14 @@ async function loadStock(){
 
   for(let p in data){
 
-    html+=`<div class="card"><b>${p.toUpperCase()}</b><br><br>`;
+    html += `<div class="card"><b>${p.toUpperCase()}</b><br><br>`;
 
     if(data[p].length === 0){
-      html+="No Keys<br>";
+      html += "No Keys<br>";
     }
 
     data[p].forEach(k=>{
-      html+=`
+      html += `
       <div style="display:flex;justify-content:space-between;margin:5px 0;">
         <span>${k}</span>
         <button style="padding:4px 8px;font-size:12px;"
@@ -69,7 +69,7 @@ async function loadStock(){
       </div>`;
     });
 
-    html+="</div>";
+    html += "</div>";
   }
 
   stockList.innerHTML = html;
@@ -88,9 +88,8 @@ async function loadStockCount(){
   stockCount.innerText="Stock: "+total;
 }
 
-// 🔥 UPDATED ADD KEY (10 SECOND SHOW)
+// ✅ ADD KEY (10 sec top show)
 async function addKey(){
-
   if(!newkey.value.trim()) return alert("Enter key");
 
   let keyVal = newkey.value;
