@@ -1,33 +1,69 @@
-<!-- 📊 REAL GRAPH (ADD INSIDE DASHBOARD CARD) -->
+<!-- 🔥 STEP 1: REAL GRAPH ADD (FULL UPDATED DASHBOARD SECTION) -->
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="container hidden">
+
+<div class="card" id="totalSales">Total Sales: 0</div>
+<div class="card" id="pendingReq">Pending: 0</div>
+<div class="card" id="stockCount">Stock: 0</div>
+<div class="card" id="todaySales">Today Sales: 0</div>
+
+<!-- 📊 GRAPH CARD -->
+<div class="card">
+<b>Sales Graph</b>
+
+<!-- REAL GRAPH -->
 <canvas id="salesChart" style="width:100%;margin-top:10px;"></canvas>
 
-<!-- 📦 CHART.JS CDN (ADD BEFORE </body>) -->
+</div>
+
+</div>
+
+<!-- 📦 CHART.JS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-// 📊 DEMO GRAPH DATA (UI ONLY)
-const ctx = document.getElementById('salesChart');
 
-new Chart(ctx, {
-  type: 'bar',
-  data: {
-    labels: ['1hour','3hour','1day','3day','7day'],
-    datasets: [{
-      label: 'Sales',
-      data: [5, 8, 12, 6, 9],
-      borderWidth: 1
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins:{
-      legend:{display:false}
+// 🔥 GRAPH INIT
+let chart;
+
+function initGraph(){
+
+  const ctx = document.getElementById('salesChart');
+
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['1hour','3hour','1day','3day','7day'],
+      datasets: [{
+        label: 'Sales',
+        data: [0,0,0,0,0],
+        borderWidth: 1
+      }]
     },
-    scales: {
-      y: {
-        beginAtZero: true
-      }
+    options: {
+      responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true}}
     }
-  }
-});
+  });
+
+}
+
+// 🔄 UPDATE GRAPH
+function updateGraph(stats){
+
+  if(!chart) return;
+
+  chart.data.datasets[0].data = [
+    stats["1hour"],
+    stats["3hour"],
+    stats["1day"],
+    stats["3day"],
+    stats["7day"]
+  ];
+
+  chart.update();
+}
+
 </script>
