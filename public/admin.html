@@ -7,7 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 
 <style>
-
 body{
   margin:0;
   font-family:'Poppins',sans-serif;
@@ -17,27 +16,56 @@ body{
 
 /* HEADER */
 .header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
   padding:15px;
-  background:#f1f5f9;
-  color:#065f46;
-  font-weight:bold;
+  background:#020617;
 }
 
-/* ALERT */
-.alert{
-  margin:15px;
-  background:black;
+.menu{
+  font-size:22px;
+  cursor:pointer;
+}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;
+  top:0;
+  left:-260px;
+  width:240px;
+  height:100%;
+  background:#0f172a;
+  padding:15px;
+  transition:0.3s;
+  z-index:1000;
+}
+.sidebar.active{left:0;}
+
+.sideItem{
   padding:12px;
-  border-left:5px solid orange;
+  margin:10px 0;
   border-radius:10px;
+  background:#1e293b;
+  cursor:pointer;
 }
 
-/* LOGIN CARD */
+/* OVERLAY */
+.overlay{
+  position:fixed;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.5);
+  display:none;
+}
+.overlay.active{display:block;}
+
+/* LOGIN */
 .loginWrap{
   display:flex;
   justify-content:center;
   align-items:center;
-  height:70vh;
+  height:100vh;
 }
 
 .loginBox{
@@ -49,94 +77,107 @@ body{
   overflow:hidden;
 }
 
-/* TOP */
 .loginTop{
   padding:25px;
-  color:white;
-  font-size:24px;
-  font-weight:bold;
   text-align:center;
+  color:white;
+  font-size:22px;
   background:linear-gradient(135deg,#0f766e,#22c55e);
 }
 
-/* BODY */
 .loginBody{
   padding:20px;
 }
 
-.inputBox{
-  margin:10px 0;
-}
-
-.inputBox input{
+input{
   width:100%;
   padding:12px;
+  margin:8px 0;
   border-radius:10px;
   border:1px solid #ccc;
 }
 
-/* BUTTON */
-.loginBtn{
+button{
   width:100%;
   padding:12px;
   border:none;
-  border-radius:12px;
-  background:linear-gradient(135deg,#22c55e,#16a34a);
+  border-radius:10px;
+  background:#22c55e;
   color:white;
   margin-top:10px;
-  font-weight:bold;
 }
 
-/* PANEL */
+/* DASHBOARD */
 .container{
   padding:15px;
 }
 
 .card{
-  padding:12px;
-  border-radius:12px;
+  padding:15px;
+  border-radius:15px;
   background:linear-gradient(135deg,#16a34a,#22c55e);
   margin-bottom:10px;
+  text-align:center;
+}
+
+/* GRAPH */
+.bar{
+  height:10px;
+  background:#22c55e;
+  margin:5px 0;
+  border-radius:5px;
 }
 
 .hidden{display:none;}
-
 </style>
 </head>
 
 <body>
 
-<div class="header">COBRA SERVER</div>
+<div id="overlay" class="overlay" onclick="closeMenu()"></div>
 
-<div class="alert">⚠ Please login first.</div>
+<!-- SIDEBAR -->
+<div id="sidebar" class="sidebar">
+<div class="sideItem" onclick="go('dashboard')">Dashboard</div>
+<div class="sideItem" onclick="go('stockPage')">Stock</div>
+<div class="sideItem" onclick="go('requestPage')">Requests</div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+<span class="menu" onclick="openMenu()">☰</span>
+<b>COBRA ADMIN</b>
+</div>
 
 <!-- LOGIN -->
 <div id="loginWrap" class="loginWrap">
-
 <div class="loginBox">
 <div class="loginTop">Welcome Back</div>
-
 <div class="loginBody">
-
-<div class="inputBox">
-<input id="user" placeholder="Enter your username">
+<input id="user" placeholder="Username">
+<input id="pass" placeholder="Password" type="password">
+<button onclick="login()">Login</button>
 </div>
-
-<div class="inputBox">
-<input id="pass" placeholder="Enter your password" type="password">
-</div>
-
-<button class="loginBtn" onclick="login()">Sign In</button>
-
 </div>
 </div>
 
-</div>
+<!-- DASHBOARD -->
+<div id="dashboard" class="container hidden">
 
-<!-- PANEL -->
-<div id="panel" class="container hidden">
-
+<div class="card" id="totalSales">Sales: 0</div>
+<div class="card" id="pendingReq">Pending: 0</div>
 <div class="card" id="stockCount">Stock: 0</div>
+
+<div class="card">
+<b>Sales Graph</b>
+<div id="graph"></div>
+</div>
+
+</div>
+
+<!-- STOCK -->
+<div id="stockPage" class="container hidden">
+<div class="card">STOCK PANEL</div>
 
 <select id="plan">
 <option value="1hour">1hour</option>
@@ -150,17 +191,44 @@ body{
 <button onclick="addKey()">ADD KEY</button>
 
 <div id="stockList"></div>
+</div>
 
-<h3>REQUESTS</h3>
+<!-- REQUEST -->
+<div id="requestPage" class="container hidden">
+<div class="card">REQUESTS</div>
 <div id="data"></div>
-
 </div>
 
 <script>
 
+// SIDEBAR
+function openMenu(){
+sidebar.classList.add("active");
+overlay.classList.add("active");
+}
+function closeMenu(){
+sidebar.classList.remove("active");
+overlay.classList.remove("active");
+}
+
+// NAV
+function go(p){
+dashboard.classList.add("hidden");
+stockPage.classList.add("hidden");
+requestPage.classList.add("hidden");
+
+document.getElementById(p).classList.remove("hidden");
+
+if(p==="dashboard") loadDashboard();
+if(p==="requestPage") loadRequests();
+if(p==="stockPage") loadStock();
+
+closeMenu();
+}
+
 // LOGIN
 async function login(){
-let res = await fetch("/login",{
+let res=await fetch("/login",{
 method:"POST",
 headers:{'Content-Type':'application/json'},
 body:JSON.stringify({
@@ -170,33 +238,60 @@ device:navigator.userAgent
 })
 });
 
-let d = await res.json();
+let d=await res.json();
 
 if(d.status==="ok"){
 loginWrap.style.display="none";
-panel.classList.remove("hidden");
+dashboard.classList.remove("hidden");
 
-loadStock();
-loadRequests();
+loadDashboard();
 }else{
 alert("Wrong Login");
 }
 }
 
+// DASHBOARD
+async function loadDashboard(){
+
+let res=await fetch("/admin/data");
+let arr=await res.json();
+
+let sales=0,pending=0;
+let stats={"1hour":0,"3hour":0,"1day":0,"3day":0,"7day":0};
+
+arr.forEach(x=>{
+if(x.status==="approved"){
+sales++;
+stats[x.plan]++;
+}
+if(x.status==="pending") pending++;
+});
+
+totalSales.innerText="Sales: "+sales;
+pendingReq.innerText="Pending: "+pending;
+
+// GRAPH
+let g="";
+for(let p in stats){
+g+=`${p}<div class="bar" style="width:${stats[p]*20}px"></div>`;
+}
+graph.innerHTML=g;
+
+loadStockCount();
+}
+
 // REQUEST
 async function loadRequests(){
-let res = await fetch("/admin/data");
-let arr = await res.json();
+let res=await fetch("/admin/data");
+let arr=await res.json();
 
 let html="";
-
 arr.forEach(x=>{
 if(x.status==="pending"){
 html+=`
 <div class="card">
 ${x.plan}<br>
 UTR: ${x.utr || "N/A"}<br>
-Time: ${x.time}<br>
 <button onclick="verify(${x.id},this)">YES</button>
 <button onclick="reject(${x.id},this)">NO</button>
 </div>`;
@@ -210,7 +305,7 @@ data.innerHTML=html;
 async function verify(id,btn){
 btn.parentElement.remove();
 await fetch("/admin/verify/"+id);
-loadStock();
+loadDashboard();
 }
 
 // REJECT
@@ -224,18 +319,25 @@ async function loadStock(){
 let res=await fetch("/admin/stock");
 let data=await res.json();
 
-let html="",total=0;
-
+let html="";
 for(let p in data){
 html+=`<div class="card">${p}<br>`;
-data[p].forEach(k=>{
-html+=k+"<br>";
-total++;
-});
+data[p].forEach(k=>html+=k+"<br>");
 html+="</div>";
 }
-
 stockList.innerHTML=html;
+}
+
+// STOCK COUNT
+async function loadStockCount(){
+let res=await fetch("/admin/stock");
+let data=await res.json();
+
+let total=0;
+for(let p in data){
+total+=data[p].length;
+}
+
 stockCount.innerText="Stock: "+total;
 }
 
@@ -252,12 +354,12 @@ key:newkey.value
 
 newkey.value="";
 loadStock();
+loadStockCount();
 }
 
-// AUTO REFRESH
+// AUTO
 setInterval(()=>{
-loadStock();
-loadRequests();
+loadDashboard();
 },3000);
 
 </script>
