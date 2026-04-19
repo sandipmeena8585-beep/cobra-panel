@@ -10,11 +10,56 @@
       font-family: Arial;
       background: #0f172a;
       color: white;
-      padding: 10px;
     }
 
     h2 {
       text-align: center;
+      padding: 10px;
+    }
+
+    /* 🔹 TOP BAR */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #020617;
+      padding: 12px;
+    }
+
+    .menu-btn {
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    /* 🔹 SIDEBAR */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -250px;
+      width: 250px;
+      height: 100%;
+      background: #1e293b;
+      padding: 20px;
+      transition: 0.3s;
+      z-index: 1000;
+    }
+
+    .sidebar.active {
+      left: 0;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 12px;
+      margin: 8px 0;
+      background: #334155;
+      border-radius: 8px;
+      text-decoration: none;
+      color: white;
+    }
+
+    .content {
+      padding: 10px;
     }
 
     .toggle {
@@ -66,6 +111,23 @@
 
 <body>
 
+<!-- 🔹 SIDEBAR -->
+<div id="sidebar" class="sidebar">
+  <h3>⚡ MENU</h3>
+  <a href="#">Dashboard</a>
+  <a href="#">Users</a>
+  <a href="#">Payments</a>
+  <a href="#" onclick="logout()">Logout</a>
+</div>
+
+<!-- 🔹 TOPBAR -->
+<div class="topbar">
+  <div class="menu-btn" onclick="toggleMenu()">☰</div>
+  <div>ADMIN PANEL</div>
+</div>
+
+<div class="content">
+
 <h2>⚡ ADMIN DASHBOARD</h2>
 
 <button id="toggleBtn" class="toggle" onclick="toggleSystem()">SYSTEM: ON</button>
@@ -74,66 +136,87 @@
 
 <button class="logout" onclick="logout()">Logout</button>
 
+</div>
+
 <script>
-let systemOn = true;
 
-// Dummy data (abhi testing ke liye)
-let data = [
-  { user: "Rahul", plan: "1 DAY" },
-  { user: "Amit", plan: "7 DAYS" }
-];
+// 🔹 Sidebar toggle
+function toggleMenu(){
+  document.getElementById("sidebar").classList.toggle("active");
+}
 
+// 🔹 Load requests from backend
 function render(){
-  let html = "";
+  fetch("/requests")
+  .then(res => res.json())
+  .then(data => {
 
-  data.forEach((item, i) => {
-    html += `
-      <div class="card">
-        <p><b>User:</b> ${item.user}</p>
-        <p><b>Plan:</b> ${item.plan}</p>
+    let html = "";
 
-        <div class="btns">
-          <button class="approve" onclick="approve(${i})">Approve</button>
-          <button class="reject" onclick="reject(${i})">Reject</button>
+    data.forEach((item) => {
+      html += `
+        <div class="card">
+          <p><b>User:</b> ${item.user}</p>
+          <p><b>Plan:</b> ${item.plan}</p>
+
+          <div class="btns">
+            <button class="approve" onclick="approve('${item.user}')">Approve</button>
+            <button class="reject" onclick="reject('${item.user}')">Reject</button>
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    });
+
+    document.getElementById("requests").innerHTML = html;
   });
-
-  document.getElementById("requests").innerHTML = html;
 }
 
-function approve(i){
-  alert("Approved: " + data[i].user);
-  data.splice(i,1);
-  render();
+// 🔹 Approve
+function approve(user){
+  fetch("/approve", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ user })
+  }).then(() => render());
 }
 
-function reject(i){
-  alert("Rejected: " + data[i].user);
-  data.splice(i,1);
-  render();
+// 🔹 Reject
+function reject(user){
+  fetch("/reject", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ user })
+  }).then(() => render());
 }
 
+// 🔹 Toggle system
 function toggleSystem(){
-  systemOn = !systemOn;
+  fetch("/toggle", { method: "POST" })
+  .then(res => res.json())
+  .then(data => {
+    let btn = document.getElementById("toggleBtn");
 
-  let btn = document.getElementById("toggleBtn");
-
-  if(systemOn){
-    btn.innerText = "SYSTEM: ON";
-    btn.classList.remove("off");
-  } else {
-    btn.innerText = "SYSTEM: OFF";
-    btn.classList.add("off");
-  }
+    if(data.on){
+      btn.innerText = "SYSTEM: ON";
+      btn.classList.remove("off");
+    } else {
+      btn.innerText = "SYSTEM: OFF";
+      btn.classList.add("off");
+    }
+  });
 }
 
+// 🔹 Logout
 function logout(){
   window.location.href = "/admin";
 }
 
+// 🔹 Auto refresh
+setInterval(render, 3000);
+
+// 🔹 First load
 render();
+
 </script>
 
 </body>
