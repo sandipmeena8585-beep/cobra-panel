@@ -14,7 +14,6 @@ body{
   color:white;
 }
 
-/* TOP */
 .topbar{
   display:flex;
   justify-content:space-between;
@@ -28,7 +27,6 @@ body{
   display:none;
 }
 
-/* SIDEBAR */
 .sidebar{
   position:fixed;
   top:0;
@@ -59,7 +57,6 @@ body{
   background:#0f172a;
 }
 
-/* CONTAINER */
 .container{
   padding:15px;
   display:flex;
@@ -74,7 +71,6 @@ body{
   text-align:center;
 }
 
-/* LOGIN */
 .loginBox{
   width:90%;
   max-width:300px;
@@ -117,7 +113,6 @@ button{
   font-weight:bold;
 }
 
-/* TELEGRAM */
 .telegram{
   position:fixed;
   bottom:15px;
@@ -136,7 +131,6 @@ button{
 
 <div id="overlay" class="overlay" onclick="closeMenu()"></div>
 
-<!-- SIDEBAR -->
 <div id="sidebar" class="sidebar">
 <div class="sideItem" onclick="go('panel')">Home</div>
 <div class="sideItem" onclick="go('stockPage')">Stock</div>
@@ -191,7 +185,6 @@ button{
 <div id="data"></div>
 </div>
 
-<!-- TELEGRAM -->
 <div class="telegram" onclick="window.open('https://t.me/GODx_COBRA')">
 📢 Help
 </div>
@@ -237,35 +230,29 @@ async function login(){
     menuBtn.style.display="block";
 
     load();
+    loadStock();
     loadStockCount();
   }else{
     alert("Wrong Login");
   }
 }
 
-// LOAD REQUEST
-async function load(){
-  let res=await fetch("/admin/data");
-  let arr=await res.json();
+// 🔥 STOCK LOAD FIX
+async function loadStock(){
+  let res = await fetch("/admin/stock");
+  let data = await res.json();
 
-  let sales=0,pending=0,html="";
+  let html="";
 
-  arr.forEach(x=>{
-    if(x.status==="pending"){
-      pending++;
-      html+=`
-      <div class="card">
-      ${x.plan}
-      <button onclick="verify(${x.id})">✔</button>
-      <button onclick="reject(${x.id})">❌</button>
-      </div>`;
-    }
-    if(x.status==="approved") sales++;
-  });
+  for(let p in data){
+    html+=`<div class="card">${p}<br>`;
+    data[p].forEach(k=>{
+      html+=k+"<br>";
+    });
+    html+="</div>";
+  }
 
-  data.innerHTML=html;
-  sales.innerText="Sales: "+sales;
-  pending.innerText="Pending: "+pending;
+  stockList.innerHTML = html;
 }
 
 // STOCK COUNT
@@ -293,17 +280,37 @@ async function addKey(){
   });
 
   newkey.value="";
+  loadStock();       // 🔥 FIX
   loadStockCount();
 }
 
-// VERIFY
+// बाकी same
+async function load(){
+  let res=await fetch("/admin/data");
+  let arr=await res.json();
+
+  let sales=0,pending=0,html="";
+
+  arr.forEach(x=>{
+    if(x.status==="pending"){
+      pending++;
+      html+=`<div class="card">${x.plan}</div>`;
+    }
+    if(x.status==="approved") sales++;
+  });
+
+  data.innerHTML=html;
+  sales.innerText="Sales: "+sales;
+  pending.innerText="Pending: "+pending;
+}
+
 async function verify(id){
   await fetch("/admin/verify/"+id);
   load();
+  loadStock();
   loadStockCount();
 }
 
-// REJECT
 async function reject(id){
   await fetch("/admin/reject/"+id);
   load();
@@ -311,10 +318,10 @@ async function reject(id){
 
 // AUTO REFRESH
 setInterval(()=>{
+  loadStock();
   loadStockCount();
 },3000);
 
-// LOGOUT
 function logout(){
   location.reload();
 }
