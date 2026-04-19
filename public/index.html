@@ -8,7 +8,7 @@
 body{
   margin:0;
   font-family:sans-serif;
-  background:#071226;
+  background:#050d1a;
   color:white;
 }
 
@@ -18,46 +18,55 @@ body{
   padding:15px;
 }
 
+/* 🔥 CARD */
 .card{
   border-radius:20px;
   padding:20px;
   margin-top:20px;
+  background:#0a1628;
+  box-shadow:0 0 20px rgba(0,255,255,0.15);
+  transition:0.3s;
 }
 
-/* STEP COLORS */
-.step1{background:#0f1c2e;}
-.step2{background:#102a43;}
-.step3{background:#1a1f3a;}
-
+/* 🔥 TITLE */
 .title{
   text-align:center;
   font-size:22px;
   font-weight:bold;
-  margin-bottom:15px;
+  margin-bottom:20px;
+  letter-spacing:1px;
+  color:#00f2ff;
+  text-shadow:0 0 10px #00f2ff,0 0 20px #007bff;
 }
 
+/* 🔥 HEADER */
 .header{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  margin-bottom:15px;
 }
 
 .btnTop{
   background:#00f2ff;
   color:black;
   border:none;
-  padding:6px 10px;
+  padding:6px 12px;
   border-radius:8px;
 }
 
+/* INPUT */
 select,input{
   width:100%;
   padding:14px;
   margin:10px 0;
   border-radius:12px;
   border:none;
+  background:#09192e;
+  color:white;
 }
 
+/* BUTTON */
 button{
   width:100%;
   padding:14px;
@@ -65,14 +74,18 @@ button{
   border-radius:12px;
   background:linear-gradient(90deg,#00f2ff,#007bff);
   color:white;
+  font-weight:bold;
 }
 
+/* UPI */
 .mono{
-  background:black;
-  padding:12px;
+  background:#000;
+  padding:14px;
   border-radius:10px;
   text-align:center;
   font-family:monospace;
+  margin-top:10px;
+  border:1px solid #00f2ff;
 }
 
 .hidden{display:none;}
@@ -83,8 +96,8 @@ button{
 
 <div class="container">
 
-<!-- STEP 1 -->
-<div id="step1" class="card step1">
+<!-- 🔥 STEP 1 -->
+<div id="step1" class="card">
 
 <div class="title">COBRA SERVER PANNEL</div>
 
@@ -101,17 +114,17 @@ button{
 
 </div>
 
-<!-- STEP 2 -->
-<div id="step2" class="card step2 hidden">
+<!-- 🔥 STEP 2 -->
+<div id="step2" class="card hidden">
 
 <div class="header">
-<button class="btnTop" onclick="goBack1()">⬅ Back</button>
+<button class="btnTop" onclick="goBack1()">⬅</button>
 <div>PAYMENT</div>
-<button class="btnTop" onclick="goHome()">🏠 Home</button>
+<button class="btnTop" onclick="goHome()">🏠</button>
 </div>
 
 <div class="mono" onclick="copyUPI()">
-UPI: godxcobra@axl (tap to copy)
+UPI: godxcobra@axl
 </div>
 
 <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa=godxcobra@axl"
@@ -122,13 +135,13 @@ style="display:block;margin:auto;margin-top:15px;">
 
 </div>
 
-<!-- STEP 3 -->
-<div id="step3" class="card step3 hidden">
+<!-- 🔥 STEP 3 -->
+<div id="step3" class="card hidden">
 
 <div class="header">
-<button class="btnTop" onclick="goBack2()">⬅ Back</button>
+<button class="btnTop" onclick="goBack2()">⬅</button>
 <div>VERIFY</div>
-<button class="btnTop" onclick="goHome()">🏠 Home</button>
+<button class="btnTop" onclick="goHome()">🏠</button>
 </div>
 
 <select id="method" onchange="changeMethod()">
@@ -188,14 +201,14 @@ function goHome(){
   location.reload();
 }
 
-// METHOD SWITCH
+// METHOD
 function changeMethod(){
   let m=document.getElementById("method").value;
   document.getElementById("utr").style.display=(m==="utr")?"block":"none";
   document.getElementById("file").style.display=(m==="qr")?"block":"none";
 }
 
-// COPY UPI
+// COPY
 function copyUPI(){
   navigator.clipboard.writeText("godxcobra@axl");
   alert("UPI Copied");
@@ -227,7 +240,7 @@ async function submitPayment(){
   check(finalUTR);
 }
 
-// STATUS CHECK
+// STATUS
 function check(utr){
 
   clearInterval(interval);
@@ -241,7 +254,7 @@ function check(utr){
       clearInterval(interval);
 
       document.getElementById("step3").innerHTML=`
-      <h3 style="text-align:center;">🎉 PAYMENT SUCCESS</h3>
+      <h3 style="text-align:center;color:#00f2ff;">🎉 SUCCESS</h3>
       <p style="text-align:center;">🔑 ${d.key}</p>
       <button onclick="navigator.clipboard.writeText('${d.key}')">
       📋 Copy Key
