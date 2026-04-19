@@ -2,7 +2,7 @@ const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
 
-// ✅ fetch fix
+// ✅ fetch fix (Node 18+ compatible)
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const app = express();
@@ -13,7 +13,7 @@ app.use(express.static("public"));
 
 const upload = multer({dest:"uploads/"});
 
-// ⚠️ IMPORTANT: NEW TOKEN USE KAR (old leak ho gaya hai)
+// ⚠️ TOKEN (abhi ke liye direct, baad me env karenge)
 const BOT_TOKEN = "8390006157:AAH_RN5sNPtD3hgsizK2DXkoiquLTRUYpEI";
 const CHAT_ID = "7707237527";
 
@@ -40,7 +40,7 @@ function saveData(data){
   fs.writeFileSync(FILE, JSON.stringify(data,null,2));
 }
 
-// ===== ✅ TELEGRAM SEND (FINAL FIX) =====
+// ===== TELEGRAM SEND =====
 async function sendTelegram(msg){
   try{
     console.log("📤 Sending Telegram...");
@@ -72,7 +72,7 @@ app.post("/admin/addkey",(req,res)=>{
   res.json({ok:true});
 });
 
-// ===== DELETE =====
+// ===== DELETE KEY =====
 app.post("/admin/deletekey",(req,res)=>{
   let data = loadData();
   let {plan,key} = req.body;
@@ -90,7 +90,7 @@ app.get("/admin/stock",(req,res)=>{
   res.json(loadData().stock);
 });
 
-// ===== BUY =====
+// ===== BUY REQUEST =====
 app.post("/buy", upload.single("file"), async (req,res)=>{
 
   console.log("🔥 NEW BUY REQUEST");
@@ -109,6 +109,7 @@ app.post("/buy", upload.single("file"), async (req,res)=>{
   data.requests.push(request);
   saveData(data);
 
+  // 🔥 TELEGRAM ALERT
   await sendTelegram(
 `🔥 NEW PAYMENT
 
@@ -183,6 +184,14 @@ app.get("/status/:utr",(req,res)=>{
   res.json(r || {status:"pending"});
 });
 
+// ===== TEST ROUTE (IMPORTANT DEBUG) =====
+app.get("/test", async (req,res)=>{
+  let msg = "🚀 TEST MESSAGE FROM SERVER";
+
+  await sendTelegram(msg);
+
+  res.send("Test sent");
+});
+
 // ===== START =====
 app.listen(3000,()=>console.log("🚀 SERVER RUNNING"));
-// restart
