@@ -12,7 +12,7 @@ app.use(express.static("public"));
 const upload = multer({dest:"uploads/"});
 
 // 🔥 TELEGRAM CONFIG
-const BOT_TOKEN = "8390006157:AAHEljV65Rrb-hieT-Opl4H5W_qRM-SHIN8";
+const BOT_TOKEN = "8390006157:AAFyEdJMkvxV_rPc9IHhQkXOJkKCWEDxJGg";
 const CHAT_ID = "7707237527";
 
 // 🔥 DATA FILE
