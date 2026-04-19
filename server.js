@@ -1,9 +1,7 @@
 const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
-
-// ✅ fetch fix
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const axios = require("axios"); // ✅ IMPORTANT
 
 const app = express();
 
@@ -13,7 +11,7 @@ app.use(express.static("public"));
 
 const upload = multer({dest:"uploads/"});
 
-// ⚠️ TOKEN
+// 🔐 TOKEN
 const BOT_TOKEN = "8390006157:AAH_RN5sNPtD3hgsizK2DXkoiquLTRUYpEI";
 const CHAT_ID = "7707237527";
 
@@ -40,24 +38,29 @@ function saveData(data){
   fs.writeFileSync(FILE, JSON.stringify(data,null,2));
 }
 
-// ===== TELEGRAM SEND =====
+// ===== TELEGRAM SEND (AXIOS FIX) =====
 async function sendTelegram(msg){
   try{
     console.log("📤 Sending Telegram...");
 
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}`;
+    let res = await axios.get(
+      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+      {
+        params:{
+          chat_id: CHAT_ID,
+          text: msg
+        }
+      }
+    );
 
-    let res = await fetch(url);
-    let data = await res.json();
-
-    console.log("📡 TELEGRAM RESPONSE:", data);
+    console.log("📡 TELEGRAM RESPONSE:", res.data);
 
   }catch(e){
     console.log("❌ TELEGRAM ERROR:", e.message);
   }
 }
 
-// ===== TEST ROUTE (IMPORTANT) =====
+// ===== TEST ROUTE =====
 app.get("/test", async (req,res)=>{
   await sendTelegram("🚀 TEST MESSAGE FROM SERVER");
   res.send("Test Done");
@@ -72,8 +75,6 @@ app.post("/admin/addkey",(req,res)=>{
 
   data.stock[plan].push(key);
 
-  console.log("✅ KEY ADDED:", plan, key);
-
   saveData(data);
   res.json({ok:true});
 });
@@ -84,8 +85,6 @@ app.post("/admin/deletekey",(req,res)=>{
   let {plan,key} = req.body;
 
   data.stock[plan] = data.stock[plan].filter(k=>k!==key);
-
-  console.log("❌ KEY DELETED:", key);
 
   saveData(data);
   res.send("deleted");
@@ -98,8 +97,6 @@ app.get("/admin/stock",(req,res)=>{
 
 // ===== BUY =====
 app.post("/buy", upload.single("file"), async (req,res)=>{
-
-  console.log("🔥 NEW BUY REQUEST");
 
   let data = loadData();
 
@@ -119,16 +116,11 @@ app.post("/buy", upload.single("file"), async (req,res)=>{
 `🔥 NEW PAYMENT
 
 📦 Plan: ${request.plan}
-🧾 UTR: ${request.utr || "N/A"}
+🧾 UTR: ${request.utr}
 ⏰ Time: ${request.time}`
   );
 
   res.send("ok");
-});
-
-// ===== ADMIN DATA =====
-app.get("/admin/data",(req,res)=>{
-  res.json(loadData().requests);
 });
 
 // ===== VERIFY =====
@@ -149,8 +141,6 @@ app.get("/admin/verify/:id", async (req,res)=>{
 
   saveData(data);
 
-  console.log("✅ VERIFIED:", r.plan, key);
-
   await sendTelegram(
 `✅ PAYMENT VERIFIED
 
@@ -163,14 +153,11 @@ app.get("/admin/verify/:id", async (req,res)=>{
 
 // ===== REJECT =====
 app.get("/admin/reject/:id", async (req,res)=>{
-
   let data = loadData();
   let r = data.requests.find(x=>x.id==req.params.id);
 
   if(r){
     r.status="rejected";
-
-    console.log("❌ REJECTED:", r.plan);
 
     await sendTelegram(
 `❌ PAYMENT REJECTED
@@ -189,5 +176,4 @@ app.get("/status/:utr",(req,res)=>{
   res.json(r || {status:"pending"});
 });
 
-// ===== START =====
 app.listen(3000,()=>console.log("🚀 SERVER RUNNING"));
