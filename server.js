@@ -14,7 +14,7 @@ app.use(express.static("public"));
 const upload = multer({dest:"uploads/"});
 
 // ⚠️ IMPORTANT: NEW TOKEN USE KAR (old leak ho gaya hai)
-const BOT_TOKEN = "8390006157:AAFyEdJMkvxV_rPc9IHhQkXOJkKCWEDxJGg";
+const BOT_TOKEN = "8390006157:AAHkDjlT6VQNTMq-qfwYlPyBh1tQSQv8dVA";
 const CHAT_ID = "7707237527";
 
 const FILE = "data.json";
