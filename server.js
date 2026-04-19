@@ -76,13 +76,43 @@ app.get("/admin/stock",(req,res)=>{
   res.json(loadData().stock);
 });
 
+// STOCK COUNT
+app.get("/admin/stockcount",(req,res)=>{
+  let d=loadData();
+  let total=0;
+
+  for(let p in d.stock){
+    total += d.stock[p].length;
+  }
+
+  res.json({total});
+});
+
 // ADD KEY
 app.post("/admin/addkey",(req,res)=>{
   let d=loadData();
   let {plan,key}=req.body;
 
+  if(!key || !key.trim()){
+    return res.json({ok:false});
+  }
+
   if(!d.stock[plan]) d.stock[plan]=[];
+
   d.stock[plan].push(key);
+
+  saveData(d);
+  res.json({ok:true});
+});
+
+// DELETE KEY
+app.post("/admin/deletekey",(req,res)=>{
+  let d=loadData();
+  let {plan,key}=req.body;
+
+  if(d.stock[plan]){
+    d.stock[plan]=d.stock[plan].filter(k=>k!==key);
+  }
 
   saveData(d);
   res.json({ok:true});
@@ -110,17 +140,26 @@ app.post("/buy",upload.single("file"), async (req,res)=>{
   res.send("ok");
 });
 
-// VERIFY (YES PAYMENT)
+// ✅ VERIFY (KEY REMOVE FROM STOCK)
 app.get("/admin/verify/:id", async (req,res)=>{
   let d=loadData();
   let r=d.requests.find(x=>x.id==req.params.id);
 
-  let key=d.stock[r.plan]?.shift() || "NO KEY";
+  if(!r) return res.send("not found");
+
+  // 🔥 REMOVE KEY FROM STOCK
+  let key = "NO KEY";
+
+  if(d.stock[r.plan] && d.stock[r.plan].length > 0){
+    key = d.stock[r.plan].shift(); // ✅ REMOVE HERE
+  }
 
   r.status="approved";
   r.key=key;
 
   let expiry = new Date(Date.now()+86400000).toLocaleString();
+
+  saveData(d);
 
   await sendTelegram(
 `✅ PAYMENT RECEIVED
@@ -138,11 +177,10 @@ OBB: https://t.me/c/3525686026/45
 ⚠ Kill limit 10-12 | Play Safe`
   );
 
-  saveData(d);
   res.send("ok");
 });
 
-// REJECT (NO PAYMENT)
+// REJECT
 app.get("/admin/reject/:id", async (req,res)=>{
   let d=loadData();
   let r=d.requests.find(x=>x.id==req.params.id);
