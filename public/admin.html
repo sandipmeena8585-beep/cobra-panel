@@ -1,5 +1,26 @@
 <script>
 
+// ✅ ELEMENT FIX (MOST IMPORTANT)
+const dashboard = document.getElementById("dashboard");
+const stockPage = document.getElementById("stockPage");
+const requestPage = document.getElementById("requestPage");
+const sidebar = document.getElementById("sidebar");
+const overlay = document.getElementById("overlay");
+const loginWrap = document.getElementById("loginWrap");
+
+const totalSales = document.getElementById("totalSales");
+const pendingReq = document.getElementById("pendingReq");
+const todaySales = document.getElementById("todaySales");
+const stockCount = document.getElementById("stockCount");
+const graph = document.getElementById("graph");
+const data = document.getElementById("data");
+const stockList = document.getElementById("stockList");
+
+const user = document.getElementById("user");
+const pass = document.getElementById("pass");
+const plan = document.getElementById("plan");
+const newkey = document.getElementById("newkey");
+
 // MENU
 function openMenu(){
   sidebar.classList.add("active");
@@ -10,7 +31,7 @@ function closeMenu(){
   overlay.classList.remove("active");
 }
 
-// NAV (🔥 ACTIVE FIX)
+// NAV
 function go(p,el){
 
   document.querySelectorAll(".sideItem").forEach(x=>{
@@ -47,9 +68,13 @@ async function login(){
   let d=await res.json();
 
   if(d.status==="ok"){
+
     loginWrap.style.display="none";
-    dashboard.classList.remove("hidden");
-    loadDashboard();
+
+    go("dashboard");
+
+    document.querySelectorAll(".sideItem")[0].classList.add("active");
+
   }else{
     alert("Wrong Login");
   }
@@ -82,7 +107,6 @@ async function loadDashboard(){
   pendingReq.innerText="Pending: "+pending;
   todaySales.innerText="Today Sales: "+today;
 
-  // GRAPH FIX
   let g="";
   for(let p in stats){
     g+=`${p}<div class="bar" style="width:${stats[p]*25}px"></div>`;
@@ -105,7 +129,7 @@ async function loadStockCount(){
   stockCount.innerText="Stock: "+total;
 }
 
-// REQUEST (🔥 FULL DETAILS)
+// REQUEST
 async function loadRequests(){
 
   let res=await fetch("/admin/data");
@@ -120,9 +144,7 @@ async function loadRequests(){
       <div class="card">
 
       <b>Plan:</b> ${x.plan}<br><br>
-
       <b>UTR:</b> ${x.utr || "N/A"}<br><br>
-
       <b>Time:</b> ${x.time || "N/A"}<br><br>
 
       ${x.file ? `<img src="/uploads/${x.file}" style="width:100%;border-radius:10px;"><br><br>`:""}
@@ -137,7 +159,7 @@ async function loadRequests(){
   data.innerHTML = html || "<div class='card'>No Requests</div>";
 }
 
-// VERIFY (🔥 HIDE + KEY REMOVE)
+// VERIFY
 async function verify(id,btn){
   btn.parentElement.style.opacity="0";
   setTimeout(()=>btn.parentElement.remove(),200);
@@ -168,7 +190,6 @@ async function loadStock(){
 
     html+=`<div class="card"><b>${p}</b><br>`;
 
-    // 🔥 LOW STOCK WARNING
     if(data[p].length < 3){
       html+="⚠ Low Stock<br>";
     }
@@ -206,8 +227,9 @@ async function addKey(){
   loadStockCount();
 }
 
-// AUTO REFRESH (🔥 SAFE)
+// AUTO REFRESH
 setInterval(()=>{
+
   if(!dashboard.classList.contains("hidden")){
     loadDashboard();
   }
