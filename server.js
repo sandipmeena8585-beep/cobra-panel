@@ -2,7 +2,7 @@ const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
 
-// ✅ fetch fix (Node 18+ compatible)
+// ✅ fetch fix
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const app = express();
@@ -13,7 +13,7 @@ app.use(express.static("public"));
 
 const upload = multer({dest:"uploads/"});
 
-// ⚠️ TOKEN (abhi ke liye direct, baad me env karenge)
+// ⚠️ TOKEN
 const BOT_TOKEN = "8390006157:AAH_RN5sNPtD3hgsizK2DXkoiquLTRUYpEI";
 const CHAT_ID = "7707237527";
 
@@ -57,6 +57,12 @@ async function sendTelegram(msg){
   }
 }
 
+// ===== TEST ROUTE (IMPORTANT) =====
+app.get("/test", async (req,res)=>{
+  await sendTelegram("🚀 TEST MESSAGE FROM SERVER");
+  res.send("Test Done");
+});
+
 // ===== ADD KEY =====
 app.post("/admin/addkey",(req,res)=>{
   let data = loadData();
@@ -72,7 +78,7 @@ app.post("/admin/addkey",(req,res)=>{
   res.json({ok:true});
 });
 
-// ===== DELETE KEY =====
+// ===== DELETE =====
 app.post("/admin/deletekey",(req,res)=>{
   let data = loadData();
   let {plan,key} = req.body;
@@ -90,7 +96,7 @@ app.get("/admin/stock",(req,res)=>{
   res.json(loadData().stock);
 });
 
-// ===== BUY REQUEST =====
+// ===== BUY =====
 app.post("/buy", upload.single("file"), async (req,res)=>{
 
   console.log("🔥 NEW BUY REQUEST");
@@ -109,7 +115,6 @@ app.post("/buy", upload.single("file"), async (req,res)=>{
   data.requests.push(request);
   saveData(data);
 
-  // 🔥 TELEGRAM ALERT
   await sendTelegram(
 `🔥 NEW PAYMENT
 
@@ -182,15 +187,6 @@ app.get("/admin/reject/:id", async (req,res)=>{
 app.get("/status/:utr",(req,res)=>{
   let r = loadData().requests.find(x=>x.utr==req.params.utr);
   res.json(r || {status:"pending"});
-});
-
-// ===== TEST ROUTE (IMPORTANT DEBUG) =====
-app.get("/test", async (req,res)=>{
-  let msg = "🚀 TEST MESSAGE FROM SERVER";
-
-  await sendTelegram(msg);
-
-  res.send("Test sent");
 });
 
 // ===== START =====
