@@ -1,5 +1,13 @@
 <script>
 
+// ELEMENT FIX
+const panel = document.getElementById("panel");
+const stockPage = document.getElementById("stockPage");
+const requestPage = document.getElementById("requestPage");
+const dataBox = document.getElementById("data");
+const stockList = document.getElementById("stockList");
+const stockCount = document.getElementById("stockCount");
+
 // MENU
 function toggleMenu(){
   sidebar.classList.add("active");
@@ -15,6 +23,7 @@ function go(p){
   panel.classList.add("hidden");
   stockPage.classList.add("hidden");
   requestPage.classList.add("hidden");
+
   document.getElementById(p).classList.remove("hidden");
 
   if(p==="requestPage"){
@@ -49,7 +58,7 @@ async function login(){
   }
 }
 
-// 🔥 FULL REQUEST DETAILS
+// 🔥 REQUEST LOAD FIXED
 async function loadRequests(){
   let res = await fetch("/admin/data");
   let arr = await res.json();
@@ -58,6 +67,11 @@ async function loadRequests(){
 
   arr.reverse().forEach(x=>{
     if(x.status==="pending"){
+
+      let img = "";
+      if(x.file){
+        img = "<b>📸 Screenshot:</b><br><img src='/uploads/"+x.file+"' style='width:100%;border-radius:10px;margin-top:5px;'><br><br>";
+      }
 
       html += `
       <div class="card">
@@ -68,10 +82,7 @@ async function loadRequests(){
 
         <b>⏰ Time:</b> ${x.time || "N/A"}<br><br>
 
-        ${x.file ? `
-        <b>📸 Screenshot:</b><br>
-        <img src="/uploads/${x.file}" style="width:100%;border-radius:10px;margin-top:5px;"><br><br>
-        ` : ""}
+        ${img}
 
         <button onclick="verify(${x.id},event)">✅ YES PAYMENT</button>
         <button onclick="reject(${x.id},event)">❌ NO PAYMENT</button>
@@ -80,12 +91,11 @@ async function loadRequests(){
     }
   });
 
-  data.innerHTML = html || "<div class='card'>No Requests</div>";
+  dataBox.innerHTML = html || "<div class='card'>No Requests</div>";
 }
 
-// ✅ VERIFY (INSTANT HIDE + KEY REMOVE)
+// VERIFY
 async function verify(id,e){
-
   let card = e.target.closest(".card");
 
   card.style.opacity="0";
@@ -97,9 +107,8 @@ async function verify(id,e){
   loadStockCount();
 }
 
-// ❌ REJECT (INSTANT HIDE)
+// REJECT
 async function reject(id,e){
-
   let card = e.target.closest(".card");
 
   card.style.opacity="0";
