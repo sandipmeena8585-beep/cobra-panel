@@ -68,14 +68,9 @@ button{
   font-weight:600;
   font-size:14px;
   margin-top:10px;
-  transition:0.2s;
 }
 
-button:active{
-  transform:scale(0.96);
-}
-
-/* UPI BOX */
+/* UPI */
 .mono{
   background:#000;
   padding:12px;
@@ -83,7 +78,6 @@ button:active{
   text-align:center;
   font-family:monospace;
   border:1px solid #00f2ff;
-  font-size:14px;
 }
 
 /* QR */
@@ -157,11 +151,17 @@ width="200">
 
 <!-- STEP 4 -->
 <div id="step4" class="card hidden">
+
+<!-- 🔥 TOP BAR -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+  <span style="font-size:18px;cursor:pointer;" onclick="goBack3()">⬅</span>
+  <span style="font-size:18px;cursor:pointer;" onclick="goHome()">🏠</span>
+</div>
+
 <div class="heading">ACCESS KEY</div>
 
 <div id="keyBox" style="text-align:center;"></div>
 
-<button onclick="goHome()">HOME</button>
 </div>
 
 </div>
@@ -179,7 +179,7 @@ function show(id){
   document.getElementById(id).classList.remove("hidden");
 }
 
-// STEP 1 → 2
+// STEP FLOW
 function goStep2(){
   selectedPlan=document.getElementById("plan").value;
   if(!selectedPlan){
@@ -189,17 +189,26 @@ function goStep2(){
   show("step2");
 }
 
-// STEP 2 → 3
 function goStep3(){
   show("step3");
 }
 
-// COPY
+// BACK FROM STEP 4
+function goBack3(){
+  show("step3");
+}
+
+// HOME
+function goHome(){
+  location.reload();
+}
+
+// COPY UPI
 function copyUPI(){
   navigator.clipboard.writeText("godxcobra@axl");
 }
 
-// METHOD
+// METHOD SWITCH
 function changeMethod(){
   let m=document.getElementById("method").value;
   document.getElementById("utr").style.display=(m==="utr")?"block":"none";
@@ -232,7 +241,7 @@ async function submitPayment(){
   check(finalUTR);
 }
 
-// CHECK
+// CHECK STATUS
 function check(utr){
 
   clearInterval(interval);
@@ -261,11 +270,6 @@ function check(utr){
     }
 
   },2000);
-}
-
-// HOME
-function goHome(){
-  location.reload();
 }
 
 </script>
