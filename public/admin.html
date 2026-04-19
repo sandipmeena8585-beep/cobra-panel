@@ -1,244 +1,180 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COBRA ADMIN</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
-
-<style>
-body{
-  margin:0;
-  font-family:'Poppins',sans-serif;
-  background:#020617;
-  color:white;
-}
-
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  padding:12px 15px;
-}
-
-.sidebar{
-  position:fixed;
-  left:-260px;
-  width:240px;
-  height:100%;
-  background:#020617;
-  transition:0.3s;
-}
-.sidebar.active{left:0;}
-
-.container{
-  padding:15px;
-}
-
-.card{
-  padding:15px;
-  border-radius:15px;
-  background:linear-gradient(135deg,#16a34a,#22c55e);
-  margin-bottom:10px;
-}
-
-.loginBox{
-  width:90%;
-  max-width:300px;
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  background:#0b1220;
-  border-radius:15px;
-}
-
-.loginTop{
-  padding:20px;
-  text-align:center;
-  background:linear-gradient(135deg,#0f766e,#22c55e);
-}
-
-.loginBody{
-  padding:15px;
-}
-
-input,select{
-  width:100%;
-  padding:10px;
-  margin:6px 0;
-  border-radius:10px;
-  border:none;
-  background:#111827;
-  color:white;
-}
-
-button{
-  width:100%;
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  background:#22c55e;
-  color:white;
-  margin-top:5px;
-}
-
-.hidden{display:none;}
-</style>
-</head>
-
-<body>
-
-<!-- LOGIN -->
-<div id="loginBox" class="loginBox">
-<div class="loginTop">Welcome Back</div>
-<div class="loginBody">
-<input id="user" placeholder="Username">
-<input id="pass" placeholder="Password">
-<button onclick="login()">LOGIN</button>
-</div>
-</div>
-
-<!-- PANEL -->
-<div id="panel" class="container hidden">
-
-<div class="card" id="stockCount">Stock: 0</div>
-
-<!-- STOCK -->
-<div class="card">
-<select id="plan">
-<option value="1hour">1 Hour</option>
-<option value="3hour">3 Hour</option>
-<option value="1day">1 Day</option>
-<option value="3day">3 Day</option>
-<option value="7day">7 Day</option>
-</select>
-
-<input id="newkey" placeholder="Enter Key">
-<button onclick="addKey()">ADD KEY</button>
-</div>
-
-<div id="stockList"></div>
-
-<h3>REQUESTS</h3>
-<div id="data"></div>
-
-</div>
-
 <script>
 
-// LOGIN
-async function login(){
-let res = await fetch("/login",{
-method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({
-user:user.value,
-pass:pass.value,
-device:navigator.userAgent
-})
-});
+let temp = [];
 
-let d = await res.json();
+// LOAD REQUEST
+async function load(){
 
-if(d.status==="ok"){
-loginBox.style.display="none";
-panel.classList.remove("hidden");
+  let res = await fetch("/admin/data");
+  let arr = await res.json();
 
-loadStock();
-loadRequests();
-}else{
-alert("Wrong Login");
-}
-}
+  let sales=0,pending=0,html="";
 
-// REQUEST LOAD (FULL DETAIL)
-async function loadRequests(){
-let res = await fetch("/admin/data");
-let arr = await res.json();
+  arr.forEach(x=>{
 
-let html="";
+    if(x.status==="pending"){
+      pending++;
 
-arr.reverse().forEach(x=>{
-if(x.status==="pending"){
+      html += `
+      <div class="card">
+        <b>${x.plan}</b><br>
+        UTR: ${x.utr || "N/A"}<br>
+        Time: ${x.time || "N/A"}<br><br>
 
-html+=`
-<div class="card">
+        <button onclick="verify(${x.id},this)">VERIFY</button>
+        <button onclick="reject(${x.id},this)">REJECT</button>
+      </div>`;
+    }
 
-<b>Plan:</b> ${x.plan}<br>
-<b>UTR:</b> ${x.utr || "N/A"}<br>
-<b>Time:</b> ${x.time || "N/A"}<br><br>
+    if(x.status==="approved") sales++;
+  });
 
-${x.file ? `<img src="/uploads/${x.file}" style="width:100%;border-radius:10px;">` : ""}
-
-<button onclick="verify(${x.id},this)">✅ YES</button>
-<button onclick="reject(${x.id},this)">❌ NO</button>
-
-</div>`;
-}
-});
-
-data.innerHTML = html || "<div class='card'>No Requests</div>";
+  data.innerHTML = html;
+  salesBox.innerText = "Sales: "+sales;
+  pendingBox.innerText = "Pending: "+pending;
 }
 
-// VERIFY (REMOVE + HIDE)
+
+// ANALYTICS
+async function loadAnalytics(){
+
+  let res = await fetch("/admin/data");
+  let arr = await res.json();
+
+  let total=0;
+  let stats={"1hour":0,"3hour":0,"1day":0,"3day":0,"7day":0};
+
+  arr.forEach(x=>{
+    if(x.status==="approved"){
+      total++;
+      stats[x.plan]++;
+    }
+  });
+
+  let html = `<div class="card">Total Sales: ${total}</div>
+              <div class="card">`;
+
+  for(let p in stats){
+    html += `${p} → ${stats[p]}<br>`;
+  }
+
+  html += "</div>";
+
+  analytics.innerHTML = html;
+}
+
+
+// VERIFY
 async function verify(id,btn){
-btn.parentElement.remove();
-await fetch("/admin/verify/"+id);
-loadStock();
+  await fetch("/admin/verify/"+id);
+  btn.parentElement.remove(); // 🔥 hide instantly
+  load();
+  loadAnalytics();
 }
 
-// REJECT (HIDE)
+// REJECT
 async function reject(id,btn){
-btn.parentElement.remove();
-await fetch("/admin/reject/"+id);
+  await fetch("/admin/reject/"+id);
+  btn.parentElement.remove();
+  load();
 }
+
 
 // STOCK
 async function loadStock(){
-let res = await fetch("/admin/stock");
-let data = await res.json();
 
-let html="",total=0;
+  let s = await fetch("/admin/stock?"+Date.now());
+  let st = await s.json();
 
-for(let p in data){
-html+=`<div class="card"><b>${p}</b><br>`;
+  let html="";
 
-data[p].forEach(k=>{
-html+=k+"<br>";
-total++;
-});
+  for(let p in st){
 
-html+="</div>";
+    html += `<div class="card"><b>${p}</b><br>`;
+
+    st[p].forEach(k=>{
+      html += `
+      ${k}
+      <button onclick="del('${p}','${k}')">❌</button><br>`;
+    });
+
+    html += "</div>";
+  }
+
+  stockList.innerHTML = html;
+
+  // TEMP KEYS (10 sec show)
+  let now = Date.now();
+  temp = temp.filter(t => now - t.time < 10000);
+
+  let tHTML="";
+  temp.forEach(t=>{
+    tHTML += `<div class="card">${t.key}</div>`;
+  });
+
+  tempKeys.innerHTML = tHTML;
 }
 
-stockList.innerHTML = html;
-stockCount.innerText="Stock: "+total;
-}
 
 // ADD KEY
 async function addKey(){
-if(!newkey.value.trim()) return;
 
-await fetch("/admin/addkey",{
-method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({
-plan:plan.value,
-key:newkey.value
-})
-});
+  let p = plan.value;
+  let k = newkey.value.trim();
 
-newkey.value="";
-loadStock();
+  if(!k) return alert("Enter Key");
+
+  await fetch("/admin/addkey",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({plan:p,key:k})
+  });
+
+  temp.push({key:k,time:Date.now()});
+
+  newkey.value="";
+  loadStock();
 }
+
+
+// DELETE KEY
+async function del(p,k){
+  await fetch("/admin/deletekey",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({plan:p,key:k})
+  });
+
+  loadStock();
+}
+
+
+// ALL STOCK VIEW
+async function loadAll(){
+
+  let s = await fetch("/admin/stock");
+  let st = await s.json();
+
+  let html="";
+
+  for(let p in st){
+    html += `<div class="card"><b>${p}</b><br>`;
+    st[p].forEach(k=> html += k+"<br>");
+    html += "</div>";
+  }
+
+  allKeys.innerHTML = html;
+}
+
 
 // AUTO REFRESH
 setInterval(()=>{
-loadStock();
-loadRequests();
-},3000);
+  if(!stockPage.classList.contains("hidden")){
+    loadStock();
+  }else{
+    load();
+    loadAnalytics();
+  }
+},2000);
 
 </script>
-
-</body>
-</html>
