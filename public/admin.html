@@ -1,231 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COBRA ADMIN</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
-
-<style>
-body{
-  margin:0;
-  font-family:'Poppins',sans-serif;
-  background:#020617;
-  color:white;
-}
-
-/* HEADER FIX */
-.header{
-  display:flex;
-  align-items:center;
-  padding:14px;
-  border-bottom:1px solid #111;
-  gap:10px;
-}
-
-.menu{font-size:22px;cursor:pointer;}
-
-/* SIDEBAR */
-.sidebar{
-  position:fixed;
-  top:0;
-  left:-260px;
-  width:240px;
-  height:100%;
-  background:#0f172a;
-  padding:15px;
-  transition:0.3s;
-}
-.sidebar.active{left:0;}
-
-.sideItem{
-  padding:12px;
-  margin:8px 0;
-  border-radius:10px;
-  background:#1e293b;
-  cursor:pointer;
-}
-
-.overlay{
-  position:fixed;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.5);
-  display:none;
-}
-.overlay.active{display:block;}
-
-.container{padding:12px;}
-
-.card{
-  padding:14px;
-  border-radius:14px;
-  background:linear-gradient(135deg,#16a34a,#22c55e);
-  margin-bottom:10px;
-}
-
-/* LOGIN */
-.loginWrap{
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
-
-.loginBox{
-  width:90%;
-  max-width:320px;
-  background:white;
-  color:black;
-  border-radius:18px;
-}
-
-.loginTop{
-  padding:20px;
-  text-align:center;
-  color:white;
-  background:linear-gradient(135deg,#0f766e,#22c55e);
-}
-
-.loginBody{padding:15px;}
-
-input{
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-  border-radius:8px;
-  border:1px solid #ccc;
-}
-
-button{
-  width:100%;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-  background:#22c55e;
-  color:white;
-  margin-top:6px;
-}
-
-button:active{transform:scale(0.97);}
-
-/* TOGGLE */
-.switch{
-  position:relative;
-  display:inline-block;
-  width:50px;
-  height:26px;
-}
-
-.switch input{display:none;}
-
-.slider{
-  position:absolute;
-  top:0;left:0;right:0;bottom:0;
-  background:#ccc;
-  border-radius:34px;
-}
-
-.slider:before{
-  position:absolute;
-  content:"";
-  height:20px;
-  width:20px;
-  left:3px;
-  bottom:3px;
-  background:white;
-  border-radius:50%;
-  transition:.3s;
-}
-
-input:checked + .slider{
-  background:#22c55e;
-}
-
-input:checked + .slider:before{
-  transform:translateX(24px);
-}
-
-.hidden{display:none;}
-</style>
-</head>
-
-<body>
-
-<div id="overlay" class="overlay" onclick="closeMenu()"></div>
-
-<!-- SIDEBAR -->
-<div id="sidebar" class="sidebar">
-<div class="sideItem" onclick="go('dashboard',this)">Dashboard</div>
-<div class="sideItem" onclick="go('stockPage',this)">Stock</div>
-<div class="sideItem" onclick="go('requestPage',this)">Requests</div>
-</div>
-
-<!-- HEADER FIXED -->
-<div class="header">
-<span class="menu" onclick="openMenu()">☰</span>
-<b>COBRA ADMIN</b>
-</div>
-
-<!-- LOGIN -->
-<div id="loginWrap" class="loginWrap">
-<div class="loginBox">
-<div class="loginTop">Admin Login</div>
-<div class="loginBody">
-<input id="user" placeholder="Username">
-<input id="pass" placeholder="Password" type="password">
-<button onclick="login()">Login</button>
-</div>
-</div>
-</div>
-
-<!-- DASHBOARD -->
-<div id="dashboard" class="container hidden">
-
-<div class="card" id="totalSales">Total Sales: 0</div>
-<div class="card" id="pendingReq">Pending: 0</div>
-<div class="card" id="stockCount">Stock: 0</div>
-<div class="card" id="todaySales">Today: 0</div>
-
-<!-- TOGGLE FIX -->
-<div class="card">
-<b>Customer Panel</b><br><br>
-
-<label class="switch">
-  <input type="checkbox" id="customerToggle" onchange="toggleCustomer()">
-  <span class="slider"></span>
-</label>
-
-<div id="toggleStatus" style="margin-top:10px;font-weight:bold;">OFF</div>
-
-</div>
-
-</div>
-
-<!-- STOCK -->
-<div id="stockPage" class="container hidden">
-<div class="card">Stock Panel</div>
-
-<select id="plan">
-<option value="1hour">1hour</option>
-<option value="3hour">3hour</option>
-<option value="1day">1day</option>
-<option value="3day">3day</option>
-<option value="7day">7day</option>
-</select>
-
-<input id="newkey" placeholder="Enter key">
-<button onclick="addKey()">Add Key</button>
-
-<div id="stockList"></div>
-</div>
-
-<!-- REQUEST -->
-<div id="requestPage" class="container hidden">
-<div class="card">Requests</div>
-<div id="data"></div>
-</div>
-
 <script>
 
 // MENU
@@ -263,22 +35,39 @@ go("dashboard");
 }else alert("Login failed");
 }
 
-// LOAD SETTINGS
+// 🔥 SETTINGS LOAD FIX
 async function loadSettings(){
+toggleStatus.innerText="Please Wait...";
+
+try{
 let res=await fetch("/admin/settings");
 let s=await res.json();
 
 customerToggle.checked = s.customerPanel;
+
 toggleStatus.innerText = s.customerPanel ? "ON" : "OFF";
+}catch{
+toggleStatus.innerText="Error";
+}
 }
 
-// TOGGLE
+// 🔥 TOGGLE FIX (REAL UPDATE)
 async function toggleCustomer(){
+
+toggleStatus.innerText="Please Wait...";
+
+try{
 let res=await fetch("/admin/toggleCustomer",{method:"POST"});
 let d=await res.json();
 
 customerToggle.checked = d.status;
+
+// 🔥 FINAL STATUS SHOW
 toggleStatus.innerText = d.status ? "ON" : "OFF";
+
+}catch{
+toggleStatus.innerText="Error";
+}
 }
 
 // DASHBOARD
@@ -378,6 +167,3 @@ if(!requestPage.classList.contains("hidden")) loadRequests();
 },3000);
 
 </script>
-
-</body>
-</html>
