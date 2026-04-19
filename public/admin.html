@@ -19,7 +19,6 @@ body{
   background:#081426;
   border-radius:18px;
   margin-top:15px;
-  box-shadow:0 0 15px rgba(0,255,255,0.1);
 }
 
 h2,h3{
@@ -51,21 +50,19 @@ button{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:10px;
 }
 
 .logout{
   background:red;
   padding:6px 10px;
   border-radius:8px;
-  cursor:pointer;
 }
 
 .card{
   background:#0c1d33;
   padding:10px;
   border-radius:10px;
-  margin:5px 0;
+  margin:6px 0;
   text-align:center;
 }
 
@@ -74,6 +71,18 @@ button{
   padding:10px;
   margin:10px 0;
   border-radius:10px;
+}
+
+.low{
+  color:red;
+}
+
+.risk-high{
+  border:2px solid red;
+}
+
+.risk-medium{
+  border:2px solid yellow;
 }
 
 .hidden{display:none;}
@@ -91,7 +100,6 @@ button{
 
 <button onclick="login()">LOGIN</button>
 
-<!-- PANEL -->
 <div id="panel" class="hidden">
 
 <div class="topbar">
@@ -102,10 +110,13 @@ button{
 <h3>📊 Dashboard</h3>
 
 <div class="card" id="sales">Sales: 0</div>
-<div class="card" id="stock">Stock: 0</div>
 <div class="card" id="pending">Pending: 0</div>
 
-<h3>📦 Add Stock</h3>
+<!-- 🔥 PLAN STOCK -->
+<h3>📦 STOCK</h3>
+<div id="stockBox"></div>
+
+<h3>📦 Add Key</h3>
 
 <select id="plan">
 <option value="1hour">1 Hour</option>
@@ -115,7 +126,7 @@ button{
 <option value="7day">7 Day</option>
 </select>
 
-<input id="newkey" placeholder="Enter New Key">
+<input id="newkey" placeholder="Enter Key">
 
 <button onclick="addKey()">ADD KEY</button>
 
@@ -131,62 +142,50 @@ button{
 
 <script>
 
-// 🔥 SESSION (2 HOURS)
-function checkSession(){
-  let t = localStorage.getItem("adminLogin");
-
-  if(t && (Date.now()-t < 2*60*60*1000)){
-    document.getElementById("panel").classList.remove("hidden");
-    load();
-  }
-}
-checkSession();
-
 // LOGIN
 function login(){
-  let u=document.getElementById("user").value.trim();
-  let p=document.getElementById("pass").value.trim();
+  let u=user.value.trim();
+  let p=pass.value.trim();
 
   if(u==="COBRA SERVER" && p==="SAMI9166"){
-    localStorage.setItem("adminLogin",Date.now());
-    document.getElementById("panel").classList.remove("hidden");
+    panel.classList.remove("hidden");
+    document.querySelector("h2").style.display="none";
+    user.style.display="none";
+    pass.style.display="none";
+    document.querySelector("button").style.display="none";
     load();
-  }else{
-    alert("Wrong Login");
-  }
+  }else alert("Wrong Login");
 }
 
-// LOGOUT
 function logout(){
-  localStorage.removeItem("adminLogin");
   location.reload();
 }
 
-// 🔥 LOAD DATA
+// LOAD
 async function load(){
 
-  // 🔥 REQUEST + HISTORY
   let res = await fetch("/admin/data");
   let data = await res.json();
 
-  let pendingHTML="";
-  let historyHTML="";
-
-  let sales=0;
-  let pending=0;
+  let html="", historyHTML="";
+  let sales=0,pending=0;
 
   data.forEach(x=>{
+
+    let riskClass="";
+    if(x.risk==="high") riskClass="risk-high";
+    if(x.risk==="medium") riskClass="risk-medium";
 
     if(x.status==="pending"){
       pending++;
 
-      pendingHTML+=`
-      <div class="req">
+      html+=`
+      <div class="req ${riskClass}">
       📦 ${x.plan}<br>
       🧾 ${x.utr}<br>
       ⏰ ${x.time || ""}
       <br>
-      ${x.file ? `<img src="${x.file}" width="100">` : ""}
+      🔑 Next Key: <b id="key-${x.id}">Loading...</b>
       <br>
       <button onclick="verify(${x.id})">VERIFY</button>
       <button onclick="reject(${x.id})">REJECT</button>
@@ -195,38 +194,49 @@ async function load(){
 
     if(x.status==="approved"){
       sales++;
-
-      historyHTML+=`
-      <div class="req">
-      ✅ ${x.plan} → ${x.key}<br>
-      ⏰ ${x.time || ""}
-      </div>`;
+      historyHTML+=`<div class="req">✅ ${x.plan} → ${x.key}</div>`;
     }
 
     if(x.status==="rejected"){
-      historyHTML+=`
-      <div class="req">
-      ❌ ${x.plan} → REJECTED<br>
-      ⏰ ${x.time || ""}
-      </div>`;
+      historyHTML+=`<div class="req">❌ ${x.plan}</div>`;
     }
 
   });
 
-  document.getElementById("data").innerHTML=pendingHTML;
-  document.getElementById("history").innerHTML=historyHTML;
+  dataEl.innerHTML=html;
+  history.innerHTML=historyHTML;
 
-  document.getElementById("sales").innerText="Sales: "+sales;
-  document.getElementById("pending").innerText="Pending: "+pending;
+  salesEl.innerText="Sales: "+sales;
+  pendingEl.innerText="Pending: "+pending;
 
-  // 🔥 STOCK LIVE FETCH
+  // 🔥 STOCK FETCH
   let s = await fetch("/admin/stock");
   let st = await s.json();
 
-  document.getElementById("stock").innerText="Stock: "+st.total;
+  let stockHTML="";
+  for(let p in st.stock){
+    let val = st.stock[p].length;
+    stockHTML+=`
+    <div class="card ${val<=2?'low':''}">
+    ${p} : ${val} ${val<=2?'⚠ LOW':''}
+    </div>`;
+  }
+
+  stockBox.innerHTML=stockHTML;
+
+  // 🔥 KEY PREVIEW
+  data.forEach(x=>{
+    fetch("/admin/nextkey/"+x.plan)
+    .then(r=>r.text())
+    .then(k=>{
+      let el=document.getElementById("key-"+x.id);
+      if(el) el.innerText=k || "No Key";
+    });
+  });
+
 }
 
-// VERIFY (NO CHANGE - backend handle karega)
+// VERIFY
 async function verify(id){
   await fetch("/admin/verify/"+id);
   load();
@@ -238,19 +248,17 @@ async function reject(id){
   load();
 }
 
-// ADD KEY (PLAN WISE)
+// ADD KEY
 async function addKey(){
-
-  let plan=document.getElementById("plan").value;
-  let key=document.getElementById("newkey").value;
-
   await fetch("/admin/addkey",{
     method:"POST",
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({plan,key})
+    body:JSON.stringify({
+      plan:plan.value,
+      key:newkey.value
+    })
   });
-
-  alert("Key Added");
+  alert("Added");
   load();
 }
 
