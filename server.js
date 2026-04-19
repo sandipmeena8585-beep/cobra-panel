@@ -7,8 +7,6 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
-
-// ✅ STATIC FIRST (IMPORTANT)
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
@@ -28,56 +26,18 @@ async function sendTelegram(msg){
   }catch(e){}
 }
 
-// ✅ SETTINGS FILE CREATE
+// ================= SETTINGS =================
 if(!fs.existsSync(SETTINGS_FILE)){
   fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ customerEnabled:true }));
 }
 
-// ================= ✅ CUSTOMER PANEL CONTROL (FIXED) =================
-app.use((req,res,next)=>{
+function loadSettings(){
+  return JSON.parse(fs.readFileSync(SETTINGS_FILE));
+}
 
-  // ✅ ADMIN ALWAYS ALLOW
-  if(req.url.startsWith("/admin")) return next();
-
-  // ✅ STATIC FILES ALLOW (VERY IMPORTANT)
-  if(req.url.match(/\.(css|js|png|jpg|jpeg|gif|html)$/)) return next();
-
-  let setting = { customerEnabled:true };
-
-  try{
-    if(fs.existsSync(SETTINGS_FILE)){
-      setting = JSON.parse(fs.readFileSync(SETTINGS_FILE));
-    }
-  }catch(e){}
-
-  // ❌ BLOCK CUSTOMER
-  if(!setting.customerEnabled){
-    return res.send(`
-      <h2 style="text-align:center;margin-top:60px;font-family:sans-serif;">
-        🚫 SERVER UNDER MAINTENANCE <br><br>
-        Try again later
-      </h2>
-    `);
-  }
-
-  next();
-});
-// ====================================================================
-
-// ================= TOGGLE SYSTEM =================
-app.get("/admin/settings",(req,res)=>{
-  const data = JSON.parse(fs.readFileSync(SETTINGS_FILE));
-  res.json(data);
-});
-
-app.post("/admin/toggleCustomer",(req,res)=>{
-  const { enabled } = req.body;
-  const newData = { customerEnabled: enabled };
-
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(newData));
-  res.json(newData);
-});
-// =================================================
+function saveSettings(d){
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(d));
+}
 
 // ================= DATA =================
 function loadData(){
@@ -85,7 +45,11 @@ function loadData(){
     fs.writeFileSync(FILE,JSON.stringify({
       stock:{ "1hour":[], "3hour":[], "1day":[], "3day":[], "7day":[] },
       requests:[],
-      devices:{}
+      devices:{},
+
+      // 🔥 NEW
+      stats:{ sold:0, added:0, deleted:0 },
+      history:[]
     }));
   }
   return JSON.parse(fs.readFileSync(FILE));
@@ -95,7 +59,44 @@ function saveData(d){
   fs.writeFileSync(FILE,JSON.stringify(d,null,2));
 }
 
-// 🔐 LOGIN
+// ================= HISTORY =================
+function addHistory(text){
+  let d = loadData();
+
+  d.history.unshift(text);
+
+  if(d.history.length > 5) d.history.pop(); // only 5
+
+  saveData(d);
+}
+
+// ================= CUSTOMER CONTROL =================
+app.use((req,res,next)=>{
+  if(req.url.startsWith("/admin")) return next();
+  if(req.url.match(/\.(css|js|png|jpg|html)$/)) return next();
+
+  let s = loadSettings();
+
+  if(!s.customerEnabled){
+    return res.send("<h2 style='text-align:center;margin-top:60px'>🚫 SERVER OFF</h2>");
+  }
+
+  next();
+});
+
+// ================= TOGGLE =================
+app.get("/admin/settings",(req,res)=>{
+  res.json(loadSettings());
+});
+
+app.post("/admin/toggleCustomer",(req,res)=>{
+  let {enabled} = req.body;
+  let s = { customerEnabled: enabled };
+  saveSettings(s);
+  res.json(s);
+});
+
+// ================= LOGIN =================
 app.post("/login", async (req,res)=>{
   let d=loadData();
   let {user,pass,device}=req.body;
@@ -107,7 +108,6 @@ app.post("/login", async (req,res)=>{
     if(!d.devices[user]) d.devices[user]=device;
 
     if(d.devices[user]!==device){
-      await sendTelegram(`🚫 BLOCKED DEVICE LOGIN`);
       return res.json({status:"blocked"});
     }
 
@@ -115,21 +115,31 @@ app.post("/login", async (req,res)=>{
     return res.json({status:"ok"});
   }
 
-  await sendTelegram(`❌ WRONG LOGIN ATTEMPT`);
   res.json({status:"fail"});
 });
 
-// REQUEST LIST
+// ================= DATA =================
 app.get("/admin/data",(req,res)=>{
   res.json(loadData().requests);
 });
 
-// STOCK
 app.get("/admin/stock",(req,res)=>{
   res.json(loadData().stock);
 });
 
-// ➕ ADD KEY
+// 👉 NEW STATS API
+app.get("/admin/stats",(req,res)=>{
+  let d = loadData();
+  res.json(d.stats);
+});
+
+// 👉 NEW HISTORY API
+app.get("/admin/history",(req,res)=>{
+  let d = loadData();
+  res.json(d.history);
+});
+
+// ================= ADD KEY =================
 app.post("/admin/addkey",(req,res)=>{
   let d=loadData();
   let {plan,key}=req.body;
@@ -137,13 +147,15 @@ app.post("/admin/addkey",(req,res)=>{
   if(!d.stock[plan]) d.stock[plan]=[];
 
   d.stock[plan].push(key);
-  sendTelegram(`➕ KEY ADDED\n${key}\nPlan: ${plan}`);
+  d.stats.added++; // ✅ count
+
+  addHistory(`➕ Added ${key}`);
 
   saveData(d);
   res.json({ok:true});
 });
 
-// ❌ DELETE KEY
+// ================= DELETE =================
 app.post("/admin/deletekey",(req,res)=>{
   let d=loadData();
   let {plan,key}=req.body;
@@ -151,13 +163,15 @@ app.post("/admin/deletekey",(req,res)=>{
   if(!d.stock[plan]) return res.send("no plan");
 
   d.stock[plan]=d.stock[plan].filter(k=>k!==key);
-  sendTelegram(`❌ KEY DELETED\n${key}\nPlan: ${plan}`);
+  d.stats.deleted++; // ✅ count
+
+  addHistory(`❌ Deleted ${key}`);
 
   saveData(d);
   res.send("ok");
 });
 
-// 🛒 BUY
+// ================= BUY =================
 app.post("/buy",upload.single("file"), async (req,res)=>{
   let d=loadData();
 
@@ -173,53 +187,38 @@ app.post("/buy",upload.single("file"), async (req,res)=>{
   d.requests.push(r);
   saveData(d);
 
-  await sendTelegram(`🔥 NEW REQUEST\nPlan: ${r.plan}\nUTR: ${r.utr}`);
-
   res.send("ok");
 });
 
-// ✅ VERIFY
-app.get("/admin/verify/:id", async (req,res)=>{
+// ================= VERIFY =================
+app.get("/admin/verify/:id",(req,res)=>{
   let d=loadData();
   let r=d.requests.find(x=>x.id==req.params.id);
 
   if(!r) return res.send("not found");
-  if(r.status!=="pending") return res.send("done");
 
-  let key="NO KEY";
-
-  if(d.stock[r.plan] && d.stock[r.plan].length>0){
-    key=d.stock[r.plan].shift();
-  }
+  let key = d.stock[r.plan]?.shift() || "NO KEY";
 
   r.status="approved";
   r.key=key;
 
+  d.stats.sold++; // ✅ count
+  addHistory(`💰 Sold ${key}`);
+
   saveData(d);
-
-  await sendTelegram(`✅ VERIFIED\nPlan: ${r.plan}\nKey: ${key}`);
-
-  if(d.stock[r.plan] && d.stock[r.plan].length<=2){
-    await sendTelegram(`⚠ LOW STOCK\n${r.plan} = ${d.stock[r.plan].length}`);
-  }
-
   res.send("ok");
 });
 
-// ❌ REJECT
-app.get("/admin/reject/:id", async (req,res)=>{
+// ================= REJECT =================
+app.get("/admin/reject/:id",(req,res)=>{
   let d=loadData();
   let r=d.requests.find(x=>x.id==req.params.id);
 
-  if(!r) return res.send("not found");
+  if(r) r.status="rejected";
 
-  r.status="rejected";
   saveData(d);
-
-  await sendTelegram(`❌ REJECTED\nPlan: ${r.plan}`);
-
   res.send("ok");
 });
 
-// 🚀 START
+// ================= START =================
 app.listen(3000,()=>console.log("🚀 SERVER RUNNING"));
