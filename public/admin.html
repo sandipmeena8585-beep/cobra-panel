@@ -7,18 +7,24 @@
 <style>
 body{
   margin:0;
-  background:#071226;
+  background:#030a14;
   color:white;
-  font-family:sans-serif;
+  font-family:system-ui;
 }
 
 .box{
   max-width:420px;
   margin:auto;
-  padding:20px;
-  background:#0f1c2e;
-  border-radius:20px;
-  margin-top:20px;
+  padding:15px;
+  background:#081426;
+  border-radius:18px;
+  margin-top:15px;
+  box-shadow:0 0 15px rgba(0,255,255,0.1);
+}
+
+h2,h3{
+  text-align:center;
+  color:#00f2ff;
 }
 
 input,select{
@@ -27,19 +33,36 @@ input,select{
   margin:8px 0;
   border-radius:10px;
   border:none;
+  background:#0c1d33;
+  color:white;
 }
 
 button{
   padding:12px;
   border:none;
   border-radius:10px;
-  background:#00f2ff;
+  background:linear-gradient(90deg,#00f2ff,#007bff);
   width:100%;
   margin-top:5px;
+  color:white;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+}
+
+.logout{
+  background:red;
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
 }
 
 .card{
-  background:#12243c;
+  background:#0c1d33;
   padding:10px;
   border-radius:10px;
   margin:5px 0;
@@ -47,7 +70,7 @@ button{
 }
 
 .req{
-  border:1px solid white;
+  border:1px solid #00f2ff;
   padding:10px;
   margin:10px 0;
   border-radius:10px;
@@ -68,8 +91,13 @@ button{
 
 <button onclick="login()">LOGIN</button>
 
-<!-- DASHBOARD -->
+<!-- PANEL -->
 <div id="panel" class="hidden">
+
+<div class="topbar">
+<div>🟢 ADMIN PANEL</div>
+<div class="logout" onclick="logout()">LOGOUT</div>
+</div>
 
 <h3>📊 Dashboard</h3>
 
@@ -103,22 +131,41 @@ button{
 
 <script>
 
+// 🔥 SESSION (2 HOURS)
+function checkSession(){
+  let t = localStorage.getItem("adminLogin");
+
+  if(t && (Date.now()-t < 2*60*60*1000)){
+    document.getElementById("panel").classList.remove("hidden");
+    load();
+  }
+}
+checkSession();
+
 // LOGIN
 function login(){
   let u=document.getElementById("user").value.trim();
   let p=document.getElementById("pass").value.trim();
 
   if(u==="COBRA SERVER" && p==="SAMI9166"){
-    document.getElementById("panel").style.display="block";
+    localStorage.setItem("adminLogin",Date.now());
+    document.getElementById("panel").classList.remove("hidden");
     load();
   }else{
     alert("Wrong Login");
   }
 }
 
-// LOAD DATA
+// LOGOUT
+function logout(){
+  localStorage.removeItem("adminLogin");
+  location.reload();
+}
+
+// 🔥 LOAD DATA
 async function load(){
 
+  // 🔥 REQUEST + HISTORY
   let res = await fetch("/admin/data");
   let data = await res.json();
 
@@ -135,8 +182,10 @@ async function load(){
 
       pendingHTML+=`
       <div class="req">
-      Plan: ${x.plan}<br>
-      UTR: ${x.utr}<br>
+      📦 ${x.plan}<br>
+      🧾 ${x.utr}<br>
+      ⏰ ${x.time || ""}
+      <br>
       ${x.file ? `<img src="${x.file}" width="100">` : ""}
       <br>
       <button onclick="verify(${x.id})">VERIFY</button>
@@ -149,7 +198,16 @@ async function load(){
 
       historyHTML+=`
       <div class="req">
-      ✅ ${x.plan} → ${x.key}
+      ✅ ${x.plan} → ${x.key}<br>
+      ⏰ ${x.time || ""}
+      </div>`;
+    }
+
+    if(x.status==="rejected"){
+      historyHTML+=`
+      <div class="req">
+      ❌ ${x.plan} → REJECTED<br>
+      ⏰ ${x.time || ""}
       </div>`;
     }
 
@@ -161,9 +219,14 @@ async function load(){
   document.getElementById("sales").innerText="Sales: "+sales;
   document.getElementById("pending").innerText="Pending: "+pending;
 
+  // 🔥 STOCK LIVE FETCH
+  let s = await fetch("/admin/stock");
+  let st = await s.json();
+
+  document.getElementById("stock").innerText="Stock: "+st.total;
 }
 
-// VERIFY
+// VERIFY (NO CHANGE - backend handle karega)
 async function verify(id){
   await fetch("/admin/verify/"+id);
   load();
@@ -175,7 +238,7 @@ async function reject(id){
   load();
 }
 
-// ADD KEY
+// ADD KEY (PLAN WISE)
 async function addKey(){
 
   let plan=document.getElementById("plan").value;
