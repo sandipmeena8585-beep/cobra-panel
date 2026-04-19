@@ -5,34 +5,83 @@
 <title>COBRA SERVER</title>
 
 <style>
-body{margin:0;font-family:sans-serif;background:#f1f5f9}
+body{
+margin:0;
+font-family:sans-serif;
+background:#eef2f7;
+-webkit-tap-highlight-color: transparent;
+}
 
 /* HEADER */
 .header{
-display:flex;justify-content:space-between;align-items:center;
-padding:12px;background:#fff;
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:14px;
+background:#fff;
+box-shadow:0 2px 10px rgba(0,0,0,0.05);
+position:sticky;
+top:0;
+z-index:10;
 }
-.logo{font-weight:bold;color:#0f766e;font-size:20px}
-.menuBtn{font-size:22px;cursor:pointer}
+.logo{
+font-weight:bold;
+color:#0f766e;
+font-size:18px;
+}
+.menuBtn{
+font-size:22px;
+cursor:pointer;
+}
 
 /* MENU */
 .menu{
-position:fixed;top:0;right:-220px;width:200px;height:100%;
-background:#111;color:#fff;transition:.3s;padding:10px;
+position:fixed;
+top:0;
+right:-240px;
+width:220px;
+height:100%;
+background:#0f172a;
+color:#fff;
+transition:0.3s ease;
+padding-top:20px;
+z-index:20;
 }
 .menu.active{right:0}
-.menu div{padding:10px;border-bottom:1px solid #333;cursor:pointer}
 
-/* FLOOR */
+.menu div{
+padding:14px;
+border-bottom:1px solid #1e293b;
+cursor:pointer;
+}
+
+/* OVERLAY */
+.overlay{
+position:fixed;
+top:0;left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.3);
+display:none;
+z-index:15;
+}
+.overlay.active{display:block}
+
+/* PAGE */
 .page{display:none}
 .activePage{display:block}
 
 /* CARD */
 .card{
-background:#fff;margin:15px;border-radius:15px;padding:20px;text-align:center;
-box-shadow:0 5px 15px rgba(0,0,0,0.1);
+background:#fff;
+margin:12px;
+border-radius:14px;
+padding:18px;
+text-align:center;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
 }
 
+/* TOP */
 .top{
 background:linear-gradient(135deg,#065f46,#4ade80);
 color:#fff;
@@ -40,15 +89,35 @@ color:#fff;
 
 /* LOGIN */
 #loginWrap{
-display:flex;justify-content:center;align-items:center;height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
 }
 .loginBox{
-background:#fff;padding:25px;border-radius:12px;text-align:center;width:260px;
+background:#fff;
+padding:25px;
+border-radius:14px;
+text-align:center;
+width:260px;
+box-shadow:0 5px 20px rgba(0,0,0,0.1);
 }
-input{width:90%;padding:8px;margin:6px;border-radius:6px;border:1px solid #ccc}
-button{padding:8px 12px;border:none;border-radius:6px;background:#22c55e;color:#fff}
-
-.small{font-size:13px;color:#555}
+input{
+width:90%;
+padding:10px;
+margin:6px;
+border-radius:8px;
+border:1px solid #ddd;
+}
+button{
+padding:10px 14px;
+border:none;
+border-radius:8px;
+background:#22c55e;
+color:#fff;
+font-weight:bold;
+}
+.small{font-size:12px;color:#555}
 </style>
 
 </head>
@@ -73,6 +142,9 @@ button{padding:8px 12px;border:none;border-radius:6px;background:#22c55e;color:#
   <div class="menuBtn" onclick="toggleMenu()">☰</div>
 </div>
 
+<!-- OVERLAY -->
+<div id="overlay" class="overlay" onclick="toggleMenu()"></div>
+
 <!-- MENU -->
 <div id="menu" class="menu">
   <div onclick="showPage('home')">Home</div>
@@ -81,7 +153,7 @@ button{padding:8px 12px;border:none;border-radius:6px;background:#22c55e;color:#
   <div onclick="logout()">Logout</div>
 </div>
 
-<!-- ================= HOME ================= -->
+<!-- HOME -->
 <div id="home" class="page activePage">
 
 <div class="card top">
@@ -116,27 +188,21 @@ button{padding:8px 12px;border:none;border-radius:6px;background:#22c55e;color:#
 
 </div>
 
-<!-- ================= REQUEST ================= -->
+<!-- REQUEST -->
 <div id="request" class="page">
-
 <div class="card">
   <h3>Customer Requests</h3>
   <div id="requestData"></div>
 </div>
-
 </div>
 
-<!-- ================= MANAGE ================= -->
+<!-- MANAGE -->
 <div id="manage" class="page">
-
 <div class="card">
   <h3>Customer Panel Control</h3>
-
   <input type="checkbox" id="customerToggle" onchange="toggleCustomer()">
   <p id="toggleStatus"></p>
-
 </div>
-
 </div>
 
 </div>
@@ -149,6 +215,7 @@ const loginWrap = document.getElementById("loginWrap");
 const main = document.getElementById("main");
 
 const menu = document.getElementById("menu");
+const overlay = document.getElementById("overlay");
 
 const stockCount = document.getElementById("stockCount");
 const soldCount = document.getElementById("soldCount");
@@ -164,13 +231,14 @@ const customerToggle = document.getElementById("customerToggle");
 // MENU
 function toggleMenu(){
 menu.classList.toggle("active");
+overlay.classList.toggle("active");
 }
 
-// PAGE SWITCH
+// PAGE
 function showPage(p){
 document.querySelectorAll(".page").forEach(x=>x.classList.remove("activePage"));
 document.getElementById(p).classList.add("activePage");
-menu.classList.remove("active");
+toggleMenu();
 
 if(p==="home") loadAll();
 if(p==="request") loadRequests();
@@ -192,11 +260,9 @@ loadAll();
 }
 
 // LOGOUT
-function logout(){
-location.reload();
-}
+function logout(){location.reload();}
 
-// LOAD ALL
+// LOAD
 function loadAll(){
 loadStats();
 loadHistory();
