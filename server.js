@@ -12,6 +12,7 @@ app.use("/uploads", express.static("uploads"));
 
 const upload = multer({dest:"uploads/"});
 const FILE="data.json";
+const SETTINGS_FILE="settings.json"; // ✅ NEW
 
 // 🔥 TELEGRAM
 const BOT_TOKEN="PUT_TOKEN";
@@ -25,7 +26,31 @@ async function sendTelegram(msg){
   }catch(e){}
 }
 
-// DATA
+// ✅ SETTINGS FILE CREATE
+if(!fs.existsSync(SETTINGS_FILE)){
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ customerEnabled:false }));
+}
+
+// ================= TOGGLE SYSTEM =================
+
+// 👉 GET CURRENT STATUS
+app.get("/admin/settings",(req,res)=>{
+  const data = JSON.parse(fs.readFileSync(SETTINGS_FILE));
+  res.json(data);
+});
+
+// 👉 TOGGLE ON/OFF
+app.post("/admin/toggleCustomer",(req,res)=>{
+  const { enabled } = req.body;
+
+  const newData = { customerEnabled: enabled };
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(newData));
+
+  res.json(newData);
+});
+
+// ================= DATA =================
+
 function loadData(){
   if(!fs.existsSync(FILE)){
     fs.writeFileSync(FILE,JSON.stringify({
@@ -105,8 +130,14 @@ app.post("/admin/deletekey",(req,res)=>{
   res.send("ok");
 });
 
-// 🛒 BUY REQUEST
+// 🛒 BUY REQUEST (❗ PANEL OFF CHECK ADDED)
 app.post("/buy",upload.single("file"), async (req,res)=>{
+  const setting = JSON.parse(fs.readFileSync(SETTINGS_FILE));
+
+  if(!setting.customerEnabled){
+    return res.send("🚫 Panel is OFF. Please try later.");
+  }
+
   let d=loadData();
 
   let r={
@@ -126,7 +157,7 @@ app.post("/buy",upload.single("file"), async (req,res)=>{
   res.send("ok");
 });
 
-// ✅ VERIFY (KEY REMOVE + STOCK ALERT)
+// ✅ VERIFY
 app.get("/admin/verify/:id", async (req,res)=>{
   let d=loadData();
   let r=d.requests.find(x=>x.id==req.params.id);
@@ -151,7 +182,6 @@ Plan: ${r.plan}
 Key: ${key}`
   );
 
-  // ⚠ LOW STOCK ALERT
   if(d.stock[r.plan] && d.stock[r.plan].length<=2){
     await sendTelegram(`⚠ LOW STOCK\nPlan: ${r.plan}\nRemaining: ${d.stock[r.plan].length}`);
   }
@@ -159,7 +189,7 @@ Key: ${key}`
   res.send("ok");
 });
 
-// ❌ REJECT + LOG
+// ❌ REJECT
 app.get("/admin/reject/:id", async (req,res)=>{
   let d=loadData();
   let r=d.requests.find(x=>x.id==req.params.id);
