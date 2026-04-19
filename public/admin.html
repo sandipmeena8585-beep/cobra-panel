@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
 <title>COBRA SERVER</title>
 
@@ -22,9 +22,9 @@ background:#fff;margin:10px;border-radius:14px;padding:16px;text-align:center;
 box-shadow:0 4px 12px rgba(0,0,0,0.08);
 }
 
-/* TOGGLE */
+/* TOGGLE SWITCH */
 .switch{
-position:relative;width:60px;height:30px;display:inline-block;
+position:relative;display:inline-block;width:60px;height:30px;
 }
 .switch input{display:none}
 .slider{
@@ -35,11 +35,18 @@ background:#ccc;border-radius:30px;
 content:"";position:absolute;
 height:24px;width:24px;
 left:3px;bottom:3px;
-background:#fff;border-radius:50%;
+background:white;border-radius:50%;
 transition:.3s;
 }
 input:checked + .slider{background:#22c55e}
 input:checked + .slider:before{transform:translateX(30px)}
+
+/* PLAN BOX */
+.plan{
+background:#f9fafb;
+margin:10px;padding:10px;
+border-radius:10px;
+}
 
 input{
 width:90%;padding:10px;margin:5px;
@@ -49,11 +56,6 @@ button{
 width:90%;padding:10px;border:none;
 border-radius:8px;background:#22c55e;color:#fff;
 margin-top:10px;
-}
-
-.planBox{
-background:#f9fafb;
-padding:10px;margin:8px;border-radius:10px;
 }
 </style>
 
@@ -73,26 +75,26 @@ padding:10px;margin:8px;border-radius:10px;
     <span class="slider"></span>
   </label>
 
-  <p id="toggleStatus">ON</p>
+  <p id="toggleStatus">...</p>
 </div>
 
-<!-- 🔥 PLAN EDIT -->
+<!-- 🔥 PLAN EDIT (UPDATED) -->
 <div class="card">
-  <h3>Edit Plans (Live Customer Panel)</h3>
+  <h3>Edit Plans (Customer Panel)</h3>
 
-  <div class="planBox">
+  <div class="plan">
     <b>Plan 1</b><br>
     <input id="d1" placeholder="Days (ex: 1 DAY)">
     <input id="p1" placeholder="Price (ex: 120)">
   </div>
 
-  <div class="planBox">
+  <div class="plan">
     <b>Plan 2</b><br>
     <input id="d2" placeholder="Days (ex: 7 DAY)">
     <input id="p2" placeholder="Price">
   </div>
 
-  <div class="planBox">
+  <div class="plan">
     <b>Plan 3</b><br>
     <input id="d3" placeholder="Days (ex: 30 DAY)">
     <input id="p3" placeholder="Price">
@@ -103,14 +105,14 @@ padding:10px;margin:8px;border-radius:10px;
 
 <script>
 
-// 🔥 PLAN STORAGE (future backend ready)
+// 🔥 PLAN DATA (future backend ready)
 let plans = {
   p1:{day:"1 DAY",price:"120"},
   p2:{day:"7 DAY",price:"500"},
   p3:{day:"30 DAY",price:"1000"}
 };
 
-// LOAD UI
+// LOAD
 function loadPlans(){
 d1.value = plans.p1.day;
 p1.value = plans.p1.price;
@@ -122,7 +124,7 @@ d3.value = plans.p3.day;
 p3.value = plans.p3.price;
 }
 
-// SAVE (future API ready)
+// SAVE
 function savePlans(){
 
 plans = {
@@ -131,11 +133,9 @@ plans = {
   p3:{day:d3.value,price:p3.value}
 };
 
-console.log("UPDATED PLANS:", plans);
+console.log("UPDATED:", plans);
 
-// 👉 yahi data customer panel me use hoga future me
-
-alert("Saved! Customer panel me yehi price show hoga (backend connect baad me)");
+alert("Saved! Yehi price customer panel me use hoga");
 }
 
 // TOGGLE
@@ -144,6 +144,8 @@ toggleStatus.innerText = customerToggle.checked ? "ON" : "OFF";
 }
 
 // INIT
+toggleStatus.innerText="ON";
+customerToggle.checked=true;
 loadPlans();
 
 </script>
