@@ -15,7 +15,7 @@ padding:12px;background:#fff;
 .logo{font-weight:bold;color:#0f766e;font-size:20px}
 .menuBtn{font-size:22px;cursor:pointer}
 
-/* MENU RIGHT */
+/* MENU */
 .menu{
 position:fixed;top:0;right:-220px;width:200px;height:100%;
 background:#111;color:#fff;transition:.3s;padding:10px;
@@ -23,13 +23,16 @@ background:#111;color:#fff;transition:.3s;padding:10px;
 .menu.active{right:0}
 .menu div{padding:10px;border-bottom:1px solid #333;cursor:pointer}
 
+/* FLOOR */
+.page{display:none}
+.activePage{display:block}
+
 /* CARD */
 .card{
 background:#fff;margin:15px;border-radius:15px;padding:20px;text-align:center;
 box-shadow:0 5px 15px rgba(0,0,0,0.1);
 }
 
-/* GRADIENT */
 .top{
 background:linear-gradient(135deg,#065f46,#4ade80);
 color:#fff;
@@ -45,7 +48,6 @@ background:#fff;padding:25px;border-radius:12px;text-align:center;width:260px;
 input{width:90%;padding:8px;margin:6px;border-radius:6px;border:1px solid #ccc}
 button{padding:8px 12px;border:none;border-radius:6px;background:#22c55e;color:#fff}
 
-/* SMALL */
 .small{font-size:13px;color:#555}
 </style>
 
@@ -57,14 +59,13 @@ button{padding:8px 12px;border:none;border-radius:6px;background:#22c55e;color:#
   <div class="loginBox">
     <h2>Welcome Back</h2>
     <small>COBRA ADMIN</small><br><br>
-
     <input id="user" placeholder="Username">
     <input id="pass" placeholder="Password">
     <button onclick="login()">LOGIN</button>
   </div>
 </div>
 
-<!-- HEADER -->
+<!-- MAIN -->
 <div id="main" style="display:none;">
 
 <div class="header">
@@ -74,20 +75,20 @@ button{padding:8px 12px;border:none;border-radius:6px;background:#22c55e;color:#
 
 <!-- MENU -->
 <div id="menu" class="menu">
-  <div onclick="loadDashboard()">Home</div>
-  <div onclick="loadRequests()">Request</div>
-  <div onclick="loadUsers()">Manage User</div>
-  <div onclick="loadSettings()">Online Control</div>
+  <div onclick="showPage('home')">Home</div>
+  <div onclick="showPage('request')">Request</div>
+  <div onclick="showPage('manage')">Manage User</div>
   <div onclick="logout()">Logout</div>
 </div>
 
-<!-- TOP CARD -->
+<!-- ================= HOME ================= -->
+<div id="home" class="page activePage">
+
 <div class="card top">
   <h2>Welcome, COBRASERVER!</h2>
   <p>Your account overview and recent activity</p>
 </div>
 
-<!-- STATS -->
 <div class="card">
   <h2 id="stockCount">0</h2>
   <p class="small">Stock Live</p>
@@ -108,17 +109,34 @@ button{padding:8px 12px;border:none;border-radius:6px;background:#22c55e;color:#
   <p class="small">Deleted</p>
 </div>
 
-<!-- TOGGLE -->
-<div class="card">
-  <b>Customer Panel</b><br><br>
-  <input type="checkbox" id="customerToggle" onchange="toggleCustomer()">
-  <p id="toggleStatus"></p>
-</div>
-
-<!-- HISTORY -->
 <div class="card">
   <b>Last 5 Activity</b>
   <div id="history"></div>
+</div>
+
+</div>
+
+<!-- ================= REQUEST ================= -->
+<div id="request" class="page">
+
+<div class="card">
+  <h3>Customer Requests</h3>
+  <div id="requestData"></div>
+</div>
+
+</div>
+
+<!-- ================= MANAGE ================= -->
+<div id="manage" class="page">
+
+<div class="card">
+  <h3>Customer Panel Control</h3>
+
+  <input type="checkbox" id="customerToggle" onchange="toggleCustomer()">
+  <p id="toggleStatus"></p>
+
+</div>
+
 </div>
 
 </div>
@@ -138,6 +156,7 @@ const addCount = document.getElementById("addCount");
 const deleteCount = document.getElementById("deleteCount");
 
 const historyBox = document.getElementById("history");
+const requestBox = document.getElementById("requestData");
 
 const toggleStatus = document.getElementById("toggleStatus");
 const customerToggle = document.getElementById("customerToggle");
@@ -145,6 +164,17 @@ const customerToggle = document.getElementById("customerToggle");
 // MENU
 function toggleMenu(){
 menu.classList.toggle("active");
+}
+
+// PAGE SWITCH
+function showPage(p){
+document.querySelectorAll(".page").forEach(x=>x.classList.remove("activePage"));
+document.getElementById(p).classList.add("activePage");
+menu.classList.remove("active");
+
+if(p==="home") loadAll();
+if(p==="request") loadRequests();
+if(p==="manage") loadSettings();
 }
 
 // LOGIN
@@ -167,10 +197,10 @@ location.reload();
 }
 
 // LOAD ALL
-async function loadAll(){
+function loadAll(){
 loadStats();
-loadSettings();
 loadHistory();
+loadSettings();
 }
 
 // STATS
@@ -200,6 +230,37 @@ historyBox.innerHTML="";
 arr.forEach(x=>{
 historyBox.innerHTML+=`<div>${x}</div>`;
 });
+}
+
+// REQUEST
+async function loadRequests(){
+let res=await fetch("/admin/data");
+let arr=await res.json();
+
+requestBox.innerHTML="";
+
+arr.reverse().forEach(x=>{
+if(x.status==="pending"){
+requestBox.innerHTML+=`
+<div style="border:1px solid #ccc;margin:5px;padding:5px">
+${x.plan} | UTR: ${x.utr}
+<button onclick="verify(${x.id})">YES</button>
+<button onclick="reject(${x.id})">NO</button>
+</div>`;
+}
+});
+}
+
+// VERIFY
+async function verify(id){
+await fetch("/admin/verify/"+id);
+loadRequests();
+}
+
+// REJECT
+async function reject(id){
+await fetch("/admin/reject/"+id);
+loadRequests();
 }
 
 // SETTINGS
