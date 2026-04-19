@@ -1,261 +1,164 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Admin Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- 🔒 SAFE LOGIN CHECK (FIXED) -->
-  <script>
-    try {
-      if(localStorage.getItem("adminLogin") !== "true"){
-        window.location.href = "/admin";
-      }
-    } catch(e){
-      window.location.href = "/admin";
-    }
-  </script>
+<style>
+body{margin:0;font-family:Arial;background:#0f172a;color:white}
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: #0f172a;
-      color: white;
-    }
+/* LOGIN */
+.login{
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:center;
+ height:100vh;
+ background:linear-gradient(135deg,#0f766e,#14b8a6);
+}
+.login input,.login button{
+ width:80%;
+ max-width:300px;
+ padding:12px;
+ margin:10px;
+ border:none;
+ border-radius:6px;
+}
+.login button{background:#22c55e;color:white}
 
-    h2 {
-      text-align: center;
-      padding: 10px;
-    }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #020617;
-      padding: 12px;
-    }
-
-    .menu-btn {
-      font-size: 22px;
-      cursor: pointer;
-    }
-
-    .sidebar {
-      position: fixed;
-      top: 0;
-      left: -250px;
-      width: 250px;
-      height: 100%;
-      background: #1e293b;
-      padding: 20px;
-      transition: 0.3s;
-      z-index: 1000;
-    }
-
-    .sidebar.active {
-      left: 0;
-    }
-
-    .sidebar a {
-      display: block;
-      padding: 12px;
-      margin: 8px 0;
-      background: #334155;
-      border-radius: 8px;
-      text-decoration: none;
-      color: white;
-    }
-
-    .content {
-      padding: 10px;
-    }
-
-    .toggle {
-      width: 100%;
-      padding: 15px;
-      font-size: 18px;
-      border: none;
-      border-radius: 10px;
-      margin: 10px 0;
-      background: #22c55e;
-    }
-
-    .off {
-      background: #ef4444;
-    }
-
-    .card {
-      background: #1e293b;
-      padding: 15px;
-      border-radius: 12px;
-      margin: 10px 0;
-    }
-
-    .btns {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    button {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-
-    .approve { background: #22c55e; }
-    .reject { background: #ef4444; }
-
-    .logout {
-      margin-top: 20px;
-      width: 100%;
-      padding: 12px;
-      background: gray;
-    }
-
-    .center {
-      text-align: center;
-      margin-top: 20px;
-      color: #94a3b8;
-    }
-  </style>
+/* DASHBOARD */
+.topbar{padding:12px;background:#020617;display:flex;justify-content:space-between}
+.toggle{width:90%;margin:10px;padding:15px;border:none;border-radius:10px;background:#22c55e}
+.off{background:#ef4444}
+.card{background:#1e293b;padding:15px;border-radius:10px;margin:10px}
+.center{text-align:center;margin-top:20px}
+</style>
 </head>
 
 <body>
 
-<!-- 🔹 SIDEBAR -->
-<div id="sidebar" class="sidebar">
-  <h3>⚡ MENU</h3>
-  <a href="#">Dashboard</a>
-  <a href="#">Users</a>
-  <a href="#">Payments</a>
-  <a href="#" onclick="logout()">Logout</a>
+<!-- LOGIN SCREEN -->
+<div id="loginBox" class="login">
+  <h2>ADMIN LOGIN</h2>
+  <input id="user" placeholder="Username">
+  <input id="pass" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
 </div>
 
-<!-- 🔹 TOPBAR -->
+<!-- DASHBOARD -->
+<div id="panel" style="display:none">
+
 <div class="topbar">
-  <div class="menu-btn" onclick="toggleMenu()">☰</div>
-  <div>ADMIN PANEL</div>
+<div>☰</div>
+<div>ADMIN PANEL</div>
 </div>
 
-<div class="content">
+<h2 style="text-align:center">⚡ DASHBOARD</h2>
 
-<h2>⚡ ADMIN DASHBOARD</h2>
-
-<button id="toggleBtn" class="toggle">SYSTEM: LOADING...</button>
+<button id="toggleBtn" class="toggle">LOADING...</button>
 
 <div id="requests" class="center">Loading...</div>
 
-<button class="logout" onclick="logout()">Logout</button>
+<button onclick="logout()" style="margin:10px">Logout</button>
 
 </div>
 
 <script>
 
-// 🔹 Sidebar toggle
-function toggleMenu(){
-  document.getElementById("sidebar").classList.toggle("active");
+// 🔐 AUTO LOGIN CHECK
+if(localStorage.getItem("adminLogin")==="true"){
+  showPanel();
 }
 
-// 🔹 Load requests (SAFE)
-function render(){
-  document.getElementById("requests").innerHTML = "Loading...";
+// 🔐 LOGIN
+function login(){
+ let u=document.getElementById("user").value;
+ let p=document.getElementById("pass").value;
 
-  fetch("/requests")
-  .then(res => res.json())
-  .then(data => {
-
-    let html = "";
-
-    if(!data || data.length === 0){
-      html = "<div class='center'>No Requests</div>";
-    }
-
-    data.forEach((item) => {
-      html += `
-        <div class="card">
-          <p><b>User:</b> ${item.user || "N/A"}</p>
-          <p><b>Plan:</b> ${item.plan || "N/A"}</p>
-
-          <div class="btns">
-            <button class="approve" onclick="approve('${item.user}')">Approve</button>
-            <button class="reject" onclick="reject('${item.user}')">Reject</button>
-          </div>
-        </div>
-      `;
-    });
-
-    document.getElementById("requests").innerHTML = html;
-  })
-  .catch(() => {
-    document.getElementById("requests").innerHTML =
-      "<div class='center'>⚠️ Server Error</div>";
-  });
+ if(u==="COBRA SERVER" && p==="SAMI9166"){
+   localStorage.setItem("adminLogin","true");
+   showPanel();
+ }else{
+   alert("Wrong login");
+ }
 }
 
-// 🔹 Approve
-function approve(user){
-  fetch("/approve", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ user })
-  }).then(render);
+// 🔐 SHOW PANEL
+function showPanel(){
+ document.getElementById("loginBox").style.display="none";
+ document.getElementById("panel").style.display="block";
+ render();
+ loadToggle();
 }
 
-// 🔹 Reject
-function reject(user){
-  fetch("/reject", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ user })
-  }).then(render);
-}
-
-// 🔹 Toggle system
-function loadToggle(){
-  fetch("/status")
-  .then(res => res.json())
-  .then(data => {
-    updateToggleUI(data.on);
-  });
-}
-
-function toggleSystem(){
-  fetch("/toggle", { method: "POST" })
-  .then(res => res.json())
-  .then(data => updateToggleUI(data.on));
-}
-
-function updateToggleUI(on){
-  let btn = document.getElementById("toggleBtn");
-  btn.onclick = toggleSystem;
-
-  if(on){
-    btn.innerText = "SYSTEM: ON";
-    btn.classList.remove("off");
-  } else {
-    btn.innerText = "SYSTEM: OFF";
-    btn.classList.add("off");
-  }
-}
-
-// 🔹 Logout
+// 🔐 LOGOUT
 function logout(){
-  localStorage.removeItem("adminLogin");
-  window.location.href = "/admin";
+ localStorage.removeItem("adminLogin");
+ location.reload();
 }
 
-// 🔹 START (IMPORTANT FIX)
-window.onload = () => {
-  render();
-  loadToggle();
-};
+// 🔄 LOAD REQUESTS
+function render(){
+ fetch("/requests")
+ .then(r=>r.json())
+ .then(data=>{
+   let html="";
+   if(!data.length) html="No Requests";
 
-// 🔹 Auto refresh
-setInterval(render, 4000);
+   data.forEach(x=>{
+     html+=`
+     <div class="card">
+     <p>${x.user}</p>
+     <p>${x.plan}</p>
+     <button onclick="approve('${x.user}')">Approve</button>
+     <button onclick="reject('${x.user}')">Reject</button>
+     </div>`;
+   });
+
+   document.getElementById("requests").innerHTML=html;
+ })
+ .catch(()=>{
+   document.getElementById("requests").innerHTML="Server Error";
+ });
+}
+
+// ✅ APPROVE
+function approve(u){
+ fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
+ .then(render);
+}
+
+// ❌ REJECT
+function reject(u){
+ fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
+ .then(render);
+}
+
+// 🔘 TOGGLE
+function loadToggle(){
+ fetch("/status")
+ .then(r=>r.json())
+ .then(d=>updateToggle(d.on));
+}
+
+function toggle(){
+ fetch("/toggle",{method:"POST"})
+ .then(r=>r.json())
+ .then(d=>updateToggle(d.on));
+}
+
+function updateToggle(on){
+ let b=document.getElementById("toggleBtn");
+ b.onclick=toggle;
+ b.innerText=on?"SYSTEM ON":"SYSTEM OFF";
+ if(!on) b.classList.add("off"); else b.classList.remove("off");
+}
+
+// 🔁 AUTO REFRESH
+setInterval(()=>{
+ if(document.getElementById("panel").style.display==="block"){
+   render();
+ }
+},4000);
 
 </script>
 
