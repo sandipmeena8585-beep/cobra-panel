@@ -1,172 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COBRA ADMIN</title>
+
+<style>
+body{margin:0;font-family:sans-serif;background:#020617;color:white;}
+.container{padding:15px}
+.card{background:#0f172a;padding:12px;margin:10px 0;border-radius:10px}
+button{width:100%;padding:10px;margin-top:5px;background:#22c55e;border:none;border-radius:8px;color:white}
+input,select{width:100%;padding:10px;margin:5px 0;background:#111827;color:white;border:none;border-radius:8px}
+.hidden{display:none;}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginBox" class="container">
+<h2>LOGIN</h2>
+<input id="user" placeholder="Username">
+<input id="pass" placeholder="Password">
+<button onclick="login()">LOGIN</button>
+</div>
+
+<!-- PANEL -->
+<div id="panel" class="container hidden">
+
+<div class="card" id="stockCount">Stock: 0</div>
+
+<!-- STOCK -->
+<div class="card">
+<select id="plan">
+<option value="1hour">1hour</option>
+<option value="3hour">3hour</option>
+<option value="1day">1day</option>
+<option value="3day">3day</option>
+<option value="7day">7day</option>
+</select>
+
+<input id="newkey" placeholder="Enter Key">
+<button onclick="addKey()">ADD KEY</button>
+</div>
+
+<div id="stockList"></div>
+
+<h3>REQUESTS</h3>
+<div id="data"></div>
+
+</div>
+
 <script>
-
-// SAFE ELEMENT SELECT
-const panel = document.getElementById("panel");
-const stockPage = document.getElementById("stockPage");
-const requestPage = document.getElementById("requestPage");
-const dataBox = document.getElementById("data");
-const stockList = document.getElementById("stockList");
-const stockCount = document.getElementById("stockCount");
-
-// MENU
-function toggleMenu(){
-  document.getElementById("sidebar").classList.add("active");
-  document.getElementById("overlay").classList.add("active");
-}
-
-function closeMenu(){
-  document.getElementById("sidebar").classList.remove("active");
-  document.getElementById("overlay").classList.remove("active");
-}
-
-// NAV
-function go(p){
-  panel.style.display="none";
-  stockPage.style.display="none";
-  requestPage.style.display="none";
-
-  document.getElementById(p).style.display="block";
-
-  if(p==="requestPage"){
-    loadRequests();
-  }
-}
 
 // LOGIN
 async function login(){
-  try{
+let res = await fetch("/login",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({
+user:user.value,
+pass:pass.value,
+device:navigator.userAgent
+})
+});
 
-    let res = await fetch("/login",{
-      method:"POST",
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        user:user.value,
-        pass:pass.value,
-        device:navigator.userAgent
-      })
-    });
+let d = await res.json();
 
-    let d = await res.json();
+if(d.status==="ok"){
+loginBox.style.display="none";
+panel.classList.remove("hidden");
 
-    if(d.status==="ok"){
-      loginBox.style.display="none";
-      panel.style.display="block";
-      menuBtn.style.display="block";
-
-      loadStock();
-      loadStockCount();
-      loadRequests();
-    }else{
-      alert("Wrong Login");
-    }
-
-  }catch(e){
-    alert("SERVER ERROR");
-  }
+loadStock();
+loadRequests();
+}else{
+alert("Wrong Login");
+}
 }
 
 // REQUEST
 async function loadRequests(){
-  try{
+let res = await fetch("/admin/data");
+let arr = await res.json();
 
-    let res = await fetch("/admin/data");
-    let arr = await res.json();
+let html="";
 
-    let html="";
+arr.forEach(x=>{
+if(x.status==="pending"){
 
-    arr.reverse().forEach(x=>{
-      if(x.status==="pending"){
+let img="";
+if(x.file){
+img=`<img src="/uploads/${x.file}" width="100%">`;
+}
 
-        let img="";
-        if(x.file){
-          img = "<img src='/uploads/"+x.file+"' style='width:100%;border-radius:10px'>";
-        }
+html+=`
+<div class="card">
+${x.plan}<br>
+UTR: ${x.utr || "N/A"}<br>
+Time: ${x.time}<br>
+${img}
+<button onclick="verify(${x.id},this)">YES</button>
+<button onclick="reject(${x.id},this)">NO</button>
+</div>`;
+}
+});
 
-        html += `
-        <div class="card">
-          ${x.plan}<br>
-          ${x.utr || "N/A"}<br>
-          ${x.time || ""}<br>
-          ${img}<br>
-          <button onclick="verify(${x.id},event)">YES</button>
-          <button onclick="reject(${x.id},event)">NO</button>
-        </div>`;
-      }
-    });
-
-    dataBox.innerHTML = html || "No Requests";
-
-  }catch(e){
-    console.log(e);
-  }
+data.innerHTML=html;
 }
 
 // VERIFY
-async function verify(id,e){
-  e.target.parentElement.remove();
-  await fetch("/admin/verify/"+id);
+async function verify(id,btn){
+btn.parentElement.remove();
+await fetch("/admin/verify/"+id);
+loadStock();
 }
 
 // REJECT
-async function reject(id,e){
-  e.target.parentElement.remove();
-  await fetch("/admin/reject/"+id);
+async function reject(id,btn){
+btn.parentElement.remove();
+await fetch("/admin/reject/"+id);
 }
 
 // STOCK
 async function loadStock(){
-  let res = await fetch("/admin/stock");
-  let data = await res.json();
+let res=await fetch("/admin/stock");
+let data=await res.json();
 
-  let html="";
+let html="",total=0;
 
-  for(let p in data){
-    html += `<div class="card">${p}<br>`;
-
-    data[p].forEach(k=>{
-      html += k+"<br>";
-    });
-
-    html += "</div>";
-  }
-
-  stockList.innerHTML = html;
+for(let p in data){
+html+=`<div class="card">${p}<br>`;
+data[p].forEach(k=>{
+html+=k+"<br>";
+total++;
+});
+html+="</div>";
 }
 
-// COUNT
-async function loadStockCount(){
-  let res = await fetch("/admin/stock");
-  let data = await res.json();
-
-  let total = 0;
-  for(let p in data){
-    total += data[p].length;
-  }
-
-  stockCount.innerText="Stock: "+total;
+stockList.innerHTML=html;
+stockCount.innerText="Stock: "+total;
 }
 
-// ADD KEY
+// ADD
 async function addKey(){
-  if(!newkey.value) return;
+await fetch("/admin/addkey",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({
+plan:plan.value,
+key:newkey.value
+})
+});
 
-  await fetch("/admin/addkey",{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      plan:plan.value,
-      key:newkey.value
-    })
-  });
-
-  newkey.value="";
-  loadStock();
+newkey.value="";
+loadStock();
 }
 
 // AUTO
 setInterval(()=>{
-  loadStock();
-  loadStockCount();
+loadStock();
+loadRequests();
 },3000);
 
 </script>
+
+</body>
+</html>
