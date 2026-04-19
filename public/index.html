@@ -24,24 +24,18 @@ body{
   margin-top:20px;
   background:#081426;
   box-shadow:0 0 20px rgba(0,255,255,0.15);
+  transition:0.3s;
 }
 
-/* STEP 1 TITLE */
-.title{
+/* 🔥 UNIQUE HEADINGS */
+.heading{
   text-align:center;
-  font-size:22px;
+  font-size:20px;
   font-weight:bold;
   margin-bottom:20px;
   color:#00f2ff;
-  text-shadow:0 0 15px #00f2ff;
-}
-
-/* HEADER CENTER */
-.centerTitle{
-  text-align:center;
-  font-size:18px;
-  margin-bottom:20px;
-  color:#00f2ff;
+  letter-spacing:1px;
+  text-shadow:0 0 10px #00f2ff, 0 0 20px #007bff;
 }
 
 /* BUTTON */
@@ -73,7 +67,6 @@ select,input{
   border-radius:10px;
   text-align:center;
   font-family:monospace;
-  margin-top:10px;
   border:1px solid #00f2ff;
 }
 
@@ -101,8 +94,7 @@ select,input{
 
 <!-- 🔥 STEP 1 -->
 <div id="step1" class="card">
-
-<div class="title">COBRA SERVER PANNEL</div>
+<div class="heading">COBRA SERVER PANNEL</div>
 
 <select id="plan">
 <option value="">Select Plan</option>
@@ -114,34 +106,24 @@ select,input{
 </select>
 
 <button onclick="goStep2()">BUY KEY</button>
-
 </div>
 
-<!-- 🔥 STEP 2 (PAYMENT) -->
+<!-- 🔥 STEP 2 -->
 <div id="step2" class="card hidden">
+<div class="heading">PAYMENT</div>
 
-<div class="centerTitle">PAYMENT</div>
-
-<div style="margin-top:20px;">
-
-<div class="mono" onclick="copyUPI()">
-UPI: godxcobra@axl
-</div>
+<div class="mono" onclick="copyUPI()">UPI: godxcobra@axl</div>
 
 <img class="qr"
 src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa=godxcobra@axl"
 width="220">
 
-</div>
-
 <button style="margin-top:25px;" onclick="goStep3()">NEXT</button>
-
 </div>
 
-<!-- 🔥 STEP 3 (VERIFY) -->
+<!-- 🔥 STEP 3 -->
 <div id="step3" class="card hidden">
-
-<div class="centerTitle">VERIFY PAYMENT</div>
+<div class="heading">VERIFY PAYMENT PROOF</div>
 
 <select id="method" onchange="changeMethod()">
 <option value="utr">Enter UTR</option>
@@ -153,8 +135,16 @@ width="220">
 
 <button onclick="submitPayment()">SUBMIT</button>
 
-<p id="status" class="status">⏳ Please wait admin verify...</p>
+<p id="status" class="status"></p>
+</div>
 
+<!-- 🔥 STEP 4 (KEY) -->
+<div id="step4" class="card hidden">
+<div class="heading">ACCESS KEY</div>
+
+<div id="keyBox" style="text-align:center;"></div>
+
+<button onclick="goHome()">🏠 HOME</button>
 </div>
 
 </div>
@@ -166,22 +156,25 @@ let interval;
 
 // STEP 1 → 2
 function goStep2(){
-
   selectedPlan=document.getElementById("plan").value;
-
   if(!selectedPlan){
     alert("Select Plan First");
     return;
   }
-
-  document.getElementById("step1").classList.add("hidden");
-  document.getElementById("step2").classList.remove("hidden");
+  show("step2");
 }
 
 // STEP 2 → 3
 function goStep3(){
-  document.getElementById("step2").classList.add("hidden");
-  document.getElementById("step3").classList.remove("hidden");
+  show("step3");
+}
+
+// SHOW FUNCTION (smooth switch)
+function show(id){
+  ["step1","step2","step3","step4"].forEach(x=>{
+    document.getElementById(x).classList.add("hidden");
+  });
+  document.getElementById(id).classList.remove("hidden");
 }
 
 // COPY
@@ -218,12 +211,12 @@ async function submitPayment(){
 
   await fetch("/buy",{method:"POST",body:form});
 
-  document.getElementById("status").innerText="⏳ Please wait admin verify...";
+  document.getElementById("status").innerText="⏳ PLEASE WAIT VERIFY ADMIN";
 
   check(finalUTR);
 }
 
-// STATUS CHECK
+// CHECK STATUS
 function check(utr){
 
   clearInterval(interval);
@@ -236,9 +229,10 @@ function check(utr){
     if(d.status==="approved"){
       clearInterval(interval);
 
-      document.getElementById("step3").innerHTML=`
-      <h3 style="text-align:center;color:#00f2ff;">🎉 PAYMENT SUCCESS</h3>
-      <p style="text-align:center;">🔑 ${d.key}</p>
+      show("step4");
+
+      document.getElementById("keyBox").innerHTML=`
+      <h2 style="color:#00f2ff;">${d.key}</h2>
       <button onclick="navigator.clipboard.writeText('${d.key}')">
       📋 Copy Key
       </button>
@@ -247,10 +241,15 @@ function check(utr){
 
     if(d.status==="rejected"){
       clearInterval(interval);
-      document.getElementById("status").innerText="❌ Rejected";
+      document.getElementById("status").innerText="❌ REJECTED";
     }
 
   },2000);
+}
+
+// HOME
+function goHome(){
+  location.reload();
 }
 
 </script>
