@@ -1,5 +1,4 @@
-<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COBRA ADMIN</title><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet"><style>
 body{
   margin:0;
@@ -16,7 +15,6 @@ body{
   padding:12px 15px;
 }
 
-/* MENU ICON */
 .menu{
   font-size:22px;
   cursor:pointer;
@@ -55,14 +53,6 @@ body{
   display:flex;
   align-items:center;
   gap:10px;
-  font-size:15px;
-}
-
-/* ICON STYLE */
-.icon{
-  width:18px;
-  height:18px;
-  fill:#22c55e;
 }
 
 /* CONTAINER */
@@ -80,72 +70,60 @@ body{
   text-align:center;
 }
 
-/* LOGIN */
+/* 🔥 LOGIN FIXED CENTER SMALL */
 .loginBox{
-  width:90%;
-  max-width:250px;
-  margin:120px auto;
-  padding:18px;
+  width:85%;
+  max-width:220px;
+  position:absolute;
+  top:50%;
+  left:45%;
+  transform:translate(-50%,-50%);
+  padding:16px;
   background:#020617;
   border-radius:15px;
   text-align:center;
 }
 
+/* SMALL INPUT */
 input{
   width:100%;
-  padding:10px;
-  margin:6px 0;
-  border-radius:10px;
+  padding:9px;
+  margin:5px 0;
+  border-radius:8px;
   border:none;
   background:#0f172a;
   color:white;
-  font-size:14px;
+  font-size:13px;
 }
 
+/* BUTTON */
 button{
   width:100%;
-  padding:11px;
+  padding:10px;
   border:none;
-  border-radius:10px;
+  border-radius:8px;
   background:linear-gradient(135deg,#22c55e,#16a34a);
   color:white;
-  margin-top:10px;
+  margin-top:8px;
+  font-size:13px;
 }
 
-/* TELEGRAM */
+/* 🔥 TELEGRAM RIGHT FLOAT SMALL */
 .telegram{
   position:fixed;
   bottom:15px;
-  left:15px;
   right:15px;
-  padding:14px;
-  text-align:center;
+  padding:10px 14px;
+  font-size:13px;
   background:#0088cc;
-  border-radius:12px;
+  border-radius:10px;
 }
 
 .hidden{display:none;}
-</style></head><body><div id="overlay" class="overlay" onclick="closeMenu()"></div><!-- ✅ SIDEBAR WITH PROFESSIONAL ICONS --><div id="sidebar" class="sidebar"><div class="sideItem" onclick="go('panel')">
-<svg class="icon" viewBox="0 0 24 24">
-<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-</svg>
-Home
-</div><div class="sideItem" onclick="go('stockPage')">
-<svg class="icon" viewBox="0 0 24 24">
-<path d="M3 3h18v4H3V3zm0 6h18v12H3V9zm4 2v8h2v-8H7zm4 0v8h2v-8h-2z"/>
-</svg>
-Stock
-</div><div class="sideItem" onclick="go('requestPage')">
-<svg class="icon" viewBox="0 0 24 24">
-<path d="M21 6h-2V4H5v2H3v14h18V6zM5 18V8h14v10H5zm2-8h10v2H7v-2z"/>
-</svg>
-Requests
-</div><div class="sideItem" onclick="logout()">
-<svg class="icon" viewBox="0 0 24 24">
-<path d="M16 17l5-5-5-5v3H9v4h7v3zM3 3h8v2H5v14h6v2H3V3z"/>
-</svg>
-Logout
-</div></div><div class="topbar">
+</style></head><body><div id="overlay" class="overlay" onclick="closeMenu()"></div><!-- SIDEBAR --><div id="sidebar" class="sidebar"><div class="sideItem" onclick="go('panel')">Home</div>
+<div class="sideItem" onclick="go('stockPage')">Stock</div>
+<div class="sideItem" onclick="go('requestPage')">Requests</div>
+<div class="sideItem" onclick="logout()">Logout</div></div><div class="topbar">
 <span id="menuBtn" class="menu" onclick="toggleMenu()">☰</span>
 <b>COBRA ADMIN</b>
 </div><!-- LOGIN --><div id="loginBox" class="loginBox">
@@ -166,7 +144,7 @@ Logout
 <div class="card">REQUESTS</div>
 <div id="data"></div>
 </div><!-- TELEGRAM --><div class="telegram" onclick="window.open('https://t.me/GODx_COBRA')">
-📢 Help Telegram
+📢 Help
 </div><script>
 
 // MENU
