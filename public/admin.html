@@ -61,6 +61,15 @@ button{
   border-radius:10px;
 }
 
+.topActions{
+  display:flex;
+  gap:10px;
+}
+
+.topActions button{
+  flex:1;
+}
+
 .hidden{display:none;}
 </style>
 </head>
@@ -91,14 +100,21 @@ button{
 
 </div>
 
-<!-- STOCK FLOOR -->
+<!-- 🔥 STOCK FLOOR -->
 <div id="stockPage" class="hidden">
 
 <button onclick="back()">⬅ BACK</button>
 
-<h3>📦 STOCK DETAILS</h3>
+<h3>📦 STOCK PANEL</h3>
 
-<div id="stockList"></div>
+<!-- 🔥 TOP OPTIONS -->
+<div class="topActions">
+<button onclick="focusAdd()">➕ ADD</button>
+<button onclick="loadStock()">🔄 REFRESH</button>
+</div>
+
+<!-- 🔥 ADD SECTION -->
+<div class="card" id="addSection">
 
 <h3>➕ Add Key</h3>
 
@@ -111,11 +127,19 @@ button{
 </select>
 
 <input id="newkey" placeholder="Enter Key">
-<button onclick="addKey()">ADD KEY</button>
+<button onclick="addKey(event)">ADD KEY</button>
 
-<h3>📊 STOCK SUMMARY</h3>
+</div>
+
+<!-- 🔥 SUMMARY -->
+<h3>📊 SUMMARY</h3>
 <div id="summary"></div>
 
+<!-- 🔥 STOCK LIST -->
+<h3>📦 AVAILABLE KEYS</h3>
+<div id="stockList"></div>
+
+<!-- 🔥 SOLD -->
 <h3>📤 SOLD KEYS</h3>
 <div id="soldList"></div>
 
@@ -146,10 +170,15 @@ function back(){
   panel.classList.remove("hidden");
 }
 
-// 🔥 DASHBOARD LOAD
+// SCROLL TO ADD
+function focusAdd(){
+  document.getElementById("addSection").scrollIntoView({behavior:"smooth"});
+}
+
+// DASHBOARD
 async function load(){
 
-  let res = await fetch("/admin/data");
+  let res = await fetch("/admin/data?time="+Date.now());
   let arr = await res.json();
 
   let html="";
@@ -163,8 +192,6 @@ async function load(){
       <div class="req">
       📦 ${x.plan}<br>
       🧾 ${x.utr}<br>
-      ⏰ ${x.time || ""}
-      <br>
       <button onclick="verify(${x.id})">VERIFY</button>
       <button onclick="reject(${x.id})">REJECT</button>
       </div>`;
@@ -173,72 +200,61 @@ async function load(){
     if(x.status==="approved") sales++;
   });
 
-  document.getElementById("data").innerHTML=html;
-  document.getElementById("sales").innerText="Sales: "+sales;
-  document.getElementById("pending").innerText="Pending: "+pending;
+  data.innerHTML=html;
+  sales.innerText="Sales: "+sales;
+  pending.innerText="Pending: "+pending;
 }
 
-// 🔥 STOCK LOAD (FINAL FIX)
+// STOCK
 async function loadStock(){
 
-  let s = await fetch("/admin/stock");
+  let s = await fetch("/admin/stock?time="+Date.now());
   let st = await s.json();
 
   let html="";
-  let totalStock=0;
+  let total=0;
 
   for(let p in st.stock){
 
     let keys = st.stock[p];
-    totalStock += keys.length;
+    total+=keys.length;
 
-    html+=`<div class="card">
-    <b>${p} : ${keys.length}</b><br><br>`;
+    html+=`<div class="card"><b>${p} (${keys.length})</b><br>`;
 
     keys.forEach(key=>{
       html+=`
-      <div style="margin:5px 0; border:1px solid #00f2ff; padding:6px; border-radius:8px;">
-        ${key}
-        <br>
-        <button onclick="deleteKey('${p}','${key}')">
-        ❌ DELETE
-        </button>
+      <div style="margin:5px 0;border:1px solid #00f2ff;padding:6px;border-radius:8px;">
+      ${key}
+      <button onclick="deleteKey('${p}','${key}')">❌ DELETE</button>
       </div>`;
     });
 
     html+=`</div>`;
   }
 
-  document.getElementById("stockList").innerHTML=html;
+  stockList.innerHTML=html;
 
-  // 🔥 SOLD DATA
-  let h = await fetch("/admin/data");
+  // SOLD
+  let h = await fetch("/admin/data?time="+Date.now());
   let arr = await h.json();
 
-  let soldHTML="";
-  let soldCount=0;
+  let sold=0, soldHTML="";
 
   arr.forEach(x=>{
     if(x.status==="approved"){
-      soldCount++;
-
-      soldHTML+=`
-      <div class="req">
-      ${x.plan} → ${x.key}
-      </div>`;
+      sold++;
+      soldHTML+=`<div class="req">${x.plan} → ${x.key}</div>`;
     }
   });
 
-  // 🔥 SUMMARY
-  document.getElementById("summary").innerHTML=`
+  summary.innerHTML=`
   <div class="card">
-  📦 Total Stock: ${totalStock}<br>
-  💰 Sold: ${soldCount}<br>
-  🔄 Remaining: ${totalStock}
-  </div>
-  `;
+  📦 Total: ${total}<br>
+  💰 Sold: ${sold}<br>
+  🔄 Remaining: ${total}
+  </div>`;
 
-  document.getElementById("soldList").innerHTML=soldHTML;
+  soldList.innerHTML=soldHTML;
 }
 
 // VERIFY
@@ -253,25 +269,32 @@ async function reject(id){
   load();
 }
 
-// ADD KEY
-async function addKey(){
+// ADD
+async function addKey(e){
+
+  let p=plan.value;
+  let k=newkey.value.trim();
+
+  if(!k){ alert("Enter key"); return; }
+
+  e.target.disabled=true;
+
   await fetch("/admin/addkey",{
     method:"POST",
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      plan:plan.value,
-      key:newkey.value
-    })
+    body:JSON.stringify({plan:p,key:k})
   });
 
-  alert("Key Added");
-  loadStock();
+  newkey.value="";
+  setTimeout(loadStock,300);
+
+  e.target.disabled=false;
 }
 
-// DELETE KEY
+// DELETE
 async function deleteKey(plan,key){
 
-  if(!confirm("Delete this key?")) return;
+  if(!confirm("Delete key?")) return;
 
   await fetch("/admin/deletekey",{
     method:"POST",
