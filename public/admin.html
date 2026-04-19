@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -74,60 +75,60 @@ body{
   text-align:center;
 }
 
-/* 🔥 LOGIN CARD (IMAGE STYLE) */
+/* 🔥 LOGIN PERFECT CENTER */
 .loginBox{
   width:90%;
-  max-width:340px;
-  margin:60px auto;
+  max-width:300px;
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
   border-radius:20px;
   overflow:hidden;
   background:#0b1220;
-  box-shadow:0 15px 50px rgba(0,0,0,0.6);
+  box-shadow:0 15px 40px rgba(0,0,0,0.6);
 }
 
 /* HEADER */
 .loginTop{
-  padding:30px;
+  padding:22px;
   background:linear-gradient(135deg,#0f766e,#22c55e);
   text-align:center;
-  font-size:26px;
-  font-weight:600;
+  font-size:22px;
+  font-weight:bold;
 }
 
 /* BODY */
 .loginBody{
-  padding:22px;
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
 }
 
-/* LABEL */
-.label{
-  font-size:13px;
-  margin-top:10px;
-  color:#cbd5f5;
-}
-
-/* INPUT */
+/* INPUT SMALL + CENTER */
 input{
-  width:100%;
-  padding:14px;
-  margin-top:6px;
-  border-radius:14px;
+  width:90%;
+  padding:10px;
+  margin:6px 0;
+  border-radius:10px;
   border:none;
   background:#111827;
   color:white;
-  font-size:14px;
+  font-size:13px;
+  text-align:left;
 }
 
 /* BUTTON */
 button{
-  width:100%;
-  padding:14px;
+  width:90%;
+  padding:11px;
   border:none;
-  border-radius:14px;
-  background:linear-gradient(135deg,#0f766e,#22c55e);
+  border-radius:10px;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
   color:white;
-  font-weight:600;
-  margin-top:15px;
+  margin-top:10px;
+  font-weight:bold;
 }
 
 /* TELEGRAM */
@@ -161,25 +162,15 @@ button{
 <b>COBRA ADMIN</b>
 </div>
 
-<!-- 🔥 LOGIN -->
+<!-- LOGIN -->
 <div id="loginBox" class="loginBox">
-
-<div class="loginTop">
-Welcome Back
-</div>
+<div class="loginTop">Welcome Back</div>
 
 <div class="loginBody">
-
-<div class="label">Username</div>
-<input id="user" placeholder="Enter your username">
-
-<div class="label">Password</div>
-<input id="pass" placeholder="Enter your password">
-
+<input id="user" placeholder="Enter username">
+<input id="pass" placeholder="Enter password">
 <button onclick="login()">Sign In</button>
-
 </div>
-
 </div>
 
 <!-- DASHBOARD -->
@@ -239,7 +230,7 @@ function go(p){
   document.getElementById(p).classList.remove("hidden");
 }
 
-// LOGIN (UNCHANGED)
+// LOGIN
 async function login(){
   let res = await fetch("/login",{
     method:"POST",
