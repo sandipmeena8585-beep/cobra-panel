@@ -31,17 +31,31 @@ body{
 }
 .login button{background:#000;color:#fff}
 
-/* TOP */
+/* TOPBAR NEW */
 .topbar{
  display:flex;
  justify-content:space-between;
  align-items:center;
- padding:12px;
+ padding:12px 15px;
  background:#020617;
  position:fixed;
  width:100%;
  top:0;
  z-index:1000;
+ box-shadow:0 2px 10px rgba(0,0,0,0.5);
+}
+
+/* MENU ICON */
+.menu-btn{
+ font-size:22px;
+ cursor:pointer;
+}
+
+/* RIGHT ICON */
+.logo{
+ font-weight:bold;
+ font-size:16px;
+ color:#22c55e;
 }
 
 /* SIDEBAR */
@@ -52,7 +66,7 @@ body{
  width:250px;
  height:100%;
  background:#1e293b;
- padding-top:60px;
+ padding-top:70px;
  transition:.3s;
  z-index:999;
 }
@@ -64,10 +78,10 @@ body{
  border-radius:8px;
 }
 
-/* CONTENT FIX */
+/* CONTENT */
 .content{
- margin-top:60px;
- padding:10px;
+ margin-top:65px;
+ padding:12px;
 }
 
 /* CARD */
@@ -104,16 +118,16 @@ button{
 <div id="panel" style="display:none">
 
 <div class="topbar">
-<div onclick="toggleMenu()">☰</div>
-<div>ADMIN PANEL</div>
+<div class="menu-btn" onclick="toggleMenu()">☰</div>
+<div class="logo">COBRA 🐍</div>
 </div>
 
 <div id="sidebar" class="sidebar">
-<div onclick="showTab('home')">Home</div>
-<div onclick="showTab('requests')">Requests</div>
-<div onclick="showTab('customer')">Customer</div>
-<div onclick="showTab('stock')">Stock</div>
-<div onclick="logout()">Logout</div>
+<div onclick="showTab('home')">🏠 Home</div>
+<div onclick="showTab('requests')">📥 Requests</div>
+<div onclick="showTab('customer')">👤 Customer</div>
+<div onclick="showTab('stock')">📦 Stock</div>
+<div onclick="logout()">🚪 Logout</div>
 </div>
 
 <div class="content" id="main"></div>
@@ -155,14 +169,13 @@ function toggleMenu(){
 // 🔥 TAB SWITCH
 function showTab(tab){
 
-// 🔥 auto close menu (mobile fix)
 document.getElementById("sidebar").classList.remove("active");
 
 let html="";
 
 if(tab==="home"){
  html=`<h2>Dashboard</h2>
- <button onclick="toggleSystem()" id="toggleBtn">Toggle System</button>`;
+ <button onclick="toggleSystem()" id="toggleBtn">SYSTEM ON</button>`;
  loadToggle();
 }
 
@@ -192,8 +205,6 @@ if(tab==="stock"){
 
 document.getElementById("main").innerHTML=html;
 }
-
-// ================= API =================
 
 // REQUESTS
 function loadRequests(){
@@ -241,7 +252,7 @@ function loadToggle(){
  });
 }
 
-// STOCK (FRONTEND DEMO)
+// STOCK
 let stock=[];
 function addKey(){
  let k=document.getElementById("key").value;
