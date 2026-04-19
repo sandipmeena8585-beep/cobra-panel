@@ -37,25 +37,13 @@ input,select{
 }
 
 button{
-  padding:12px;
+  padding:10px;
   border:none;
   border-radius:10px;
   background:linear-gradient(90deg,#00f2ff,#007bff);
   width:100%;
   margin-top:5px;
   color:white;
-}
-
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.logout{
-  background:red;
-  padding:6px 10px;
-  border-radius:8px;
 }
 
 .card{
@@ -73,10 +61,6 @@ button{
   border-radius:10px;
 }
 
-.low{color:red;}
-.risk-high{border:2px solid red;}
-.risk-medium{border:2px solid yellow;}
-
 .hidden{display:none;}
 </style>
 </head>
@@ -89,26 +73,34 @@ button{
 <div id="loginBox">
 <h2>🔐 ADMIN LOGIN</h2>
 <input id="user" placeholder="Username">
-<input id="pass" placeholder="Password" type="password">
+<input id="pass" placeholder="Password">
 <button onclick="login()">LOGIN</button>
 </div>
 
 <!-- PANEL -->
 <div id="panel" class="hidden">
 
-<div class="topbar">
-<div>🟢 ADMIN PANEL</div>
-<div class="logout" onclick="logout()">LOGOUT</div>
-</div>
-
 <h3>📊 Dashboard</h3>
+
+<div class="card" onclick="openStock()">📦 STOCK (CLICK)</div>
 <div class="card" id="sales">Sales: 0</div>
 <div class="card" id="pending">Pending: 0</div>
 
-<h3>📦 STOCK</h3>
-<div id="stockBox"></div>
+<h3>📥 Requests</h3>
+<div id="data"></div>
 
-<h3>📦 Add Key</h3>
+</div>
+
+<!-- 🔥 STOCK FLOOR -->
+<div id="stockPage" class="hidden">
+
+<button onclick="back()">⬅ BACK</button>
+
+<h3>📦 STOCK DETAILS</h3>
+
+<div id="stockList"></div>
+
+<h3>➕ Add Key</h3>
 
 <select id="plan">
 <option value="1hour">1 Hour</option>
@@ -121,11 +113,8 @@ button{
 <input id="newkey" placeholder="Enter Key">
 <button onclick="addKey()">ADD KEY</button>
 
-<h3>📥 Requests</h3>
-<div id="data"></div>
-
-<h3>📜 History</h3>
-<div id="history"></div>
+<h3>📤 SOLD KEYS</h3>
+<div id="soldList"></div>
 
 </div>
 
@@ -135,104 +124,107 @@ button{
 
 // LOGIN
 function login(){
-  let u=user.value.trim();
-  let p=pass.value.trim();
-
-  if(u==="COBRA SERVER" && p==="SAMI9166"){
+  if(user.value==="COBRA SERVER" && pass.value==="SAMI9166"){
     loginBox.style.display="none";
     panel.classList.remove("hidden");
     load();
-  }else{
-    alert("Wrong Login");
-  }
+  }else alert("Wrong Login");
 }
 
-// LOGOUT
-function logout(){
-  location.reload();
+// OPEN STOCK PAGE
+function openStock(){
+  panel.classList.add("hidden");
+  stockPage.classList.remove("hidden");
+  loadStock();
 }
 
-// 🔥 STABLE LOAD FUNCTION
+// BACK
+function back(){
+  stockPage.classList.add("hidden");
+  panel.classList.remove("hidden");
+}
+
+// 🔥 MAIN LOAD
 async function load(){
 
-  try{
+  let res = await fetch("/admin/data");
+  let data = await res.json();
 
-    let res = await fetch("/admin/data");
-    let data = await res.json();
+  let html="";
+  let sales=0,pending=0;
 
-    let pendingHTML="";
-    let historyHTML="";
-    let sales=0,pending=0;
+  data.forEach(x=>{
 
-    data.forEach(x=>{
+    if(x.status==="pending"){
+      pending++;
 
-      let riskClass="";
-      if(x.risk==="high") riskClass="risk-high";
-      if(x.risk==="medium") riskClass="risk-medium";
-
-      if(x.status==="pending"){
-        pending++;
-
-        pendingHTML+=`
-        <div class="req ${riskClass}">
-        📦 ${x.plan}<br>
-        🧾 ${x.utr}<br>
-        ⏰ ${x.time || ""}
-        <br>
-        🔑 Next Key: <b id="key-${x.id}">...</b>
-        <br>
-        <button onclick="verify(${x.id})">VERIFY</button>
-        <button onclick="reject(${x.id})">REJECT</button>
-        </div>`;
-      }
-
-      if(x.status==="approved"){
-        sales++;
-        historyHTML+=`<div class="req">✅ ${x.plan} → ${x.key}</div>`;
-      }
-
-      if(x.status==="rejected"){
-        historyHTML+=`<div class="req">❌ ${x.plan}</div>`;
-      }
-
-    });
-
-    // UPDATE ONLY CONTENT (NO FLICKER)
-    data.innerHTML=pendingHTML;
-    history.innerHTML=historyHTML;
-
-    sales.innerText="Sales: "+sales;
-    pending.innerText="Pending: "+pending;
-
-    // STOCK
-    let s = await fetch("/admin/stock");
-    let st = await s.json();
-
-    let stockHTML="";
-    for(let p in st.stock){
-      let val = st.stock[p].length;
-
-      stockHTML+=`
-      <div class="card ${val<=2?'low':''}">
-      ${p} : ${val} ${val<=2?'⚠ LOW':''}
+      html+=`
+      <div class="req">
+      📦 ${x.plan}<br>
+      🧾 ${x.utr}<br>
+      ⏰ ${x.time || ""}
+      <br>
+      <button onclick="verify(${x.id})">VERIFY</button>
+      <button onclick="reject(${x.id})">REJECT</button>
       </div>`;
     }
 
-    stockBox.innerHTML=stockHTML;
+    if(x.status==="approved") sales++;
 
-    // KEY PREVIEW
-    data.forEach(x=>{
-      fetch("/admin/nextkey/"+x.plan)
-      .then(r=>r.text())
-      .then(k=>{
-        let el=document.getElementById("key-"+x.id);
-        if(el) el.innerText=k || "No Key";
-      });
+  });
+
+  document.getElementById("data").innerHTML=html;
+  document.getElementById("sales").innerText="Sales: "+sales;
+  document.getElementById("pending").innerText="Pending: "+pending;
+}
+
+// 🔥 STOCK LOAD + DELETE
+async function loadStock(){
+
+  let s = await fetch("/admin/stock");
+  let st = await s.json();
+
+  let html="";
+
+  for(let p in st.stock){
+
+    html+=`<div class="card">
+    <b>${p} : ${st.stock[p].length}</b><br><br>`;
+
+    st.stock[p].forEach(key=>{
+
+      html+=`
+      <div style="margin:5px 0; border:1px solid #00f2ff; padding:6px; border-radius:8px;">
+        ${key}
+        <br>
+        <button onclick="deleteKey('${p}','${key}')">
+        ❌ DELETE
+        </button>
+      </div>
+      `;
     });
 
-  }catch(e){
-    console.log("error",e);
+    html+=`</div>`;
   }
+
+  document.getElementById("stockList").innerHTML=html;
+
+  // SOLD
+  let h = await fetch("/admin/data");
+  let data = await h.json();
+
+  let soldHTML="";
+
+  data.forEach(x=>{
+    if(x.status==="approved"){
+      soldHTML+=`
+      <div class="req">
+      ${x.plan} → ${x.key}
+      </div>`;
+    }
+  });
+
+  document.getElementById("soldList").innerHTML=soldHTML;
 }
 
 // VERIFY
@@ -259,16 +251,29 @@ async function addKey(){
   });
 
   alert("Added");
-  load();
+  loadStock();
 }
 
-// 🔥 SMOOTH INTERVAL
-let running=false;
+// DELETE KEY
+async function deleteKey(plan,key){
 
+  if(!confirm("Delete this key?")) return;
+
+  await fetch("/admin/deletekey",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({plan,key})
+  });
+
+  loadStock();
+}
+
+// AUTO REFRESH
 setInterval(()=>{
-  if(!running){
-    running=true;
-    load().finally(()=>running=false);
+  if(!stockPage.classList.contains("hidden")){
+    loadStock();
+  }else{
+    load();
   }
 },2000);
 
