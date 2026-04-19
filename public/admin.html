@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,7 +14,6 @@ body{
   color:white;
 }
 
-/* TOP */
 .topbar{
   display:flex;
   justify-content:space-between;
@@ -29,7 +27,6 @@ body{
   display:none;
 }
 
-/* SIDEBAR */
 .sidebar{
   position:fixed;
   top:0;
@@ -60,7 +57,6 @@ body{
   background:#0f172a;
 }
 
-/* CONTAINER */
 .container{
   padding:15px;
   display:flex;
@@ -75,7 +71,6 @@ body{
   text-align:center;
 }
 
-/* 🔥 LOGIN PERFECT CENTER */
 .loginBox{
   width:90%;
   max-width:300px;
@@ -89,7 +84,6 @@ body{
   box-shadow:0 15px 40px rgba(0,0,0,0.6);
 }
 
-/* HEADER */
 .loginTop{
   padding:22px;
   background:linear-gradient(135deg,#0f766e,#22c55e);
@@ -98,7 +92,6 @@ body{
   font-weight:bold;
 }
 
-/* BODY */
 .loginBody{
   padding:18px;
   display:flex;
@@ -106,9 +99,8 @@ body{
   align-items:center;
 }
 
-/* INPUT SMALL + CENTER */
-input{
-  width:90%;
+input,select{
+  width:100%;
   padding:10px;
   margin:6px 0;
   border-radius:10px;
@@ -116,12 +108,10 @@ input{
   background:#111827;
   color:white;
   font-size:13px;
-  text-align:left;
 }
 
-/* BUTTON */
 button{
-  width:90%;
+  width:100%;
   padding:11px;
   border:none;
   border-radius:10px;
@@ -131,7 +121,6 @@ button{
   font-weight:bold;
 }
 
-/* TELEGRAM */
 .telegram{
   position:fixed;
   bottom:15px;
@@ -183,9 +172,12 @@ button{
 
 <!-- STOCK -->
 <div id="stockPage" class="container hidden">
+
 <div class="card">STOCK PANEL</div>
 
-<select id="plan">
+<!-- SAME LINE -->
+<div style="display:flex; gap:8px;">
+<select id="plan" style="flex:1;">
 <option value="1hour">1 Hour</option>
 <option value="3hour">3 Hour</option>
 <option value="1day">1 Day</option>
@@ -193,10 +185,13 @@ button{
 <option value="7day">7 Day</option>
 </select>
 
-<input id="newkey" placeholder="Enter Key">
+<input id="newkey" placeholder="Enter Key" style="flex:2;">
+</div>
+
 <button onclick="addKey()">ADD KEY</button>
 
 <div id="stockList"></div>
+
 </div>
 
 <!-- REQUEST -->
@@ -249,12 +244,95 @@ async function login(){
     panel.classList.remove("hidden");
     menuBtn.style.display="block";
 
-    load();
     loadStock();
     loadStockCount();
   }else{
     alert("Wrong Login");
   }
+}
+
+// STOCK LOAD
+async function loadStock(){
+  let res = await fetch("/admin/stock");
+  let data = await res.json();
+
+  let html="";
+
+  for(let p in data){
+
+    html+=`<div class="card"><b>${p.toUpperCase()}</b><br><br>`;
+
+    if(data[p].length === 0){
+      html+="No Keys<br>";
+    }
+
+    data[p].forEach(k=>{
+      html+=`
+      <div style="display:flex;justify-content:space-between;margin:5px 0;">
+        <span>${k}</span>
+        <button style="padding:4px 8px;font-size:12px;"
+        onclick="deleteKey('${p}','${k}')">❌</button>
+      </div>`;
+    });
+
+    html+="</div>";
+  }
+
+  stockList.innerHTML = html;
+}
+
+// STOCK COUNT
+async function loadStockCount(){
+  let res = await fetch("/admin/stock");
+  let stock = await res.json();
+
+  let total = 0;
+  for(let p in stock){
+    total += stock[p].length;
+  }
+
+  stockCount.innerText="Stock: "+total;
+}
+
+// ADD KEY
+async function addKey(){
+  if(!newkey.value.trim()) return alert("Enter key");
+
+  await fetch("/admin/addkey",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      plan:plan.value,
+      key:newkey.value
+    })
+  });
+
+  newkey.value="";
+  loadStock();
+  loadStockCount();
+}
+
+// DELETE KEY
+async function deleteKey(plan,key){
+  await fetch("/admin/deletekey",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({plan,key})
+  });
+
+  loadStock();
+  loadStockCount();
+}
+
+// AUTO REFRESH
+setInterval(()=>{
+  loadStock();
+  loadStockCount();
+},3000);
+
+// LOGOUT
+function logout(){
+  location.reload();
 }
 
 </script>
