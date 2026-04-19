@@ -85,19 +85,15 @@ button{
 
 <div class="box">
 
-<!-- 🔥 LOGIN FLOOR -->
+<!-- LOGIN -->
 <div id="loginBox">
-
 <h2>🔐 ADMIN LOGIN</h2>
-
 <input id="user" placeholder="Username">
 <input id="pass" placeholder="Password" type="password">
-
 <button onclick="login()">LOGIN</button>
-
 </div>
 
-<!-- 🔥 PANEL FLOOR -->
+<!-- PANEL -->
 <div id="panel" class="hidden">
 
 <div class="topbar">
@@ -106,7 +102,6 @@ button{
 </div>
 
 <h3>📊 Dashboard</h3>
-
 <div class="card" id="sales">Sales: 0</div>
 <div class="card" id="pending">Pending: 0</div>
 
@@ -124,7 +119,6 @@ button{
 </select>
 
 <input id="newkey" placeholder="Enter Key">
-
 <button onclick="addKey()">ADD KEY</button>
 
 <h3>📥 Requests</h3>
@@ -139,21 +133,15 @@ button{
 
 <script>
 
-// 🔥 LOGIN FIX
+// LOGIN
 function login(){
-  let u=document.getElementById("user").value.trim();
-  let p=document.getElementById("pass").value.trim();
+  let u=user.value.trim();
+  let p=pass.value.trim();
 
   if(u==="COBRA SERVER" && p==="SAMI9166"){
-
-    // 👉 LOGIN FLOOR HIDE
-    document.getElementById("loginBox").style.display="none";
-
-    // 👉 PANEL SHOW
-    document.getElementById("panel").classList.remove("hidden");
-
+    loginBox.style.display="none";
+    panel.classList.remove("hidden");
     load();
-
   }else{
     alert("Wrong Login");
   }
@@ -164,79 +152,87 @@ function logout(){
   location.reload();
 }
 
-// LOAD
+// 🔥 STABLE LOAD FUNCTION
 async function load(){
 
-  let res = await fetch("/admin/data");
-  let data = await res.json();
+  try{
 
-  let html="", historyHTML="";
-  let sales=0,pending=0;
+    let res = await fetch("/admin/data");
+    let data = await res.json();
 
-  data.forEach(x=>{
+    let pendingHTML="";
+    let historyHTML="";
+    let sales=0,pending=0;
 
-    let riskClass="";
-    if(x.risk==="high") riskClass="risk-high";
-    if(x.risk==="medium") riskClass="risk-medium";
+    data.forEach(x=>{
 
-    if(x.status==="pending"){
-      pending++;
+      let riskClass="";
+      if(x.risk==="high") riskClass="risk-high";
+      if(x.risk==="medium") riskClass="risk-medium";
 
-      html+=`
-      <div class="req ${riskClass}">
-      📦 ${x.plan}<br>
-      🧾 ${x.utr}<br>
-      ⏰ ${x.time || ""}
-      <br>
-      🔑 Next Key: <b id="key-${x.id}">...</b>
-      <br>
-      <button onclick="verify(${x.id})">VERIFY</button>
-      <button onclick="reject(${x.id})">REJECT</button>
+      if(x.status==="pending"){
+        pending++;
+
+        pendingHTML+=`
+        <div class="req ${riskClass}">
+        📦 ${x.plan}<br>
+        🧾 ${x.utr}<br>
+        ⏰ ${x.time || ""}
+        <br>
+        🔑 Next Key: <b id="key-${x.id}">...</b>
+        <br>
+        <button onclick="verify(${x.id})">VERIFY</button>
+        <button onclick="reject(${x.id})">REJECT</button>
+        </div>`;
+      }
+
+      if(x.status==="approved"){
+        sales++;
+        historyHTML+=`<div class="req">✅ ${x.plan} → ${x.key}</div>`;
+      }
+
+      if(x.status==="rejected"){
+        historyHTML+=`<div class="req">❌ ${x.plan}</div>`;
+      }
+
+    });
+
+    // UPDATE ONLY CONTENT (NO FLICKER)
+    data.innerHTML=pendingHTML;
+    history.innerHTML=historyHTML;
+
+    sales.innerText="Sales: "+sales;
+    pending.innerText="Pending: "+pending;
+
+    // STOCK
+    let s = await fetch("/admin/stock");
+    let st = await s.json();
+
+    let stockHTML="";
+    for(let p in st.stock){
+      let val = st.stock[p].length;
+
+      stockHTML+=`
+      <div class="card ${val<=2?'low':''}">
+      ${p} : ${val} ${val<=2?'⚠ LOW':''}
       </div>`;
     }
 
-    if(x.status==="approved"){
-      sales++;
-      historyHTML+=`<div class="req">✅ ${x.plan} → ${x.key}</div>`;
-    }
+    stockBox.innerHTML=stockHTML;
 
-    if(x.status==="rejected"){
-      historyHTML+=`<div class="req">❌ ${x.plan}</div>`;
-    }
-
-  });
-
-  document.getElementById("data").innerHTML=html;
-  document.getElementById("history").innerHTML=historyHTML;
-
-  document.getElementById("sales").innerText="Sales: "+sales;
-  document.getElementById("pending").innerText="Pending: "+pending;
-
-  // STOCK
-  let s = await fetch("/admin/stock");
-  let st = await s.json();
-
-  let stockHTML="";
-  for(let p in st.stock){
-    let val = st.stock[p].length;
-    stockHTML+=`
-    <div class="card ${val<=2?'low':''}">
-    ${p} : ${val} ${val<=2?'⚠ LOW':''}
-    </div>`;
-  }
-
-  document.getElementById("stockBox").innerHTML=stockHTML;
-
-  // KEY PREVIEW
-  data.forEach(x=>{
-    fetch("/admin/nextkey/"+x.plan)
-    .then(r=>r.text())
-    .then(k=>{
-      let el=document.getElementById("key-"+x.id);
-      if(el) el.innerText=k || "No Key";
+    // KEY PREVIEW
+    data.forEach(x=>{
+      fetch("/admin/nextkey/"+x.plan)
+      .then(r=>r.text())
+      .then(k=>{
+        let el=document.getElementById("key-"+x.id);
+        if(el) el.innerText=k || "No Key";
+      });
     });
-  });
 
+  }catch(e){
+    console.log("error",e);
+  }
 }
 
 // VERIFY
@@ -261,12 +257,20 @@ async function addKey(){
       key:newkey.value
     })
   });
+
   alert("Added");
   load();
 }
 
-// AUTO REFRESH
-setInterval(load,3000);
+// 🔥 SMOOTH INTERVAL
+let running=false;
+
+setInterval(()=>{
+  if(!running){
+    running=true;
+    load().finally(()=>running=false);
+  }
+},2000);
 
 </script>
 
