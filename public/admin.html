@@ -2,14 +2,46 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Panel</title>
+<title>COBRA ADMIN</title>
 
 <style>
-body{font-family:sans-serif;margin:0;background:#111;color:#fff}
-.hidden{display:none}
-.card{background:#222;padding:10px;margin:10px;border-radius:10px}
-button{padding:6px 10px;margin:5px;border:none;border-radius:6px;cursor:pointer}
-input,select{padding:6px;margin:5px}
+body{margin:0;font-family:sans-serif;background:#0f172a;color:#fff}
+
+/* LOGIN */
+#loginWrap{
+display:flex;justify-content:center;align-items:center;height:100vh;
+}
+.loginBox{
+background:#111;padding:30px;border-radius:12px;width:260px;text-align:center;
+}
+input{width:90%;padding:8px;margin:6px;border:none;border-radius:6px}
+button{padding:8px 12px;border:none;border-radius:6px;background:#22c55e}
+
+/* HEADER */
+.header{
+display:flex;align-items:center;padding:10px;background:#111;
+}
+.menuBtn{font-size:20px;cursor:pointer;margin-right:10px}
+
+/* SIDEBAR */
+.sidebar{
+position:fixed;top:0;left:-220px;width:200px;height:100%;
+background:#111;padding:10px;transition:.3s;
+}
+.sidebar.active{left:0}
+.sideItem{padding:10px;border-bottom:1px solid #222;cursor:pointer}
+
+/* DASHBOARD */
+#dashboard{display:none;padding:10px}
+.row{display:flex;gap:10px}
+.left,.right{flex:1}
+
+.card{
+background:#111;padding:10px;margin:6px;border-radius:10px;font-size:13px;
+}
+
+.small{font-size:12px;color:#aaa}
+.history{max-height:200px;overflow:auto}
 </style>
 
 </head>
@@ -17,99 +49,122 @@ input,select{padding:6px;margin:5px}
 
 <!-- LOGIN -->
 <div id="loginWrap">
-  <h2>Admin Login</h2>
-  <input id="user" placeholder="User"><br>
-  <input id="pass" placeholder="Pass"><br>
-  <button onclick="login()">Login</button>
+  <div class="loginBox">
+    <h2>Welcome Back</h2>
+    <small>COBRA ADMIN</small><br><br>
+
+    <input id="user" placeholder="Username">
+    <input id="pass" placeholder="Password">
+    <button onclick="login()">LOGIN</button>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar" class="sidebar">
+  <div class="sideItem" onclick="showPage('home')">Home</div>
+  <div class="sideItem" onclick="showPage('request')">Request</div>
+  <div class="sideItem" onclick="showPage('user')">Manage User</div>
+  <div class="sideItem" onclick="showPage('control')">Online Control</div>
+</div>
+
+<!-- HEADER -->
+<div id="header" class="header" style="display:none;">
+  <div class="menuBtn" onclick="toggleMenu()">☰</div>
+  <b>COBRA ADMIN PANEL</b>
 </div>
 
 <!-- DASHBOARD -->
-<div id="dashboard" class="hidden">
-  <h2>Dashboard</h2>
+<div id="dashboard">
 
-  <div id="totalSales"></div>
-  <div id="pendingReq"></div>
-  <div id="todaySales"></div>
-  <div id="stockCount"></div>
+  <!-- HOME -->
+  <div id="home">
 
-  <hr>
+    <!-- TOGGLE -->
+    <div class="card">
+      Customer Panel:
+      <input type="checkbox" id="customerToggle" onchange="toggleCustomer()">
+      <span id="toggleStatus"></span>
+    </div>
 
-  <!-- TOGGLE -->
-  <h3>Customer Panel Control</h3>
-  <input type="checkbox" id="customerToggle" onchange="toggleCustomer()">
-  <p id="toggleStatus"></p>
+    <div class="row">
 
-  <hr>
+      <!-- LEFT -->
+      <div class="left">
+        <div class="card">Stock: <span id="stockCount">0</span></div>
+        <div class="card">Sold: <span id="soldCount">0</span></div>
+        <div class="card">Deleted: <span id="deleteCount">0</span></div>
+        <div class="card">Added: <span id="addCount">0</span></div>
+      </div>
 
-  <button onclick="go('stockPage')">Stock</button>
-  <button onclick="go('requestPage')">Requests</button>
-</div>
+      <!-- RIGHT -->
+      <div class="right">
+        <div class="card">
+          <b>Last 5 History</b>
+          <div id="history" class="history small"></div>
+        </div>
+      </div>
 
-<!-- STOCK -->
-<div id="stockPage" class="hidden">
-  <h2>Stock</h2>
+    </div>
+  </div>
 
-  <select id="plan">
-    <option value="1hour">1 Hour</option>
-    <option value="3hour">3 Hour</option>
-    <option value="1day">1 Day</option>
-    <option value="3day">3 Day</option>
-    <option value="7day">7 Day</option>
-  </select>
+  <!-- REQUEST -->
+  <div id="request" style="display:none;">
+    <div class="card">Request Page (same backend use)</div>
+  </div>
 
-  <input id="newkey" placeholder="Enter Key">
-  <button onclick="addKey()">Add</button>
+  <!-- USER -->
+  <div id="userPage" style="display:none;">
+    <div class="card">Manage User (add later)</div>
+  </div>
 
-  <div id="stockList"></div>
+  <!-- CONTROL -->
+  <div id="control" style="display:none;">
+    <div class="card">Online Control Active</div>
+  </div>
 
-  <button onclick="go('dashboard')">Back</button>
-</div>
-
-<!-- REQUEST -->
-<div id="requestPage" class="hidden">
-  <h2>Requests</h2>
-
-  <div id="data"></div>
-
-  <button onclick="go('dashboard')">Back</button>
 </div>
 
 <script>
 
-// ✅ ELEMENT FIX
+// ELEMENTS
+const user = document.getElementById("user");
+const pass = document.getElementById("pass");
+const loginWrap = document.getElementById("loginWrap");
 const dashboard = document.getElementById("dashboard");
-const stockPage = document.getElementById("stockPage");
-const requestPage = document.getElementById("requestPage");
+const header = document.getElementById("header");
+
+const sidebar = document.getElementById("sidebar");
 
 const toggleStatus = document.getElementById("toggleStatus");
 const customerToggle = document.getElementById("customerToggle");
 
-const user = document.getElementById("user");
-const pass = document.getElementById("pass");
-const loginWrap = document.getElementById("loginWrap");
-
-const totalSales = document.getElementById("totalSales");
-const pendingReq = document.getElementById("pendingReq");
-const todaySales = document.getElementById("todaySales");
 const stockCount = document.getElementById("stockCount");
+const soldCount = document.getElementById("soldCount");
+const deleteCount = document.getElementById("deleteCount");
+const addCount = document.getElementById("addCount");
 
-const stockList = document.getElementById("stockList");
-const plan = document.getElementById("plan");
-const newkey = document.getElementById("newkey");
+const historyBox = document.getElementById("history");
 
-const data = document.getElementById("data");
+let history=[];
 
-// NAV
-function go(p){
-dashboard.classList.add("hidden");
-stockPage.classList.add("hidden");
-requestPage.classList.add("hidden");
+// MENU
+function toggleMenu(){
+sidebar.classList.toggle("active");
+}
 
-document.getElementById(p).classList.remove("hidden");
+// PAGE SWITCH
+function showPage(p){
+document.getElementById("home").style.display="none";
+document.getElementById("request").style.display="none";
+document.getElementById("userPage").style.display="none";
+document.getElementById("control").style.display="none";
 
-if(p==="dashboard"){loadDashboard();loadSettings();}
-if(p==="stockPage") loadStock();
-if(p==="requestPage") loadRequests();
+if(p==="home") document.getElementById("home").style.display="block";
+if(p==="request") document.getElementById("request").style.display="block";
+if(p==="user") document.getElementById("userPage").style.display="block";
+if(p==="control") document.getElementById("control").style.display="block";
+
+sidebar.classList.remove("active");
 }
 
 // LOGIN
@@ -121,14 +176,14 @@ let d=await res.json();
 
 if(d.status==="ok"){
 loginWrap.style.display="none";
-go("dashboard");
+dashboard.style.display="block";
+header.style.display="flex";
+loadAll();
 }else alert("Login failed");
 }
 
 // SETTINGS
 async function loadSettings(){
-toggleStatus.innerText="Please Wait...";
-
 let res=await fetch("/admin/settings");
 let s=await res.json();
 
@@ -138,7 +193,7 @@ toggleStatus.innerText = s.customerEnabled ? "ON" : "OFF";
 
 // TOGGLE
 async function toggleCustomer(){
-toggleStatus.innerText="Please Wait...";
+toggleStatus.innerText="...";
 
 let res=await fetch("/admin/toggleCustomer",{
 method:"POST",
@@ -147,106 +202,52 @@ body:JSON.stringify({ enabled: customerToggle.checked })
 });
 
 let d=await res.json();
-
-customerToggle.checked = d.customerEnabled;
 toggleStatus.innerText = d.customerEnabled ? "ON" : "OFF";
 }
 
-// DASHBOARD
-async function loadDashboard(){
+// LOAD ALL
+async function loadAll(){
+loadSettings();
+loadStats();
+}
+
+// STATS
+async function loadStats(){
 let res=await fetch("/admin/data");
 let arr=await res.json();
 
-let sales=0,pending=0,today=0;
-let todayDate=new Date().toDateString();
-
+let sold=0;
 arr.forEach(x=>{
-if(x.status==="approved"){
-sales++;
-if(new Date(x.id).toDateString()===todayDate) today++;
-}
-if(x.status==="pending") pending++;
+if(x.status==="approved") sold++;
 });
 
-totalSales.innerText="Total Sales: "+sales;
-pendingReq.innerText="Pending: "+pending;
-todaySales.innerText="Today: "+today;
-
-loadStockCount();
-}
-
-// STOCK COUNT
-async function loadStockCount(){
-let res=await fetch("/admin/stock");
-let data=await res.json();
-
-let total=0;
-for(let p in data) total+=data[p].length;
-
-stockCount.innerText="Stock: "+total;
-}
+soldCount.innerText=sold;
 
 // STOCK
-async function loadStock(){
-let res=await fetch("/admin/stock");
-let data=await res.json();
+let s=await fetch("/admin/stock");
+let stock=await s.json();
 
-let html="";
-for(let p in data){
-html+=`<div class="card"><b>${p}</b><br>`;
-data[p].forEach(k=>{html+=`${k}<br>`;});
-html+="</div>";
-}
-stockList.innerHTML=html;
+let total=0;
+for(let p in stock) total+=stock[p].length;
+
+stockCount.innerText=total;
 }
 
-// ADD KEY
-async function addKey(){
-await fetch("/admin/addkey",{method:"POST",headers:{'Content-Type':'application/json'},
-body:JSON.stringify({plan:plan.value,key:newkey.value})});
-newkey.value="";
-loadStock();
-}
+// HISTORY
+function addHistory(text){
+history.unshift(text);
+if(history.length>5) history.pop();
 
-// REQUEST
-async function loadRequests(){
-let res=await fetch("/admin/data");
-let arr=await res.json();
-
-let html="";
-arr.reverse().forEach(x=>{
-if(x.status==="pending"){
-html+=`
-<div class="card">
-${x.plan}<br>
-UTR: ${x.utr}<br>
-<button onclick="verify(${x.id},this)">YES</button>
-<button onclick="reject(${x.id},this)">NO</button>
-</div>`;
-}
+historyBox.innerHTML="";
+history.forEach(x=>{
+historyBox.innerHTML+=`<div>${x}</div>`;
 });
-data.innerHTML=html;
 }
 
-// VERIFY
-async function verify(id,btn){
-btn.parentElement.remove();
-await fetch("/admin/verify/"+id);
-loadDashboard();
-}
-
-// REJECT
-async function reject(id,btn){
-btn.parentElement.remove();
-await fetch("/admin/reject/"+id);
-}
-
-// AUTO REFRESH
+// DEMO AUTO
 setInterval(()=>{
-if(!dashboard.classList.contains("hidden")) loadDashboard();
-if(!stockPage.classList.contains("hidden")) loadStock();
-if(!requestPage.classList.contains("hidden")) loadRequests();
-},3000);
+addHistory("Sell Key");
+},7000);
 
 </script>
 
