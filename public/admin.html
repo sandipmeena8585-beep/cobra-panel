@@ -1,6 +1,6 @@
 <script>
 
-// ELEMENT FIX
+// SAFE ELEMENT SELECT
 const panel = document.getElementById("panel");
 const stockPage = document.getElementById("stockPage");
 const requestPage = document.getElementById("requestPage");
@@ -10,21 +10,22 @@ const stockCount = document.getElementById("stockCount");
 
 // MENU
 function toggleMenu(){
-  sidebar.classList.add("active");
-  overlay.classList.add("active");
+  document.getElementById("sidebar").classList.add("active");
+  document.getElementById("overlay").classList.add("active");
 }
+
 function closeMenu(){
-  sidebar.classList.remove("active");
-  overlay.classList.remove("active");
+  document.getElementById("sidebar").classList.remove("active");
+  document.getElementById("overlay").classList.remove("active");
 }
 
 // NAV
 function go(p){
-  panel.classList.add("hidden");
-  stockPage.classList.add("hidden");
-  requestPage.classList.add("hidden");
+  panel.style.display="none";
+  stockPage.style.display="none";
+  requestPage.style.display="none";
 
-  document.getElementById(p).classList.remove("hidden");
+  document.getElementById(p).style.display="block";
 
   if(p==="requestPage"){
     loadRequests();
@@ -33,87 +34,82 @@ function go(p){
 
 // LOGIN
 async function login(){
-  let res = await fetch("/login",{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      user:user.value,
-      pass:pass.value,
-      device:navigator.userAgent
-    })
-  });
+  try{
 
-  let d = await res.json();
+    let res = await fetch("/login",{
+      method:"POST",
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        user:user.value,
+        pass:pass.value,
+        device:navigator.userAgent
+      })
+    });
 
-  if(d.status==="ok"){
-    loginBox.classList.add("hidden");
-    panel.classList.remove("hidden");
-    menuBtn.style.display="block";
+    let d = await res.json();
 
-    loadStock();
-    loadStockCount();
-    loadRequests();
-  }else{
-    alert("Wrong Login");
+    if(d.status==="ok"){
+      loginBox.style.display="none";
+      panel.style.display="block";
+      menuBtn.style.display="block";
+
+      loadStock();
+      loadStockCount();
+      loadRequests();
+    }else{
+      alert("Wrong Login");
+    }
+
+  }catch(e){
+    alert("SERVER ERROR");
   }
 }
 
-// 🔥 REQUEST LOAD FIXED
+// REQUEST
 async function loadRequests(){
-  let res = await fetch("/admin/data");
-  let arr = await res.json();
+  try{
 
-  let html="";
+    let res = await fetch("/admin/data");
+    let arr = await res.json();
 
-  arr.reverse().forEach(x=>{
-    if(x.status==="pending"){
+    let html="";
 
-      let img = "";
-      if(x.file){
-        img = "<b>📸 Screenshot:</b><br><img src='/uploads/"+x.file+"' style='width:100%;border-radius:10px;margin-top:5px;'><br><br>";
+    arr.reverse().forEach(x=>{
+      if(x.status==="pending"){
+
+        let img="";
+        if(x.file){
+          img = "<img src='/uploads/"+x.file+"' style='width:100%;border-radius:10px'>";
+        }
+
+        html += `
+        <div class="card">
+          ${x.plan}<br>
+          ${x.utr || "N/A"}<br>
+          ${x.time || ""}<br>
+          ${img}<br>
+          <button onclick="verify(${x.id},event)">YES</button>
+          <button onclick="reject(${x.id},event)">NO</button>
+        </div>`;
       }
+    });
 
-      html += `
-      <div class="card">
+    dataBox.innerHTML = html || "No Requests";
 
-        <b>📦 Plan:</b> ${x.plan}<br><br>
-
-        <b>🧾 UTR:</b> ${x.utr || "N/A"}<br><br>
-
-        <b>⏰ Time:</b> ${x.time || "N/A"}<br><br>
-
-        ${img}
-
-        <button onclick="verify(${x.id},event)">✅ YES PAYMENT</button>
-        <button onclick="reject(${x.id},event)">❌ NO PAYMENT</button>
-
-      </div>`;
-    }
-  });
-
-  dataBox.innerHTML = html || "<div class='card'>No Requests</div>";
+  }catch(e){
+    console.log(e);
+  }
 }
 
 // VERIFY
 async function verify(id,e){
-  let card = e.target.closest(".card");
-
-  card.style.opacity="0";
-  setTimeout(()=>card.remove(),200);
-
+  e.target.parentElement.remove();
   await fetch("/admin/verify/"+id);
-
-  loadStock();
-  loadStockCount();
 }
 
 // REJECT
 async function reject(id,e){
-  let card = e.target.closest(".card");
-
-  card.style.opacity="0";
-  setTimeout(()=>card.remove(),200);
-
+  e.target.parentElement.remove();
   await fetch("/admin/reject/"+id);
 }
 
@@ -125,14 +121,10 @@ async function loadStock(){
   let html="";
 
   for(let p in data){
-    html += `<div class="card"><b>${p}</b><br>`;
-
-    if(data[p].length===0){
-      html += "No Keys<br>";
-    }
+    html += `<div class="card">${p}<br>`;
 
     data[p].forEach(k=>{
-      html += `${k}<br>`;
+      html += k+"<br>";
     });
 
     html += "</div>";
@@ -156,7 +148,7 @@ async function loadStockCount(){
 
 // ADD KEY
 async function addKey(){
-  if(!newkey.value.trim()) return;
+  if(!newkey.value) return;
 
   await fetch("/admin/addkey",{
     method:"POST",
@@ -169,19 +161,12 @@ async function addKey(){
 
   newkey.value="";
   loadStock();
-  loadStockCount();
 }
 
-// AUTO REFRESH
+// AUTO
 setInterval(()=>{
   loadStock();
   loadStockCount();
-  loadRequests();
 },3000);
-
-// LOGOUT
-function logout(){
-  location.reload();
-}
 
 </script>
