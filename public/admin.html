@@ -1,5 +1,10 @@
-<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COBRA ADMIN</title><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet"><style>
+<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COBRA ADMIN</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
 body{
   margin:0;
   font-family:'Poppins',sans-serif;
@@ -50,9 +55,6 @@ body{
   margin:10px 0;
   border-radius:12px;
   background:#0f172a;
-  display:flex;
-  align-items:center;
-  gap:10px;
 }
 
 /* CONTAINER */
@@ -70,45 +72,55 @@ body{
   text-align:center;
 }
 
-/* 🔥 LOGIN FIXED CENTER SMALL */
+/* 🔥 LOGIN CARD (NEW DESIGN) */
 .loginBox{
-  width:85%;
-  max-width:220px;
-  position:absolute;
-  top:50%;
-  left:45%;
-  transform:translate(-50%,-50%);
-  padding:16px;
+  width:90%;
+  max-width:320px;
+  margin:80px auto;
+  border-radius:20px;
+  overflow:hidden;
   background:#020617;
-  border-radius:15px;
-  text-align:center;
+  box-shadow:0 10px 40px rgba(0,0,0,0.5);
 }
 
-/* SMALL INPUT */
+/* TOP GRADIENT */
+.loginTop{
+  padding:25px;
+  background:linear-gradient(135deg,#0f766e,#22c55e);
+  text-align:center;
+  font-size:22px;
+  font-weight:bold;
+}
+
+/* FORM AREA */
+.loginBody{
+  padding:20px;
+}
+
+/* INPUT */
 input{
   width:100%;
-  padding:9px;
-  margin:5px 0;
-  border-radius:8px;
+  padding:12px;
+  margin:8px 0;
+  border-radius:12px;
   border:none;
   background:#0f172a;
   color:white;
-  font-size:13px;
 }
 
 /* BUTTON */
 button{
   width:100%;
-  padding:10px;
+  padding:12px;
   border:none;
-  border-radius:8px;
+  border-radius:12px;
   background:linear-gradient(135deg,#22c55e,#16a34a);
   color:white;
-  margin-top:8px;
-  font-size:13px;
+  margin-top:10px;
+  font-weight:bold;
 }
 
-/* 🔥 TELEGRAM RIGHT FLOAT SMALL */
+/* TELEGRAM */
 .telegram{
   position:fixed;
   bottom:15px;
@@ -120,32 +132,69 @@ button{
 }
 
 .hidden{display:none;}
-</style></head><body><div id="overlay" class="overlay" onclick="closeMenu()"></div><!-- SIDEBAR --><div id="sidebar" class="sidebar"><div class="sideItem" onclick="go('panel')">Home</div>
+</style>
+</head>
+
+<body>
+
+<div id="overlay" class="overlay" onclick="closeMenu()"></div>
+
+<!-- SIDEBAR -->
+<div id="sidebar" class="sidebar">
+<div class="sideItem" onclick="go('panel')">Home</div>
 <div class="sideItem" onclick="go('stockPage')">Stock</div>
 <div class="sideItem" onclick="go('requestPage')">Requests</div>
-<div class="sideItem" onclick="logout()">Logout</div></div><div class="topbar">
+<div class="sideItem" onclick="logout()">Logout</div>
+</div>
+
+<!-- TOP -->
+<div class="topbar">
 <span id="menuBtn" class="menu" onclick="toggleMenu()">☰</span>
 <b>COBRA ADMIN</b>
-</div><!-- LOGIN --><div id="loginBox" class="loginBox">
-<h3>🔐 LOGIN</h3>
-<input id="user" placeholder="Username">
-<input id="pass" placeholder="Password">
-<button onclick="login()">LOGIN</button>
-</div><!-- DASHBOARD --><div id="panel" class="container hidden">
+</div>
+
+<!-- 🔥 LOGIN -->
+<div id="loginBox" class="loginBox">
+
+<div class="loginTop">
+Welcome Back
+</div>
+
+<div class="loginBody">
+<input id="user" placeholder="Enter username">
+<input id="pass" placeholder="Enter password">
+<button onclick="login()">Sign In</button>
+</div>
+
+</div>
+
+<!-- DASHBOARD -->
+<div id="panel" class="container hidden">
 <div class="card">Dashboard</div>
 <div class="card" id="sales">Sales: 0</div>
 <div class="card" id="pending">Pending: 0</div>
-</div><!-- STOCK --><div id="stockPage" class="container hidden">
+</div>
+
+<!-- STOCK -->
+<div id="stockPage" class="container hidden">
 <div class="card">STOCK PANEL</div>
 <input id="newkey" placeholder="Enter Key">
 <button onclick="addKey()">ADD KEY</button>
 <div id="stockList"></div>
-</div><!-- REQUEST --><div id="requestPage" class="container hidden">
+</div>
+
+<!-- REQUEST -->
+<div id="requestPage" class="container hidden">
 <div class="card">REQUESTS</div>
 <div id="data"></div>
-</div><!-- TELEGRAM --><div class="telegram" onclick="window.open('https://t.me/GODx_COBRA')">
+</div>
+
+<!-- TELEGRAM -->
+<div class="telegram" onclick="window.open('https://t.me/GODx_COBRA')">
 📢 Help
-</div><script>
+</div>
+
+<script>
 
 // MENU
 function toggleMenu(){
@@ -195,5 +244,7 @@ function logout(){
   location.reload();
 }
 
-</script></body>
+</script>
+
+</body>
 </html>
