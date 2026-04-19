@@ -74,41 +74,43 @@ body{
   text-align:center;
 }
 
-/* 🔥 MODERN LOGIN CARD */
+/* 🔥 LOGIN CARD (IMAGE STYLE) */
 .loginBox{
   width:90%;
-  max-width:330px;
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
+  max-width:340px;
+  margin:60px auto;
   border-radius:20px;
   overflow:hidden;
   background:#0b1220;
   box-shadow:0 15px 50px rgba(0,0,0,0.6);
 }
 
-/* TOP GRADIENT */
+/* HEADER */
 .loginTop{
-  padding:28px;
+  padding:30px;
   background:linear-gradient(135deg,#0f766e,#22c55e);
   text-align:center;
-  font-size:24px;
+  font-size:26px;
   font-weight:600;
 }
 
 /* BODY */
 .loginBody{
   padding:22px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
+}
+
+/* LABEL */
+.label{
+  font-size:13px;
+  margin-top:10px;
+  color:#cbd5f5;
 }
 
 /* INPUT */
 input{
   width:100%;
   padding:14px;
+  margin-top:6px;
   border-radius:14px;
   border:none;
   background:#111827;
@@ -125,7 +127,7 @@ button{
   background:linear-gradient(135deg,#0f766e,#22c55e);
   color:white;
   font-weight:600;
-  margin-top:10px;
+  margin-top:15px;
 }
 
 /* TELEGRAM */
@@ -161,12 +163,21 @@ button{
 
 <!-- 🔥 LOGIN -->
 <div id="loginBox" class="loginBox">
-<div class="loginTop">Welcome Back</div>
+
+<div class="loginTop">
+Welcome Back
+</div>
 
 <div class="loginBody">
+
+<div class="label">Username</div>
 <input id="user" placeholder="Enter your username">
+
+<div class="label">Password</div>
 <input id="pass" placeholder="Enter your password">
+
 <button onclick="login()">Sign In</button>
+
 </div>
 
 </div>
@@ -228,7 +239,7 @@ function go(p){
   document.getElementById(p).classList.remove("hidden");
 }
 
-// LOGIN (same)
+// LOGIN (UNCHANGED)
 async function login(){
   let res = await fetch("/login",{
     method:"POST",
@@ -255,7 +266,6 @@ async function login(){
   }
 }
 
-// बाकी functions same (कुछ change नहीं)
 </script>
 
 </body>
