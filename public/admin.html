@@ -73,17 +73,9 @@ button{
   border-radius:10px;
 }
 
-.low{
-  color:red;
-}
-
-.risk-high{
-  border:2px solid red;
-}
-
-.risk-medium{
-  border:2px solid yellow;
-}
+.low{color:red;}
+.risk-high{border:2px solid red;}
+.risk-medium{border:2px solid yellow;}
 
 .hidden{display:none;}
 </style>
@@ -93,13 +85,19 @@ button{
 
 <div class="box">
 
+<!-- 🔥 LOGIN FLOOR -->
+<div id="loginBox">
+
 <h2>🔐 ADMIN LOGIN</h2>
 
 <input id="user" placeholder="Username">
-<input id="pass" placeholder="Password">
+<input id="pass" placeholder="Password" type="password">
 
 <button onclick="login()">LOGIN</button>
 
+</div>
+
+<!-- 🔥 PANEL FLOOR -->
 <div id="panel" class="hidden">
 
 <div class="topbar">
@@ -112,7 +110,6 @@ button{
 <div class="card" id="sales">Sales: 0</div>
 <div class="card" id="pending">Pending: 0</div>
 
-<!-- 🔥 PLAN STOCK -->
 <h3>📦 STOCK</h3>
 <div id="stockBox"></div>
 
@@ -142,21 +139,27 @@ button{
 
 <script>
 
-// LOGIN
+// 🔥 LOGIN FIX
 function login(){
-  let u=user.value.trim();
-  let p=pass.value.trim();
+  let u=document.getElementById("user").value.trim();
+  let p=document.getElementById("pass").value.trim();
 
   if(u==="COBRA SERVER" && p==="SAMI9166"){
-    panel.classList.remove("hidden");
-    document.querySelector("h2").style.display="none";
-    user.style.display="none";
-    pass.style.display="none";
-    document.querySelector("button").style.display="none";
+
+    // 👉 LOGIN FLOOR HIDE
+    document.getElementById("loginBox").style.display="none";
+
+    // 👉 PANEL SHOW
+    document.getElementById("panel").classList.remove("hidden");
+
     load();
-  }else alert("Wrong Login");
+
+  }else{
+    alert("Wrong Login");
+  }
 }
 
+// LOGOUT
 function logout(){
   location.reload();
 }
@@ -185,7 +188,7 @@ async function load(){
       🧾 ${x.utr}<br>
       ⏰ ${x.time || ""}
       <br>
-      🔑 Next Key: <b id="key-${x.id}">Loading...</b>
+      🔑 Next Key: <b id="key-${x.id}">...</b>
       <br>
       <button onclick="verify(${x.id})">VERIFY</button>
       <button onclick="reject(${x.id})">REJECT</button>
@@ -203,13 +206,13 @@ async function load(){
 
   });
 
-  dataEl.innerHTML=html;
-  history.innerHTML=historyHTML;
+  document.getElementById("data").innerHTML=html;
+  document.getElementById("history").innerHTML=historyHTML;
 
-  salesEl.innerText="Sales: "+sales;
-  pendingEl.innerText="Pending: "+pending;
+  document.getElementById("sales").innerText="Sales: "+sales;
+  document.getElementById("pending").innerText="Pending: "+pending;
 
-  // 🔥 STOCK FETCH
+  // STOCK
   let s = await fetch("/admin/stock");
   let st = await s.json();
 
@@ -222,9 +225,9 @@ async function load(){
     </div>`;
   }
 
-  stockBox.innerHTML=stockHTML;
+  document.getElementById("stockBox").innerHTML=stockHTML;
 
-  // 🔥 KEY PREVIEW
+  // KEY PREVIEW
   data.forEach(x=>{
     fetch("/admin/nextkey/"+x.plan)
     .then(r=>r.text())
