@@ -1,14 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+
+<style>
+body{font-family:sans-serif;margin:0;background:#111;color:#fff}
+.hidden{display:none}
+.card{background:#222;padding:10px;margin:10px;border-radius:10px}
+button{padding:6px 10px;margin:5px;border:none;border-radius:6px;cursor:pointer}
+input,select{padding:6px;margin:5px}
+</style>
+
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginWrap">
+  <h2>Admin Login</h2>
+  <input id="user" placeholder="User"><br>
+  <input id="pass" placeholder="Pass"><br>
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="hidden">
+  <h2>Dashboard</h2>
+
+  <div id="totalSales"></div>
+  <div id="pendingReq"></div>
+  <div id="todaySales"></div>
+  <div id="stockCount"></div>
+
+  <hr>
+
+  <!-- TOGGLE -->
+  <h3>Customer Panel Control</h3>
+  <input type="checkbox" id="customerToggle" onchange="toggleCustomer()">
+  <p id="toggleStatus"></p>
+
+  <hr>
+
+  <button onclick="go('stockPage')">Stock</button>
+  <button onclick="go('requestPage')">Requests</button>
+</div>
+
+<!-- STOCK -->
+<div id="stockPage" class="hidden">
+  <h2>Stock</h2>
+
+  <select id="plan">
+    <option value="1hour">1 Hour</option>
+    <option value="3hour">3 Hour</option>
+    <option value="1day">1 Day</option>
+    <option value="3day">3 Day</option>
+    <option value="7day">7 Day</option>
+  </select>
+
+  <input id="newkey" placeholder="Enter Key">
+  <button onclick="addKey()">Add</button>
+
+  <div id="stockList"></div>
+
+  <button onclick="go('dashboard')">Back</button>
+</div>
+
+<!-- REQUEST -->
+<div id="requestPage" class="hidden">
+  <h2>Requests</h2>
+
+  <div id="data"></div>
+
+  <button onclick="go('dashboard')">Back</button>
+</div>
+
 <script>
 
-// MENU
-function openMenu(){sidebar.classList.add("active");overlay.classList.add("active");}
-function closeMenu(){sidebar.classList.remove("active");overlay.classList.remove("active");}
+// ✅ ELEMENT FIX
+const dashboard = document.getElementById("dashboard");
+const stockPage = document.getElementById("stockPage");
+const requestPage = document.getElementById("requestPage");
+
+const toggleStatus = document.getElementById("toggleStatus");
+const customerToggle = document.getElementById("customerToggle");
+
+const user = document.getElementById("user");
+const pass = document.getElementById("pass");
+const loginWrap = document.getElementById("loginWrap");
+
+const totalSales = document.getElementById("totalSales");
+const pendingReq = document.getElementById("pendingReq");
+const todaySales = document.getElementById("todaySales");
+const stockCount = document.getElementById("stockCount");
+
+const stockList = document.getElementById("stockList");
+const plan = document.getElementById("plan");
+const newkey = document.getElementById("newkey");
+
+const data = document.getElementById("data");
 
 // NAV
-function go(p,el){
-document.querySelectorAll(".sideItem").forEach(x=>x.classList.remove("active"));
-if(el) el.classList.add("active");
-
+function go(p){
 dashboard.classList.add("hidden");
 stockPage.classList.add("hidden");
 requestPage.classList.add("hidden");
@@ -18,8 +110,6 @@ document.getElementById(p).classList.remove("hidden");
 if(p==="dashboard"){loadDashboard();loadSettings();}
 if(p==="stockPage") loadStock();
 if(p==="requestPage") loadRequests();
-
-closeMenu();
 }
 
 // LOGIN
@@ -35,46 +125,31 @@ go("dashboard");
 }else alert("Login failed");
 }
 
-// 🔥 SETTINGS LOAD (FIXED)
+// SETTINGS
 async function loadSettings(){
 toggleStatus.innerText="Please Wait...";
 
-try{
 let res=await fetch("/admin/settings");
 let s=await res.json();
 
-// ✅ FIX
 customerToggle.checked = s.customerEnabled;
 toggleStatus.innerText = s.customerEnabled ? "ON" : "OFF";
-
-}catch{
-toggleStatus.innerText="Error";
-}
 }
 
-// 🔥 TOGGLE (REAL FIX)
+// TOGGLE
 async function toggleCustomer(){
-
 toggleStatus.innerText="Please Wait...";
 
-try{
 let res=await fetch("/admin/toggleCustomer",{
 method:"POST",
 headers:{'Content-Type':'application/json'},
-
-// ✅ IMPORTANT (send value)
 body:JSON.stringify({ enabled: customerToggle.checked })
 });
 
 let d=await res.json();
 
-// ✅ FIX
 customerToggle.checked = d.customerEnabled;
 toggleStatus.innerText = d.customerEnabled ? "ON" : "OFF";
-
-}catch{
-toggleStatus.innerText="Error";
-}
 }
 
 // DASHBOARD
@@ -166,7 +241,7 @@ btn.parentElement.remove();
 await fetch("/admin/reject/"+id);
 }
 
-// AUTO
+// AUTO REFRESH
 setInterval(()=>{
 if(!dashboard.classList.contains("hidden")) loadDashboard();
 if(!stockPage.classList.contains("hidden")) loadStock();
@@ -174,3 +249,6 @@ if(!requestPage.classList.contains("hidden")) loadRequests();
 },3000);
 
 </script>
+
+</body>
+</html>
