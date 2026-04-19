@@ -1,7 +1,7 @@
 const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
-const axios = require("axios"); // ✅ IMPORTANT
+const axios = require("axios");
 
 const app = express();
 
@@ -11,8 +11,8 @@ app.use(express.static("public"));
 
 const upload = multer({dest:"uploads/"});
 
-// 🔐 TOKEN
-const BOT_TOKEN = "8390006157:AAHs0JAnW19B1iOIa8uUmfGfU5suLvtYwUo";
+// 🔐 TELEGRAM
+const BOT_TOKEN = "YOUR_NEW_TOKEN";
 const CHAT_ID = "7707237527";
 
 const FILE = "data.json";
@@ -28,7 +28,8 @@ function loadData(){
         "3day":[],
         "7day":[]
       },
-      requests:[]
+      requests:[],
+      devices:{} // 🔥 DEVICE STORAGE
     }));
   }
   return JSON.parse(fs.readFileSync(FILE));
@@ -38,32 +39,56 @@ function saveData(data){
   fs.writeFileSync(FILE, JSON.stringify(data,null,2));
 }
 
-// ===== TELEGRAM SEND (AXIOS FIX) =====
+// ===== TELEGRAM =====
 async function sendTelegram(msg){
   try{
-    console.log("📤 Sending Telegram...");
-
-    let res = await axios.get(
-      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
-      {
-        params:{
-          chat_id: CHAT_ID,
-          text: msg
-        }
-      }
-    );
-
-    console.log("📡 TELEGRAM RESPONSE:", res.data);
-
+    await axios.get(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
+      params:{ chat_id: CHAT_ID, text: msg }
+    });
   }catch(e){
-    console.log("❌ TELEGRAM ERROR:", e.message);
+    console.log("Telegram Error:", e.message);
   }
 }
 
-// ===== TEST ROUTE =====
-app.get("/test", async (req,res)=>{
-  await sendTelegram("🚀 TEST MESSAGE FROM SERVER");
-  res.send("Test Done");
+// ===== 🔐 LOGIN WITH DEVICE LOCK =====
+app.post("/login", async (req,res)=>{
+
+  let data = loadData();
+  let {user,pass,device} = req.body;
+
+  // 🔑 YOUR LOGIN
+  if(user==="COBRA SERVER" && pass==="SAMI9166"){
+
+    // first login save device
+    if(!data.devices[user]){
+      data.devices[user] = device;
+
+      await sendTelegram(
+`🆕 FIRST LOGIN
+
+User: ${user}
+Device: ${device}`
+      );
+    }
+
+    // device check
+    if(data.devices[user] !== device){
+      return res.json({status:"blocked"});
+    }
+
+    saveData(data);
+
+    await sendTelegram(
+`🔐 LOGIN SUCCESS
+
+User: ${user}`
+    );
+
+    return res.json({status:"ok"});
+
+  }else{
+    return res.json({status:"fail"});
+  }
 });
 
 // ===== ADD KEY =====
