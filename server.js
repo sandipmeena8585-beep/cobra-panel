@@ -37,7 +37,12 @@ function loadData(){
         "7day":[]
       },
       requests:[],
-      devices:{}
+      devices:{},
+      history:{
+        added:[],
+        removed:[],
+        requests:[]
+      }
     }));
   }
   return JSON.parse(fs.readFileSync(FILE));
@@ -66,7 +71,7 @@ app.post("/login",(req,res)=>{
   res.json({status:"fail"});
 });
 
-// GET REQUEST
+// GET REQUESTS
 app.get("/admin/data",(req,res)=>{
   res.json(loadData().requests);
 });
@@ -76,16 +81,9 @@ app.get("/admin/stock",(req,res)=>{
   res.json(loadData().stock);
 });
 
-// STOCK COUNT
-app.get("/admin/stockcount",(req,res)=>{
-  let d=loadData();
-  let total=0;
-
-  for(let p in d.stock){
-    total += d.stock[p].length;
-  }
-
-  res.json({total});
+// HISTORY
+app.get("/admin/history",(req,res)=>{
+  res.json(loadData().history);
 });
 
 // ADD KEY
@@ -93,29 +91,38 @@ app.post("/admin/addkey",(req,res)=>{
   let d=loadData();
   let {plan,key}=req.body;
 
-  if(!key || !key.trim()){
-    return res.json({ok:false});
-  }
-
   if(!d.stock[plan]) d.stock[plan]=[];
-
   d.stock[plan].push(key);
+
+  d.history.added.push({
+    key,
+    plan,
+    time:new Date().toLocaleString()
+  });
 
   saveData(d);
   res.json({ok:true});
 });
 
-// DELETE KEY
+// DELETE KEY (ADMIN REMOVE)
 app.post("/admin/deletekey",(req,res)=>{
   let d=loadData();
   let {plan,key}=req.body;
 
-  if(d.stock[plan]){
-    d.stock[plan]=d.stock[plan].filter(k=>k!==key);
-  }
+  d.stock[plan]=d.stock[plan].filter(k=>k!==key);
+
+  d.history.removed.push({
+    key,
+    plan,
+    time:new Date().toLocaleString(),
+    by:"admin"
+  });
 
   saveData(d);
-  res.json({ok:true});
+
+  sendTelegram(`❌ ADMIN REMOVED KEY\n${key} (${plan})`);
+
+  res.send("ok");
 });
 
 // BUY REQUEST
@@ -133,6 +140,13 @@ app.post("/buy",upload.single("file"), async (req,res)=>{
   };
 
   d.requests.push(r);
+
+  d.history.requests.push({
+    plan:r.plan,
+    utr:r.utr,
+    time:r.time
+  });
+
   saveData(d);
 
   await sendTelegram(`🔥 NEW REQUEST\nPlan: ${r.plan}\nUTR: ${r.utr}`);
@@ -140,27 +154,30 @@ app.post("/buy",upload.single("file"), async (req,res)=>{
   res.send("ok");
 });
 
-// ✅ VERIFY (KEY REMOVE FROM STOCK)
+// VERIFY (YES PAYMENT)
 app.get("/admin/verify/:id", async (req,res)=>{
   let d=loadData();
   let r=d.requests.find(x=>x.id==req.params.id);
 
   if(!r) return res.send("not found");
 
-  // 🔥 REMOVE KEY FROM STOCK
-  let key = "NO KEY";
-
-  if(d.stock[r.plan] && d.stock[r.plan].length > 0){
-    key = d.stock[r.plan].shift(); // ✅ REMOVE HERE
-  }
+  let key = d.stock[r.plan]?.shift() || "NO KEY";
 
   r.status="approved";
   r.key=key;
 
   let expiry = new Date(Date.now()+86400000).toLocaleString();
 
+  d.history.removed.push({
+    key,
+    plan:r.plan,
+    time:new Date().toLocaleString(),
+    by:"sell"
+  });
+
   saveData(d);
 
+  // ✅ BOT VERIFIED YES
   await sendTelegram(
 `✅ PAYMENT RECEIVED
 
@@ -180,7 +197,7 @@ OBB: https://t.me/c/3525686026/45
   res.send("ok");
 });
 
-// REJECT
+// REJECT (NO PAYMENT)
 app.get("/admin/reject/:id", async (req,res)=>{
   let d=loadData();
   let r=d.requests.find(x=>x.id==req.params.id);
@@ -188,10 +205,11 @@ app.get("/admin/reject/:id", async (req,res)=>{
   if(r){
     r.warn++;
 
+    // ❌ BOT VERIFIED NO
     if(r.warn==1){
-      await sendTelegram(`⚠ WARNING\nFake Payment Attempt`);
+      await sendTelegram(`⚠ WARNING\nFake Payment Attempt\nPlan: ${r.plan}`);
     }else{
-      await sendTelegram(`🚫 FINAL WARNING\nAccount Risk`);
+      await sendTelegram(`🚫 FINAL WARNING\nAccount Risk\nPlan: ${r.plan}`);
     }
 
     r.status="rejected";
@@ -201,4 +219,4 @@ app.get("/admin/reject/:id", async (req,res)=>{
   res.send("ok");
 });
 
-app.listen(3000,()=>console.log("🚀 RUNNING"));
+app.listen(3000,()=>console.log("🚀 SERVER RUNNING"));
