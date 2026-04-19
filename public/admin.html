@@ -1,368 +1,225 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COBRA ADMIN</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
-
-<style>
-body{
-  margin:0;
-  font-family:'Poppins',sans-serif;
-  background:#020617;
-  color:white;
-}
-
-/* HEADER */
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:15px;
-  background:#020617;
-}
-
-.menu{
-  font-size:22px;
-  cursor:pointer;
-}
-
-/* SIDEBAR */
-.sidebar{
-  position:fixed;
-  top:0;
-  left:-260px;
-  width:240px;
-  height:100%;
-  background:#0f172a;
-  padding:15px;
-  transition:0.3s;
-  z-index:1000;
-}
-.sidebar.active{left:0;}
-
-.sideItem{
-  padding:12px;
-  margin:10px 0;
-  border-radius:10px;
-  background:#1e293b;
-  cursor:pointer;
-}
-
-/* OVERLAY */
-.overlay{
-  position:fixed;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.5);
-  display:none;
-}
-.overlay.active{display:block;}
-
-/* LOGIN */
-.loginWrap{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-
-.loginBox{
-  width:90%;
-  max-width:320px;
-  background:white;
-  color:black;
-  border-radius:20px;
-  overflow:hidden;
-}
-
-.loginTop{
-  padding:25px;
-  text-align:center;
-  color:white;
-  font-size:22px;
-  background:linear-gradient(135deg,#0f766e,#22c55e);
-}
-
-.loginBody{
-  padding:20px;
-}
-
-input{
-  width:100%;
-  padding:12px;
-  margin:8px 0;
-  border-radius:10px;
-  border:1px solid #ccc;
-}
-
-button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  background:#22c55e;
-  color:white;
-  margin-top:10px;
-}
-
-/* DASHBOARD */
-.container{
-  padding:15px;
-}
-
-.card{
-  padding:15px;
-  border-radius:15px;
-  background:linear-gradient(135deg,#16a34a,#22c55e);
-  margin-bottom:10px;
-  text-align:center;
-}
-
-/* GRAPH */
-.bar{
-  height:10px;
-  background:#22c55e;
-  margin:5px 0;
-  border-radius:5px;
-}
-
-.hidden{display:none;}
-</style>
-</head>
-
-<body>
-
-<div id="overlay" class="overlay" onclick="closeMenu()"></div>
-
-<!-- SIDEBAR -->
-<div id="sidebar" class="sidebar">
-<div class="sideItem" onclick="go('dashboard')">Dashboard</div>
-<div class="sideItem" onclick="go('stockPage')">Stock</div>
-<div class="sideItem" onclick="go('requestPage')">Requests</div>
-</div>
-
-<!-- HEADER -->
-<div class="header">
-<span class="menu" onclick="openMenu()">☰</span>
-<b>COBRA ADMIN</b>
-</div>
-
-<!-- LOGIN -->
-<div id="loginWrap" class="loginWrap">
-<div class="loginBox">
-<div class="loginTop">Welcome Back</div>
-<div class="loginBody">
-<input id="user" placeholder="Username">
-<input id="pass" placeholder="Password" type="password">
-<button onclick="login()">Login</button>
-</div>
-</div>
-</div>
-
-<!-- DASHBOARD -->
-<div id="dashboard" class="container hidden">
-
-<div class="card" id="totalSales">Sales: 0</div>
-<div class="card" id="pendingReq">Pending: 0</div>
-<div class="card" id="stockCount">Stock: 0</div>
-
-<div class="card">
-<b>Sales Graph</b>
-<div id="graph"></div>
-</div>
-
-</div>
-
-<!-- STOCK -->
-<div id="stockPage" class="container hidden">
-<div class="card">STOCK PANEL</div>
-
-<select id="plan">
-<option value="1hour">1hour</option>
-<option value="3hour">3hour</option>
-<option value="1day">1day</option>
-<option value="3day">3day</option>
-<option value="7day">7day</option>
-</select>
-
-<input id="newkey" placeholder="Enter Key">
-<button onclick="addKey()">ADD KEY</button>
-
-<div id="stockList"></div>
-</div>
-
-<!-- REQUEST -->
-<div id="requestPage" class="container hidden">
-<div class="card">REQUESTS</div>
-<div id="data"></div>
-</div>
-
 <script>
 
-// SIDEBAR
+// MENU
 function openMenu(){
-sidebar.classList.add("active");
-overlay.classList.add("active");
+  sidebar.classList.add("active");
+  overlay.classList.add("active");
 }
 function closeMenu(){
-sidebar.classList.remove("active");
-overlay.classList.remove("active");
+  sidebar.classList.remove("active");
+  overlay.classList.remove("active");
 }
 
-// NAV
-function go(p){
-dashboard.classList.add("hidden");
-stockPage.classList.add("hidden");
-requestPage.classList.add("hidden");
+// NAV (🔥 ACTIVE FIX)
+function go(p,el){
 
-document.getElementById(p).classList.remove("hidden");
+  document.querySelectorAll(".sideItem").forEach(x=>{
+    x.classList.remove("active");
+  });
 
-if(p==="dashboard") loadDashboard();
-if(p==="requestPage") loadRequests();
-if(p==="stockPage") loadStock();
+  if(el) el.classList.add("active");
 
-closeMenu();
+  dashboard.classList.add("hidden");
+  stockPage.classList.add("hidden");
+  requestPage.classList.add("hidden");
+
+  document.getElementById(p).classList.remove("hidden");
+
+  if(p==="dashboard") loadDashboard();
+  if(p==="requestPage") loadRequests();
+  if(p==="stockPage") loadStock();
+
+  closeMenu();
 }
 
 // LOGIN
 async function login(){
-let res=await fetch("/login",{
-method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({
-user:user.value,
-pass:pass.value,
-device:navigator.userAgent
-})
-});
+  let res=await fetch("/login",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      user:user.value,
+      pass:pass.value,
+      device:navigator.userAgent
+    })
+  });
 
-let d=await res.json();
+  let d=await res.json();
 
-if(d.status==="ok"){
-loginWrap.style.display="none";
-dashboard.classList.remove("hidden");
-
-loadDashboard();
-}else{
-alert("Wrong Login");
-}
+  if(d.status==="ok"){
+    loginWrap.style.display="none";
+    dashboard.classList.remove("hidden");
+    loadDashboard();
+  }else{
+    alert("Wrong Login");
+  }
 }
 
 // DASHBOARD
 async function loadDashboard(){
 
-let res=await fetch("/admin/data");
-let arr=await res.json();
+  let res=await fetch("/admin/data");
+  let arr=await res.json();
 
-let sales=0,pending=0;
-let stats={"1hour":0,"3hour":0,"1day":0,"3day":0,"7day":0};
+  let sales=0,pending=0,today=0;
+  let stats={"1hour":0,"3hour":0,"1day":0,"3day":0,"7day":0};
 
-arr.forEach(x=>{
-if(x.status==="approved"){
-sales++;
-stats[x.plan]++;
-}
-if(x.status==="pending") pending++;
-});
+  let todayDate=new Date().toDateString();
 
-totalSales.innerText="Sales: "+sales;
-pendingReq.innerText="Pending: "+pending;
+  arr.forEach(x=>{
+    if(x.status==="approved"){
+      sales++;
+      stats[x.plan]++;
 
-// GRAPH
-let g="";
-for(let p in stats){
-g+=`${p}<div class="bar" style="width:${stats[p]*20}px"></div>`;
-}
-graph.innerHTML=g;
+      if(new Date(x.id).toDateString()===todayDate){
+        today++;
+      }
+    }
+    if(x.status==="pending") pending++;
+  });
 
-loadStockCount();
-}
+  totalSales.innerText="Total Sales: "+sales;
+  pendingReq.innerText="Pending: "+pending;
+  todaySales.innerText="Today Sales: "+today;
 
-// REQUEST
-async function loadRequests(){
-let res=await fetch("/admin/data");
-let arr=await res.json();
+  // GRAPH FIX
+  let g="";
+  for(let p in stats){
+    g+=`${p}<div class="bar" style="width:${stats[p]*25}px"></div>`;
+  }
+  graph.innerHTML=g;
 
-let html="";
-arr.forEach(x=>{
-if(x.status==="pending"){
-html+=`
-<div class="card">
-${x.plan}<br>
-UTR: ${x.utr || "N/A"}<br>
-<button onclick="verify(${x.id},this)">YES</button>
-<button onclick="reject(${x.id},this)">NO</button>
-</div>`;
-}
-});
-
-data.innerHTML=html;
-}
-
-// VERIFY
-async function verify(id,btn){
-btn.parentElement.remove();
-await fetch("/admin/verify/"+id);
-loadDashboard();
-}
-
-// REJECT
-async function reject(id,btn){
-btn.parentElement.remove();
-await fetch("/admin/reject/"+id);
-}
-
-// STOCK
-async function loadStock(){
-let res=await fetch("/admin/stock");
-let data=await res.json();
-
-let html="";
-for(let p in data){
-html+=`<div class="card">${p}<br>`;
-data[p].forEach(k=>html+=k+"<br>");
-html+="</div>";
-}
-stockList.innerHTML=html;
+  loadStockCount();
 }
 
 // STOCK COUNT
 async function loadStockCount(){
-let res=await fetch("/admin/stock");
-let data=await res.json();
+  let res=await fetch("/admin/stock");
+  let data=await res.json();
 
-let total=0;
-for(let p in data){
-total+=data[p].length;
+  let total=0;
+  for(let p in data){
+    total+=data[p].length;
+  }
+
+  stockCount.innerText="Stock: "+total;
 }
 
-stockCount.innerText="Stock: "+total;
+// REQUEST (🔥 FULL DETAILS)
+async function loadRequests(){
+
+  let res=await fetch("/admin/data");
+  let arr=await res.json();
+
+  let html="";
+
+  arr.reverse().forEach(x=>{
+    if(x.status==="pending"){
+
+      html+=`
+      <div class="card">
+
+      <b>Plan:</b> ${x.plan}<br><br>
+
+      <b>UTR:</b> ${x.utr || "N/A"}<br><br>
+
+      <b>Time:</b> ${x.time || "N/A"}<br><br>
+
+      ${x.file ? `<img src="/uploads/${x.file}" style="width:100%;border-radius:10px;"><br><br>`:""}
+
+      <button onclick="verify(${x.id},this)">✅ YES</button>
+      <button onclick="reject(${x.id},this)">❌ NO</button>
+
+      </div>`;
+    }
+  });
+
+  data.innerHTML = html || "<div class='card'>No Requests</div>";
+}
+
+// VERIFY (🔥 HIDE + KEY REMOVE)
+async function verify(id,btn){
+  btn.parentElement.style.opacity="0";
+  setTimeout(()=>btn.parentElement.remove(),200);
+
+  await fetch("/admin/verify/"+id);
+
+  loadDashboard();
+  loadStock();
+}
+
+// REJECT
+async function reject(id,btn){
+  btn.parentElement.style.opacity="0";
+  setTimeout(()=>btn.parentElement.remove(),200);
+
+  await fetch("/admin/reject/"+id);
+}
+
+// STOCK
+async function loadStock(){
+
+  let res=await fetch("/admin/stock");
+  let data=await res.json();
+
+  let html="";
+
+  for(let p in data){
+
+    html+=`<div class="card"><b>${p}</b><br>`;
+
+    // 🔥 LOW STOCK WARNING
+    if(data[p].length < 3){
+      html+="⚠ Low Stock<br>";
+    }
+
+    if(data[p].length===0){
+      html+="No Keys<br>";
+    }
+
+    data[p].forEach(k=>{
+      html+=`${k}<br>`;
+    });
+
+    html+="</div>";
+  }
+
+  stockList.innerHTML=html;
 }
 
 // ADD KEY
 async function addKey(){
-await fetch("/admin/addkey",{
-method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({
-plan:plan.value,
-key:newkey.value
-})
-});
 
-newkey.value="";
-loadStock();
-loadStockCount();
+  if(!newkey.value.trim()) return;
+
+  await fetch("/admin/addkey",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      plan:plan.value,
+      key:newkey.value
+    })
+  });
+
+  newkey.value="";
+  loadStock();
+  loadStockCount();
 }
 
-// AUTO
+// AUTO REFRESH (🔥 SAFE)
 setInterval(()=>{
-loadDashboard();
+  if(!dashboard.classList.contains("hidden")){
+    loadDashboard();
+  }
+
+  if(!requestPage.classList.contains("hidden")){
+    loadRequests();
+  }
+
+  if(!stockPage.classList.contains("hidden")){
+    loadStock();
+  }
+
 },3000);
 
 </script>
-
-</body>
-</html>
