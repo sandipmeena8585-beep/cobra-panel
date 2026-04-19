@@ -1,209 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COBRA ADMIN</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
-
-<style>
-body{
-  margin:0;
-  font-family:'Poppins',sans-serif;
-  background:#020617;
-  color:white;
-}
-
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:12px 15px;
-}
-
-.menu{
-  font-size:22px;
-  cursor:pointer;
-  display:none;
-}
-
-.sidebar{
-  position:fixed;
-  top:0;
-  left:-260px;
-  width:240px;
-  height:100%;
-  background:#020617;
-  padding:15px;
-  transition:0.3s;
-  z-index:999;
-}
-.sidebar.active{left:0;}
-
-.overlay{
-  position:fixed;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.5);
-  display:none;
-  z-index:998;
-}
-.overlay.active{display:block;}
-
-.sideItem{
-  padding:12px;
-  margin:10px 0;
-  border-radius:12px;
-  background:#0f172a;
-}
-
-.container{
-  padding:15px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-
-.card{
-  padding:15px;
-  border-radius:15px;
-  background:linear-gradient(135deg,#16a34a,#22c55e);
-  text-align:center;
-}
-
-.loginBox{
-  width:90%;
-  max-width:300px;
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  border-radius:20px;
-  overflow:hidden;
-  background:#0b1220;
-  box-shadow:0 15px 40px rgba(0,0,0,0.6);
-}
-
-.loginTop{
-  padding:22px;
-  background:linear-gradient(135deg,#0f766e,#22c55e);
-  text-align:center;
-  font-size:22px;
-  font-weight:bold;
-}
-
-.loginBody{
-  padding:18px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
-input,select{
-  width:100%;
-  padding:10px;
-  margin:6px 0;
-  border-radius:10px;
-  border:none;
-  background:#111827;
-  color:white;
-  font-size:13px;
-}
-
-button{
-  width:100%;
-  padding:11px;
-  border:none;
-  border-radius:10px;
-  background:linear-gradient(135deg,#22c55e,#16a34a);
-  color:white;
-  margin-top:10px;
-  font-weight:bold;
-}
-
-.telegram{
-  position:fixed;
-  bottom:15px;
-  right:15px;
-  padding:10px 14px;
-  font-size:13px;
-  background:#0088cc;
-  border-radius:10px;
-}
-
-.hidden{display:none;}
-</style>
-</head>
-
-<body>
-
-<div id="overlay" class="overlay" onclick="closeMenu()"></div>
-
-<div id="sidebar" class="sidebar">
-<div class="sideItem" onclick="go('panel')">Home</div>
-<div class="sideItem" onclick="go('stockPage')">Stock</div>
-<div class="sideItem" onclick="go('requestPage')">Requests</div>
-<div class="sideItem" onclick="logout()">Logout</div>
-</div>
-
-<div class="topbar">
-<span id="menuBtn" class="menu" onclick="toggleMenu()">☰</span>
-<b>COBRA ADMIN</b>
-</div>
-
-<!-- LOGIN -->
-<div id="loginBox" class="loginBox">
-<div class="loginTop">Welcome Back</div>
-
-<div class="loginBody">
-<input id="user" placeholder="Enter username">
-<input id="pass" placeholder="Enter password">
-<button onclick="login()">Sign In</button>
-</div>
-</div>
-
-<!-- DASHBOARD -->
-<div id="panel" class="container hidden">
-<div class="card">Dashboard</div>
-<div class="card" id="sales">Sales: 0</div>
-<div class="card" id="pending">Pending: 0</div>
-<div class="card" id="stockCount">Stock: 0</div>
-</div>
-
-<!-- STOCK -->
-<div id="stockPage" class="container hidden">
-
-<div class="card">STOCK PANEL</div>
-
-<!-- SAME LINE -->
-<div style="display:flex; gap:8px;">
-<select id="plan" style="flex:1;">
-<option value="1hour">1 Hour</option>
-<option value="3hour">3 Hour</option>
-<option value="1day">1 Day</option>
-<option value="3day">3 Day</option>
-<option value="7day">7 Day</option>
-</select>
-
-<input id="newkey" placeholder="Enter Key" style="flex:2;">
-</div>
-
-<button onclick="addKey()">ADD KEY</button>
-
-<div id="stockList"></div>
-
-</div>
-
-<!-- REQUEST -->
-<div id="requestPage" class="container hidden">
-<div class="card">REQUESTS</div>
-<div id="data"></div>
-</div>
-
-<div class="telegram" onclick="window.open('https://t.me/GODx_COBRA')">
-📢 Help
-</div>
-
 <script>
 
 // MENU
@@ -251,7 +45,7 @@ async function login(){
   }
 }
 
-// STOCK LOAD
+// 🔥 STOCK LOAD
 async function loadStock(){
   let res = await fetch("/admin/stock");
   let data = await res.json();
@@ -294,20 +88,37 @@ async function loadStockCount(){
   stockCount.innerText="Stock: "+total;
 }
 
-// ADD KEY
+// 🔥 ADD KEY (10 SEC SHOW FEATURE)
 async function addKey(){
-  if(!newkey.value.trim()) return alert("Enter key");
+
+  if(!newkey.value.trim()){
+    return alert("Enter key");
+  }
+
+  let keyVal = newkey.value;
 
   await fetch("/admin/addkey",{
     method:"POST",
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       plan:plan.value,
-      key:newkey.value
+      key:keyVal
     })
   });
 
+  // 🔥 TEMP SHOW (10 sec)
+  let tempBox = document.createElement("div");
+  tempBox.className = "card";
+  tempBox.innerHTML = `<b>ADDED:</b> ${keyVal}`;
+
+  stockList.prepend(tempBox);
+
+  setTimeout(()=>{
+    tempBox.remove();
+  },10000);
+
   newkey.value="";
+
   loadStock();
   loadStockCount();
 }
@@ -324,7 +135,7 @@ async function deleteKey(plan,key){
   loadStockCount();
 }
 
-// AUTO REFRESH
+// 🔥 AUTO LIVE REFRESH
 setInterval(()=>{
   loadStock();
   loadStockCount();
@@ -336,6 +147,3 @@ function logout(){
 }
 
 </script>
-
-</body>
-</html>
