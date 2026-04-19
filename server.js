@@ -7,12 +7,14 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
+
+// ✅ STATIC FIRST (IMPORTANT)
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
 const upload = multer({dest:"uploads/"});
 const FILE="data.json";
-const SETTINGS_FILE="settings.json"; // ✅ NEW
+const SETTINGS_FILE="settings.json";
 
 // 🔥 TELEGRAM
 const BOT_TOKEN="PUT_TOKEN";
@@ -28,29 +30,56 @@ async function sendTelegram(msg){
 
 // ✅ SETTINGS FILE CREATE
 if(!fs.existsSync(SETTINGS_FILE)){
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ customerEnabled:false }));
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ customerEnabled:true }));
 }
 
-// ================= TOGGLE SYSTEM =================
+// ================= ✅ CUSTOMER PANEL CONTROL (FIXED) =================
+app.use((req,res,next)=>{
 
-// 👉 GET CURRENT STATUS
+  // ✅ ADMIN ALWAYS ALLOW
+  if(req.url.startsWith("/admin")) return next();
+
+  // ✅ STATIC FILES ALLOW (VERY IMPORTANT)
+  if(req.url.match(/\.(css|js|png|jpg|jpeg|gif|html)$/)) return next();
+
+  let setting = { customerEnabled:true };
+
+  try{
+    if(fs.existsSync(SETTINGS_FILE)){
+      setting = JSON.parse(fs.readFileSync(SETTINGS_FILE));
+    }
+  }catch(e){}
+
+  // ❌ BLOCK CUSTOMER
+  if(!setting.customerEnabled){
+    return res.send(`
+      <h2 style="text-align:center;margin-top:60px;font-family:sans-serif;">
+        🚫 SERVER UNDER MAINTENANCE <br><br>
+        Try again later
+      </h2>
+    `);
+  }
+
+  next();
+});
+// ====================================================================
+
+// ================= TOGGLE SYSTEM =================
 app.get("/admin/settings",(req,res)=>{
   const data = JSON.parse(fs.readFileSync(SETTINGS_FILE));
   res.json(data);
 });
 
-// 👉 TOGGLE ON/OFF
 app.post("/admin/toggleCustomer",(req,res)=>{
   const { enabled } = req.body;
-
   const newData = { customerEnabled: enabled };
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(newData));
 
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(newData));
   res.json(newData);
 });
+// =================================================
 
 // ================= DATA =================
-
 function loadData(){
   if(!fs.existsSync(FILE)){
     fs.writeFileSync(FILE,JSON.stringify({
@@ -66,7 +95,7 @@ function saveData(d){
   fs.writeFileSync(FILE,JSON.stringify(d,null,2));
 }
 
-// 🔐 LOGIN + ALERT
+// 🔐 LOGIN
 app.post("/login", async (req,res)=>{
   let d=loadData();
   let {user,pass,device}=req.body;
@@ -100,7 +129,7 @@ app.get("/admin/stock",(req,res)=>{
   res.json(loadData().stock);
 });
 
-// ➕ ADD KEY + LOG
+// ➕ ADD KEY
 app.post("/admin/addkey",(req,res)=>{
   let d=loadData();
   let {plan,key}=req.body;
@@ -108,14 +137,13 @@ app.post("/admin/addkey",(req,res)=>{
   if(!d.stock[plan]) d.stock[plan]=[];
 
   d.stock[plan].push(key);
-
   sendTelegram(`➕ KEY ADDED\n${key}\nPlan: ${plan}`);
 
   saveData(d);
   res.json({ok:true});
 });
 
-// ❌ DELETE KEY + LOG
+// ❌ DELETE KEY
 app.post("/admin/deletekey",(req,res)=>{
   let d=loadData();
   let {plan,key}=req.body;
@@ -123,21 +151,14 @@ app.post("/admin/deletekey",(req,res)=>{
   if(!d.stock[plan]) return res.send("no plan");
 
   d.stock[plan]=d.stock[plan].filter(k=>k!==key);
-
   sendTelegram(`❌ KEY DELETED\n${key}\nPlan: ${plan}`);
 
   saveData(d);
   res.send("ok");
 });
 
-// 🛒 BUY REQUEST (❗ PANEL OFF CHECK ADDED)
+// 🛒 BUY
 app.post("/buy",upload.single("file"), async (req,res)=>{
-  const setting = JSON.parse(fs.readFileSync(SETTINGS_FILE));
-
-  if(!setting.customerEnabled){
-    return res.send("🚫 Panel is OFF. Please try later.");
-  }
-
   let d=loadData();
 
   let r={
@@ -176,14 +197,10 @@ app.get("/admin/verify/:id", async (req,res)=>{
 
   saveData(d);
 
-  await sendTelegram(
-`✅ PAYMENT VERIFIED
-Plan: ${r.plan}
-Key: ${key}`
-  );
+  await sendTelegram(`✅ VERIFIED\nPlan: ${r.plan}\nKey: ${key}`);
 
   if(d.stock[r.plan] && d.stock[r.plan].length<=2){
-    await sendTelegram(`⚠ LOW STOCK\nPlan: ${r.plan}\nRemaining: ${d.stock[r.plan].length}`);
+    await sendTelegram(`⚠ LOW STOCK\n${r.plan} = ${d.stock[r.plan].length}`);
   }
 
   res.send("ok");
@@ -197,10 +214,9 @@ app.get("/admin/reject/:id", async (req,res)=>{
   if(!r) return res.send("not found");
 
   r.status="rejected";
-
   saveData(d);
 
-  await sendTelegram(`❌ PAYMENT REJECTED\nPlan: ${r.plan}`);
+  await sendTelegram(`❌ REJECTED\nPlan: ${r.plan}`);
 
   res.send("ok");
 });
