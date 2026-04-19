@@ -91,7 +91,7 @@ button{
 
 </div>
 
-<!-- 🔥 STOCK FLOOR -->
+<!-- STOCK FLOOR -->
 <div id="stockPage" class="hidden">
 
 <button onclick="back()">⬅ BACK</button>
@@ -113,6 +113,9 @@ button{
 <input id="newkey" placeholder="Enter Key">
 <button onclick="addKey()">ADD KEY</button>
 
+<h3>📊 STOCK SUMMARY</h3>
+<div id="summary"></div>
+
 <h3>📤 SOLD KEYS</h3>
 <div id="soldList"></div>
 
@@ -131,30 +134,28 @@ function login(){
   }else alert("Wrong Login");
 }
 
-// OPEN STOCK PAGE
+// NAV
 function openStock(){
   panel.classList.add("hidden");
   stockPage.classList.remove("hidden");
   loadStock();
 }
 
-// BACK
 function back(){
   stockPage.classList.add("hidden");
   panel.classList.remove("hidden");
 }
 
-// 🔥 MAIN LOAD
+// 🔥 DASHBOARD LOAD
 async function load(){
 
   let res = await fetch("/admin/data");
-  let data = await res.json();
+  let arr = await res.json();
 
   let html="";
   let sales=0,pending=0;
 
-  data.forEach(x=>{
-
+  arr.forEach(x=>{
     if(x.status==="pending"){
       pending++;
 
@@ -170,7 +171,6 @@ async function load(){
     }
 
     if(x.status==="approved") sales++;
-
   });
 
   document.getElementById("data").innerHTML=html;
@@ -178,21 +178,24 @@ async function load(){
   document.getElementById("pending").innerText="Pending: "+pending;
 }
 
-// 🔥 STOCK LOAD + DELETE
+// 🔥 STOCK LOAD (FINAL FIX)
 async function loadStock(){
 
   let s = await fetch("/admin/stock");
   let st = await s.json();
 
   let html="";
+  let totalStock=0;
 
   for(let p in st.stock){
 
+    let keys = st.stock[p];
+    totalStock += keys.length;
+
     html+=`<div class="card">
-    <b>${p} : ${st.stock[p].length}</b><br><br>`;
+    <b>${p} : ${keys.length}</b><br><br>`;
 
-    st.stock[p].forEach(key=>{
-
+    keys.forEach(key=>{
       html+=`
       <div style="margin:5px 0; border:1px solid #00f2ff; padding:6px; border-radius:8px;">
         ${key}
@@ -200,8 +203,7 @@ async function loadStock(){
         <button onclick="deleteKey('${p}','${key}')">
         ❌ DELETE
         </button>
-      </div>
-      `;
+      </div>`;
     });
 
     html+=`</div>`;
@@ -209,20 +211,32 @@ async function loadStock(){
 
   document.getElementById("stockList").innerHTML=html;
 
-  // SOLD
+  // 🔥 SOLD DATA
   let h = await fetch("/admin/data");
-  let data = await h.json();
+  let arr = await h.json();
 
   let soldHTML="";
+  let soldCount=0;
 
-  data.forEach(x=>{
+  arr.forEach(x=>{
     if(x.status==="approved"){
+      soldCount++;
+
       soldHTML+=`
       <div class="req">
       ${x.plan} → ${x.key}
       </div>`;
     }
   });
+
+  // 🔥 SUMMARY
+  document.getElementById("summary").innerHTML=`
+  <div class="card">
+  📦 Total Stock: ${totalStock}<br>
+  💰 Sold: ${soldCount}<br>
+  🔄 Remaining: ${totalStock}
+  </div>
+  `;
 
   document.getElementById("soldList").innerHTML=soldHTML;
 }
@@ -250,7 +264,7 @@ async function addKey(){
     })
   });
 
-  alert("Added");
+  alert("Key Added");
   loadStock();
 }
 
