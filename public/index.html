@@ -8,8 +8,8 @@
 body{
   margin:0;
   font-family:sans-serif;
-  color:white;
   background:#071226;
+  color:white;
 }
 
 .container{
@@ -18,32 +18,46 @@ body{
   padding:15px;
 }
 
-/* STEP UI COLORS */
-.step1{background:#0f1c2e;}
-.step2{background:#102a43;}
-.step3{background:#1a1f3a;}
-
 .card{
   border-radius:20px;
   padding:20px;
   margin-top:20px;
 }
 
-/* HEADER */
+/* STEP COLORS */
+.step1{background:#0f1c2e;}
+.step2{background:#102a43;}
+.step3{background:#1a1f3a;}
+
+.title{
+  text-align:center;
+  font-size:22px;
+  font-weight:bold;
+  margin-bottom:15px;
+}
+
 .header{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:10px;
 }
 
-.title{
-  text-align:center;
-  font-size:20px;
-  font-weight:bold;
+.btnTop{
+  background:#00f2ff;
+  color:black;
+  border:none;
+  padding:6px 10px;
+  border-radius:8px;
 }
 
-/* BUTTON */
+select,input{
+  width:100%;
+  padding:14px;
+  margin:10px 0;
+  border-radius:12px;
+  border:none;
+}
+
 button{
   width:100%;
   padding:14px;
@@ -51,15 +65,6 @@ button{
   border-radius:12px;
   background:linear-gradient(90deg,#00f2ff,#007bff);
   color:white;
-}
-
-/* INPUT */
-select,input{
-  width:100%;
-  padding:14px;
-  margin:10px 0;
-  border-radius:12px;
-  border:none;
 }
 
 .mono{
@@ -78,7 +83,7 @@ select,input{
 
 <div class="container">
 
-<!-- 🔥 STEP 1 -->
+<!-- STEP 1 -->
 <div id="step1" class="card step1">
 
 <div class="title">COBRA SERVER PANNEL</div>
@@ -96,34 +101,34 @@ select,input{
 
 </div>
 
-<!-- 🔥 STEP 2 -->
+<!-- STEP 2 -->
 <div id="step2" class="card step2 hidden">
 
 <div class="header">
-<button onclick="goBack1()">⬅ Back</button>
+<button class="btnTop" onclick="goBack1()">⬅ Back</button>
 <div>PAYMENT</div>
-<button onclick="goHome()">🏠 Home</button>
+<button class="btnTop" onclick="goHome()">🏠 Home</button>
 </div>
 
 <div class="mono" onclick="copyUPI()">
 UPI: godxcobra@axl (tap to copy)
 </div>
 
-<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl"
-width="200"
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa=godxcobra@axl"
+width="220"
 style="display:block;margin:auto;margin-top:15px;">
 
 <button onclick="goStep3()">NEXT</button>
 
 </div>
 
-<!-- 🔥 STEP 3 -->
+<!-- STEP 3 -->
 <div id="step3" class="card step3 hidden">
 
 <div class="header">
-<button onclick="goBack2()">⬅ Back</button>
+<button class="btnTop" onclick="goBack2()">⬅ Back</button>
 <div>VERIFY</div>
-<button onclick="goHome()">🏠 Home</button>
+<button class="btnTop" onclick="goHome()">🏠 Home</button>
 </div>
 
 <select id="method" onchange="changeMethod()">
@@ -147,8 +152,9 @@ style="display:block;margin:auto;margin-top:15px;">
 let selectedPlan="";
 let interval;
 
-// STEP 1 → STEP 2
+// STEP 1 → 2
 function goStep2(){
+
   selectedPlan=document.getElementById("plan").value;
 
   if(!selectedPlan){
@@ -160,7 +166,7 @@ function goStep2(){
   document.getElementById("step2").classList.remove("hidden");
 }
 
-// STEP 2 → STEP 3
+// STEP 2 → 3
 function goStep3(){
   document.getElementById("step2").classList.add("hidden");
   document.getElementById("step3").classList.remove("hidden");
@@ -182,14 +188,14 @@ function goHome(){
   location.reload();
 }
 
-// METHOD
+// METHOD SWITCH
 function changeMethod(){
   let m=document.getElementById("method").value;
   document.getElementById("utr").style.display=(m==="utr")?"block":"none";
   document.getElementById("file").style.display=(m==="qr")?"block":"none";
 }
 
-// COPY
+// COPY UPI
 function copyUPI(){
   navigator.clipboard.writeText("godxcobra@axl");
   alert("UPI Copied");
@@ -221,7 +227,7 @@ async function submitPayment(){
   check(finalUTR);
 }
 
-// CHECK
+// STATUS CHECK
 function check(utr){
 
   clearInterval(interval);
@@ -235,8 +241,11 @@ function check(utr){
       clearInterval(interval);
 
       document.getElementById("step3").innerHTML=`
-      <h3 style="text-align:center;">🎉 SUCCESS</h3>
+      <h3 style="text-align:center;">🎉 PAYMENT SUCCESS</h3>
       <p style="text-align:center;">🔑 ${d.key}</p>
+      <button onclick="navigator.clipboard.writeText('${d.key}')">
+      📋 Copy Key
+      </button>
       `;
     }
 
