@@ -1,292 +1,224 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>COBRA SERVER</title>
+const express = require("express");
+const fs = require("fs");
+const multer = require("multer");
+const axios = require("axios");
 
-<style>
-body{margin:0;font-family:sans-serif;background:#f1f5f9}
+const app = express();
 
-/* HEADER */
-.header{
-display:flex;justify-content:space-between;align-items:center;
-padding:12px;background:#fff;
-}
-.logo{font-weight:bold;color:#0f766e;font-size:20px}
-.menuBtn{font-size:22px;cursor:pointer}
+app.use(express.json());
+app.use(express.urlencoded({extended:true}));
+app.use(express.static("public"));
+app.use("/uploads", express.static("uploads"));
 
-/* MENU */
-.menu{
-position:fixed;top:0;right:-220px;width:200px;height:100%;
-background:#111;color:#fff;transition:.3s;padding:10px;
-}
-.menu.active{right:0}
-.menu div{padding:10px;border-bottom:1px solid #333;cursor:pointer}
+const upload = multer({dest:"uploads/"});
+const FILE="data.json";
+const SETTINGS_FILE="settings.json";
 
-/* FLOOR */
-.page{display:none}
-.activePage{display:block}
+// 🔥 TELEGRAM
+const BOT_TOKEN="PUT_TOKEN";
+const CHAT_ID="PUT_CHAT_ID";
 
-/* CARD */
-.card{
-background:#fff;margin:15px;border-radius:15px;padding:20px;text-align:center;
-box-shadow:0 5px 15px rgba(0,0,0,0.1);
+async function sendTelegram(msg){
+  try{
+    await axios.get(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
+      params:{chat_id:CHAT_ID,text:msg}
+    });
+  }catch(e){}
 }
 
-.top{
-background:linear-gradient(135deg,#065f46,#4ade80);
-color:#fff;
+// ================= SETTINGS =================
+if(!fs.existsSync(SETTINGS_FILE)){
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ customerEnabled:true }));
 }
 
-/* LOGIN */
-#loginWrap{
-display:flex;justify-content:center;align-items:center;height:100vh;
-}
-.loginBox{
-background:#fff;padding:25px;border-radius:12px;text-align:center;width:260px;
-}
-input{width:90%;padding:8px;margin:6px;border-radius:6px;border:1px solid #ccc}
-button{padding:8px 12px;border:none;border-radius:6px;background:#22c55e;color:#fff}
-
-.small{font-size:13px;color:#555}
-</style>
-
-</head>
-<body>
-
-<!-- LOGIN -->
-<div id="loginWrap">
-  <div class="loginBox">
-    <h2>Welcome Back</h2>
-    <small>COBRA ADMIN</small><br><br>
-    <input id="user" placeholder="Username">
-    <input id="pass" placeholder="Password">
-    <button onclick="login()">LOGIN</button>
-  </div>
-</div>
-
-<!-- MAIN -->
-<div id="main" style="display:none;">
-
-<div class="header">
-  <div class="logo">COBRA SERVER</div>
-  <div class="menuBtn" onclick="toggleMenu()">☰</div>
-</div>
-
-<!-- MENU -->
-<div id="menu" class="menu">
-  <div onclick="showPage('home')">Home</div>
-  <div onclick="showPage('request')">Request</div>
-  <div onclick="showPage('manage')">Manage User</div>
-  <div onclick="logout()">Logout</div>
-</div>
-
-<!-- ================= HOME ================= -->
-<div id="home" class="page activePage">
-
-<div class="card top">
-  <h2>Welcome, COBRASERVER!</h2>
-  <p>Your account overview and recent activity</p>
-</div>
-
-<div class="card">
-  <h2 id="stockCount">0</h2>
-  <p class="small">Stock Live</p>
-</div>
-
-<div class="card">
-  <h2 id="soldCount">0</h2>
-  <p class="small">Sold</p>
-</div>
-
-<div class="card">
-  <h2 id="addCount">0</h2>
-  <p class="small">Added</p>
-</div>
-
-<div class="card">
-  <h2 id="deleteCount">0</h2>
-  <p class="small">Deleted</p>
-</div>
-
-<div class="card">
-  <b>Last 5 Activity</b>
-  <div id="history"></div>
-</div>
-
-</div>
-
-<!-- ================= REQUEST ================= -->
-<div id="request" class="page">
-
-<div class="card">
-  <h3>Customer Requests</h3>
-  <div id="requestData"></div>
-</div>
-
-</div>
-
-<!-- ================= MANAGE ================= -->
-<div id="manage" class="page">
-
-<div class="card">
-  <h3>Customer Panel Control</h3>
-
-  <input type="checkbox" id="customerToggle" onchange="toggleCustomer()">
-  <p id="toggleStatus"></p>
-
-</div>
-
-</div>
-
-</div>
-
-<script>
-
-const user = document.getElementById("user");
-const pass = document.getElementById("pass");
-const loginWrap = document.getElementById("loginWrap");
-const main = document.getElementById("main");
-
-const menu = document.getElementById("menu");
-
-const stockCount = document.getElementById("stockCount");
-const soldCount = document.getElementById("soldCount");
-const addCount = document.getElementById("addCount");
-const deleteCount = document.getElementById("deleteCount");
-
-const historyBox = document.getElementById("history");
-const requestBox = document.getElementById("requestData");
-
-const toggleStatus = document.getElementById("toggleStatus");
-const customerToggle = document.getElementById("customerToggle");
-
-// MENU
-function toggleMenu(){
-menu.classList.toggle("active");
+function loadSettings(){
+  return JSON.parse(fs.readFileSync(SETTINGS_FILE));
 }
 
-// PAGE SWITCH
-function showPage(p){
-document.querySelectorAll(".page").forEach(x=>x.classList.remove("activePage"));
-document.getElementById(p).classList.add("activePage");
-menu.classList.remove("active");
-
-if(p==="home") loadAll();
-if(p==="request") loadRequests();
-if(p==="manage") loadSettings();
+function saveSettings(d){
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(d));
 }
 
-// LOGIN
-async function login(){
-let res=await fetch("/login",{method:"POST",headers:{'Content-Type':'application/json'},
-body:JSON.stringify({user:user.value,pass:pass.value,device:navigator.userAgent})});
+// ================= DATA =================
+function loadData(){
+  if(!fs.existsSync(FILE)){
+    fs.writeFileSync(FILE,JSON.stringify({
+      stock:{ "1hour":[], "3hour":[], "1day":[], "3day":[], "7day":[] },
+      requests:[],
+      devices:{},
 
-let d=await res.json();
-
-if(d.status==="ok"){
-loginWrap.style.display="none";
-main.style.display="block";
-loadAll();
-}else alert("Login failed");
+      // 🔥 NEW
+      stats:{ sold:0, added:0, deleted:0 },
+      history:[]
+    }));
+  }
+  return JSON.parse(fs.readFileSync(FILE));
 }
 
-// LOGOUT
-function logout(){
-location.reload();
+function saveData(d){
+  fs.writeFileSync(FILE,JSON.stringify(d,null,2));
 }
 
-// LOAD ALL
-function loadAll(){
-loadStats();
-loadHistory();
-loadSettings();
+// ================= HISTORY =================
+function addHistory(text){
+  let d = loadData();
+
+  d.history.unshift(text);
+
+  if(d.history.length > 5) d.history.pop(); // only 5
+
+  saveData(d);
 }
 
-// STATS
-async function loadStats(){
-let s=await fetch("/admin/stats");
-let d=await s.json();
+// ================= CUSTOMER CONTROL =================
+app.use((req,res,next)=>{
+  if(req.url.startsWith("/admin")) return next();
+  if(req.url.match(/\.(css|js|png|jpg|html)$/)) return next();
 
-soldCount.innerText=d.sold;
-addCount.innerText=d.added;
-deleteCount.innerText=d.deleted;
+  let s = loadSettings();
 
-let st=await fetch("/admin/stock");
-let stock=await st.json();
+  if(!s.customerEnabled){
+    return res.send("<h2 style='text-align:center;margin-top:60px'>🚫 SERVER OFF</h2>");
+  }
 
-let total=0;
-for(let p in stock) total+=stock[p].length;
-
-stockCount.innerText=total;
-}
-
-// HISTORY
-async function loadHistory(){
-let res=await fetch("/admin/history");
-let arr=await res.json();
-
-historyBox.innerHTML="";
-arr.forEach(x=>{
-historyBox.innerHTML+=`<div>${x}</div>`;
-});
-}
-
-// REQUEST
-async function loadRequests(){
-let res=await fetch("/admin/data");
-let arr=await res.json();
-
-requestBox.innerHTML="";
-
-arr.reverse().forEach(x=>{
-if(x.status==="pending"){
-requestBox.innerHTML+=`
-<div style="border:1px solid #ccc;margin:5px;padding:5px">
-${x.plan} | UTR: ${x.utr}
-<button onclick="verify(${x.id})">YES</button>
-<button onclick="reject(${x.id})">NO</button>
-</div>`;
-}
-});
-}
-
-// VERIFY
-async function verify(id){
-await fetch("/admin/verify/"+id);
-loadRequests();
-}
-
-// REJECT
-async function reject(id){
-await fetch("/admin/reject/"+id);
-loadRequests();
-}
-
-// SETTINGS
-async function loadSettings(){
-let res=await fetch("/admin/settings");
-let s=await res.json();
-
-customerToggle.checked=s.customerEnabled;
-toggleStatus.innerText=s.customerEnabled?"ON":"OFF";
-}
-
-// TOGGLE
-async function toggleCustomer(){
-toggleStatus.innerText="...";
-
-let res=await fetch("/admin/toggleCustomer",{
-method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({enabled:customerToggle.checked})
+  next();
 });
 
-let d=await res.json();
-toggleStatus.innerText=d.customerEnabled?"ON":"OFF";
-}
+// ================= TOGGLE =================
+app.get("/admin/settings",(req,res)=>{
+  res.json(loadSettings());
+});
 
-</script>
+app.post("/admin/toggleCustomer",(req,res)=>{
+  let {enabled} = req.body;
+  let s = { customerEnabled: enabled };
+  saveSettings(s);
+  res.json(s);
+});
 
-</body>
-</html>
+// ================= LOGIN =================
+app.post("/login", async (req,res)=>{
+  let d=loadData();
+  let {user,pass,device}=req.body;
+
+  if(user==="COBRA SERVER" && pass==="SAMI9166"){
+
+    await sendTelegram(`🔐 LOGIN SUCCESS\nDevice: ${device}`);
+
+    if(!d.devices[user]) d.devices[user]=device;
+
+    if(d.devices[user]!==device){
+      return res.json({status:"blocked"});
+    }
+
+    saveData(d);
+    return res.json({status:"ok"});
+  }
+
+  res.json({status:"fail"});
+});
+
+// ================= DATA =================
+app.get("/admin/data",(req,res)=>{
+  res.json(loadData().requests);
+});
+
+app.get("/admin/stock",(req,res)=>{
+  res.json(loadData().stock);
+});
+
+// 👉 NEW STATS API
+app.get("/admin/stats",(req,res)=>{
+  let d = loadData();
+  res.json(d.stats);
+});
+
+// 👉 NEW HISTORY API
+app.get("/admin/history",(req,res)=>{
+  let d = loadData();
+  res.json(d.history);
+});
+
+// ================= ADD KEY =================
+app.post("/admin/addkey",(req,res)=>{
+  let d=loadData();
+  let {plan,key}=req.body;
+
+  if(!d.stock[plan]) d.stock[plan]=[];
+
+  d.stock[plan].push(key);
+  d.stats.added++; // ✅ count
+
+  addHistory(`➕ Added ${key}`);
+
+  saveData(d);
+  res.json({ok:true});
+});
+
+// ================= DELETE =================
+app.post("/admin/deletekey",(req,res)=>{
+  let d=loadData();
+  let {plan,key}=req.body;
+
+  if(!d.stock[plan]) return res.send("no plan");
+
+  d.stock[plan]=d.stock[plan].filter(k=>k!==key);
+  d.stats.deleted++; // ✅ count
+
+  addHistory(`❌ Deleted ${key}`);
+
+  saveData(d);
+  res.send("ok");
+});
+
+// ================= BUY =================
+app.post("/buy",upload.single("file"), async (req,res)=>{
+  let d=loadData();
+
+  let r={
+    id:Date.now(),
+    plan:req.body.plan,
+    utr:req.body.utr,
+    time:req.body.time,
+    file:req.file?req.file.filename:null,
+    status:"pending"
+  };
+
+  d.requests.push(r);
+  saveData(d);
+
+  res.send("ok");
+});
+
+// ================= VERIFY =================
+app.get("/admin/verify/:id",(req,res)=>{
+  let d=loadData();
+  let r=d.requests.find(x=>x.id==req.params.id);
+
+  if(!r) return res.send("not found");
+
+  let key = d.stock[r.plan]?.shift() || "NO KEY";
+
+  r.status="approved";
+  r.key=key;
+
+  d.stats.sold++; // ✅ count
+  addHistory(`💰 Sold ${key}`);
+
+  saveData(d);
+  res.send("ok");
+});
+
+// ================= REJECT =================
+app.get("/admin/reject/:id",(req,res)=>{
+  let d=loadData();
+  let r=d.requests.find(x=>x.id==req.params.id);
+
+  if(r) r.status="rejected";
+
+  saveData(d);
+  res.send("ok");
+});
+
+// ================= START =================
+app.listen(3000,()=>console.log("🚀 SERVER RUNNING"));
