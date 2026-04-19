@@ -45,7 +45,7 @@ async function login(){
   }
 }
 
-// 🔥 STOCK LOAD
+// STOCK LOAD
 async function loadStock(){
   let res = await fetch("/admin/stock");
   let data = await res.json();
@@ -88,12 +88,10 @@ async function loadStockCount(){
   stockCount.innerText="Stock: "+total;
 }
 
-// 🔥 ADD KEY (10 SEC SHOW FEATURE)
+// 🔥 UPDATED ADD KEY (10 SECOND SHOW)
 async function addKey(){
 
-  if(!newkey.value.trim()){
-    return alert("Enter key");
-  }
+  if(!newkey.value.trim()) return alert("Enter key");
 
   let keyVal = newkey.value;
 
@@ -106,19 +104,18 @@ async function addKey(){
     })
   });
 
-  // 🔥 TEMP SHOW (10 sec)
-  let tempBox = document.createElement("div");
-  tempBox.className = "card";
-  tempBox.innerHTML = `<b>ADDED:</b> ${keyVal}`;
+  // 🔥 TEMP SHOW TOP (10 sec)
+  let temp = document.createElement("div");
+  temp.className = "card";
+  temp.innerHTML = `<b>ADDED:</b> ${keyVal}`;
 
-  stockList.prepend(tempBox);
+  stockList.prepend(temp);
 
   setTimeout(()=>{
-    tempBox.remove();
+    temp.remove();
   },10000);
 
   newkey.value="";
-
   loadStock();
   loadStockCount();
 }
@@ -135,7 +132,7 @@ async function deleteKey(plan,key){
   loadStockCount();
 }
 
-// 🔥 AUTO LIVE REFRESH
+// AUTO REFRESH
 setInterval(()=>{
   loadStock();
   loadStockCount();
