@@ -2,144 +2,60 @@
 <html>
 <head>
 <meta charset="UTF-8">
-
-<!-- 🔥 MOBILE VIEW FIX -->
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>COBRA SERVER</title>
 
 <style>
-body{
-margin:0;
-font-family:sans-serif;
-background:#eef2f7;
--webkit-tap-highlight-color: transparent;
-}
+body{margin:0;font-family:sans-serif;background:#eef2f7}
 
 /* HEADER */
 .header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:14px;
-background:#fff;
-box-shadow:0 2px 10px rgba(0,0,0,0.05);
-position:sticky;
-top:0;
-z-index:10;
+display:flex;justify-content:space-between;align-items:center;
+padding:14px;background:#fff;
 }
-.logo{
-font-weight:bold;
-color:#0f766e;
-font-size:16px;
-}
-.menuBtn{
-font-size:22px;
-cursor:pointer;
-}
+.logo{font-weight:bold;color:#0f766e}
 
 /* MENU */
 .menu{
-position:fixed;
-top:0;
-right:-240px;
-width:220px;
-height:100%;
-background:#0f172a;
-color:#fff;
-transition:0.3s ease;
-padding-top:20px;
-z-index:20;
+position:fixed;top:0;right:-240px;width:220px;height:100%;
+background:#0f172a;color:#fff;transition:.3s;padding-top:20px;
 }
 .menu.active{right:0}
-
-.menu div{
-padding:14px;
-border-bottom:1px solid #1e293b;
-cursor:pointer;
-}
+.menu div{padding:14px;border-bottom:1px solid #1e293b}
 
 /* OVERLAY */
 .overlay{
-position:fixed;
-top:0;left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.3);
-display:none;
-z-index:15;
+position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,0.3);display:none;
 }
 .overlay.active{display:block}
 
-/* PAGE */
-.page{display:none}
-.activePage{display:block}
-
-/* CARD (MOBILE STYLE) */
+/* CARD */
 .card{
-background:#fff;
-margin:10px;
-border-radius:14px;
-padding:16px;
-text-align:center;
+background:#fff;margin:10px;border-radius:14px;padding:16px;text-align:center;
 box-shadow:0 4px 12px rgba(0,0,0,0.08);
 }
 
-/* TOP */
-.top{
-background:linear-gradient(135deg,#065f46,#4ade80);
-color:#fff;
+/* TOGGLE */
+.switch{position:relative;display:inline-block;width:60px;height:30px}
+.switch input{display:none}
+.slider{
+position:absolute;top:0;left:0;right:0;bottom:0;
+background:#ccc;border-radius:30px;
 }
+.slider:before{
+content:"";position:absolute;
+height:24px;width:24px;
+left:3px;bottom:3px;
+background:#fff;border-radius:50%;
+transition:.3s;
+}
+input:checked + .slider{background:#22c55e}
+input:checked + .slider:before{transform:translateX(30px)}
 
-/* LOGIN */
-#loginWrap{
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-}
-.loginBox{
-background:#fff;
-padding:20px;
-border-radius:14px;
-text-align:center;
-width:90%;
-max-width:300px;
-box-shadow:0 5px 20px rgba(0,0,0,0.1);
-}
-input{
-width:100%;
-padding:10px;
-margin:6px 0;
-border-radius:8px;
-border:1px solid #ddd;
-}
-button{
-width:100%;
-padding:10px;
-border:none;
-border-radius:8px;
-background:#22c55e;
-color:#fff;
-font-weight:bold;
-}
-
-.small{font-size:12px;color:#555}
-
-/* REQUEST BOX MOBILE */
-.req{
-border:1px solid #ddd;
-margin:6px;
-padding:8px;
-border-radius:8px;
-font-size:13px;
-}
-
-.req button{
-margin:3px;
-padding:5px 8px;
-font-size:12px;
-}
+.statusOn{color:#16a34a;font-weight:bold}
+.statusOff{color:#dc2626;font-weight:bold}
 </style>
 
 </head>
@@ -147,83 +63,77 @@ font-size:12px;
 
 <!-- LOGIN -->
 <div id="loginWrap">
-  <div class="loginBox">
-    <h2>Welcome Back</h2>
-    <small>COBRA ADMIN</small><br><br>
-    <input id="user" placeholder="Username">
-    <input id="pass" placeholder="Password">
-    <button onclick="login()">LOGIN</button>
-  </div>
+<div class="card">
+<h2>Welcome Back</h2>
+<input id="user" placeholder="Username">
+<input id="pass" placeholder="Password">
+<button onclick="login()">LOGIN</button>
+</div>
 </div>
 
 <!-- MAIN -->
 <div id="main" style="display:none;">
 
 <div class="header">
-  <div class="logo">COBRA SERVER</div>
-  <div class="menuBtn" onclick="toggleMenu()">☰</div>
+<div class="logo">COBRA SERVER</div>
+<div onclick="toggleMenu()">☰</div>
 </div>
 
-<!-- OVERLAY -->
 <div id="overlay" class="overlay" onclick="toggleMenu()"></div>
 
-<!-- MENU -->
 <div id="menu" class="menu">
-  <div onclick="showPage('home')">Home</div>
-  <div onclick="showPage('request')">Request</div>
-  <div onclick="showPage('manage')">Manage User</div>
-  <div onclick="logout()">Logout</div>
+<div onclick="showPage('home')">Home</div>
+<div onclick="showPage('request')">Request</div>
+<div onclick="showPage('manage')">Manage User</div>
+<div onclick="logout()">Logout</div>
 </div>
 
 <!-- HOME -->
 <div id="home" class="page activePage">
+<div class="card"><h3>Dashboard</h3></div>
 
-<div class="card top">
-  <h3>Welcome, COBRASERVER!</h3>
-  <p>Your account overview</p>
+<div class="card">
+<h2 id="stockCount">0</h2><p>Stock</p>
 </div>
 
 <div class="card">
-  <h2 id="stockCount">0</h2>
-  <p class="small">Stock Live</p>
+<h2 id="soldCount">0</h2><p>Sold</p>
 </div>
 
 <div class="card">
-  <h2 id="soldCount">0</h2>
-  <p class="small">Sold</p>
+<h2 id="addCount">0</h2><p>Added</p>
 </div>
 
 <div class="card">
-  <h2 id="addCount">0</h2>
-  <p class="small">Added</p>
+<h2 id="deleteCount">0</h2><p>Deleted</p>
 </div>
 
 <div class="card">
-  <h2 id="deleteCount">0</h2>
-  <p class="small">Deleted</p>
+<b>History</b>
+<div id="history"></div>
 </div>
-
-<div class="card">
-  <b>Last 5 Activity</b>
-  <div id="history"></div>
-</div>
-
 </div>
 
 <!-- REQUEST -->
 <div id="request" class="page">
 <div class="card">
-  <h3>Customer Requests</h3>
-  <div id="requestData"></div>
+<div id="requestData"></div>
 </div>
 </div>
 
 <!-- MANAGE -->
 <div id="manage" class="page">
 <div class="card">
-  <h3>Customer Panel Control</h3>
-  <input type="checkbox" id="customerToggle" onchange="toggleCustomer()">
-  <p id="toggleStatus"></p>
+
+<h3>Customer Panel Control</h3>
+
+<label class="switch">
+<input type="checkbox" id="customerToggle" onchange="toggleCustomer()">
+<span class="slider"></span>
+</label>
+
+<p id="toggleStatus"></p>
+
 </div>
 </div>
 
@@ -232,40 +142,13 @@ font-size:12px;
 <script>
 
 // ELEMENTS
-const user = document.getElementById("user");
-const pass = document.getElementById("pass");
-const loginWrap = document.getElementById("loginWrap");
-const main = document.getElementById("main");
-
-const menu = document.getElementById("menu");
-const overlay = document.getElementById("overlay");
-
-const stockCount = document.getElementById("stockCount");
-const soldCount = document.getElementById("soldCount");
-const addCount = document.getElementById("addCount");
-const deleteCount = document.getElementById("deleteCount");
-
-const historyBox = document.getElementById("history");
-const requestBox = document.getElementById("requestData");
-
-const toggleStatus = document.getElementById("toggleStatus");
-const customerToggle = document.getElementById("customerToggle");
+const toggleStatus=document.getElementById("toggleStatus");
+const customerToggle=document.getElementById("customerToggle");
 
 // MENU
 function toggleMenu(){
 menu.classList.toggle("active");
 overlay.classList.toggle("active");
-}
-
-// PAGE
-function showPage(p){
-document.querySelectorAll(".page").forEach(x=>x.classList.remove("activePage"));
-document.getElementById(p).classList.add("activePage");
-toggleMenu();
-
-if(p==="home") loadAll();
-if(p==="request") loadRequests();
-if(p==="manage") loadSettings();
 }
 
 // LOGIN
@@ -282,9 +165,6 @@ loadAll();
 }else alert("Login failed");
 }
 
-// LOGOUT
-function logout(){location.reload();}
-
 // LOAD
 function loadAll(){
 loadStats();
@@ -292,65 +172,15 @@ loadHistory();
 loadSettings();
 }
 
-// STATS
-async function loadStats(){
-let s=await fetch("/admin/stats");
-let d=await s.json();
-
-soldCount.innerText=d.sold;
-addCount.innerText=d.added;
-deleteCount.innerText=d.deleted;
-
-let st=await fetch("/admin/stock");
-let stock=await st.json();
-
-let total=0;
-for(let p in stock) total+=stock[p].length;
-
-stockCount.innerText=total;
-}
-
-// HISTORY
+// FIXED HISTORY BUG
 async function loadHistory(){
 let res=await fetch("/admin/history");
 let arr=await res.json();
 
-historyBox.innerHTML="";
+history.innerHTML="";
 arr.forEach(x=>{
-historyBox.innerHTML+=`<div>${x}</div>`;
+history.innerHTML+=`<div>${x}</div>`;
 });
-}
-
-// REQUEST
-async function loadRequests(){
-let res=await fetch("/admin/data");
-let arr=await res.json();
-
-requestBox.innerHTML="";
-
-arr.reverse().forEach(x=>{
-if(x.status==="pending"){
-requestBox.innerHTML+=`
-<div class="req">
-${x.plan}<br>
-UTR: ${x.utr}<br>
-<button onclick="verify(${x.id})">YES</button>
-<button onclick="reject(${x.id})">NO</button>
-</div>`;
-}
-});
-}
-
-// VERIFY
-async function verify(id){
-await fetch("/admin/verify/"+id);
-loadRequests();
-}
-
-// REJECT
-async function reject(id){
-await fetch("/admin/reject/"+id);
-loadRequests();
 }
 
 // SETTINGS
@@ -359,12 +189,23 @@ let res=await fetch("/admin/settings");
 let s=await res.json();
 
 customerToggle.checked=s.customerEnabled;
-toggleStatus.innerText=s.customerEnabled?"ON":"OFF";
+updateStatus(s.customerEnabled);
+}
+
+// STATUS
+function updateStatus(state){
+if(state){
+toggleStatus.innerText="ON (Live)";
+toggleStatus.className="statusOn";
+}else{
+toggleStatus.innerText="OFF (Disabled)";
+toggleStatus.className="statusOff";
+}
 }
 
 // TOGGLE
 async function toggleCustomer(){
-toggleStatus.innerText="...";
+toggleStatus.innerText="Please Wait...";
 
 let res=await fetch("/admin/toggleCustomer",{
 method:"POST",
@@ -373,7 +214,8 @@ body:JSON.stringify({enabled:customerToggle.checked})
 });
 
 let d=await res.json();
-toggleStatus.innerText=d.customerEnabled?"ON":"OFF";
+
+updateStatus(d.customerEnabled);
 }
 
 </script>
