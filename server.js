@@ -6,8 +6,28 @@ const app = express();
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
+// 🔥 IMPORTANT (Render port fix)
+const PORT = process.env.PORT || 3000;
+
 let requests = [];
 let systemOn = true;
+
+// ✅ Default route (Customer Panel)
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/index.html"));
+});
+
+// ✅ Admin Login Page
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/admin.html"));
+});
+
+// ✅ (OPTIONAL) admin.html direct open fix
+app.get("/admin.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/admin.html"));
+});
+
+// ================= BACKEND =================
 
 // ✅ Customer BUY
 app.post("/buy", (req, res) => {
@@ -45,4 +65,5 @@ app.get("/status", (req, res) => {
   res.json({ on: systemOn });
 });
 
-app.listen(3000, () => console.log("Server running"));
+// ================= START SERVER =================
+app.listen(PORT, () => console.log("Server running on " + PORT));
