@@ -2,128 +2,211 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COBRA SERVER</title>
+<title>ADMIN PANEL</title>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:#f1f5f9;
+body{margin:0;font-family:Arial;background:#0f172a;color:white}
+
+/* LOGIN */
+.login{
+ display:flex;flex-direction:column;justify-content:center;align-items:center;
+ height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);
 }
+.login input,.login button{
+ width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;
+}
+.login button{background:#000;color:#fff}
 
 /* TOP */
-.top{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:15px;
-  background:white;
-  box-shadow:0 2px 5px rgba(0,0,0,0.1);
+.topbar{display:flex;justify-content:space-between;padding:12px;background:#020617}
+
+/* SIDEBAR */
+.sidebar{
+ position:fixed;top:0;left:-250px;width:250px;height:100%;
+ background:#1e293b;padding:20px;transition:.3s;
+}
+.sidebar.active{left:0}
+.sidebar div{
+ padding:12px;background:#334155;margin:8px 0;border-radius:8px;
 }
 
-.logo{
-  font-weight:bold;
-  font-size:20px;
-  color:#0f766e;
-}
-
-/* CARD */
-.card{
-  background:white;
-  margin:15px;
-  padding:20px;
-  border-radius:15px;
-  text-align:center;
-  box-shadow:0 5px 15px rgba(0,0,0,0.1);
-}
-
-/* WELCOME */
-.welcome{
-  background:linear-gradient(135deg,#0f766e,#22c55e);
-  color:white;
-}
-
-/* ICON */
-.icon{
-  width:60px;
-  height:60px;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin:auto;
-  font-size:25px;
-  color:white;
-}
-
-.green{background:#22c55e;}
-.blue{background:#3b82f6;}
-.orange{background:#f59e0b;}
-
-h2{
-  margin:10px 0;
-}
-
-.small{
-  color:#6b7280;
-}
-
-/* FOOTER */
-.footer{
-  text-align:center;
-  padding:15px;
-  color:#6b7280;
-}
+/* CONTENT */
+.content{padding:10px}
+.card{background:#1e293b;padding:15px;border-radius:10px;margin:10px 0}
+button{padding:10px;border:none;border-radius:6px;margin:5px}
+.green{background:#22c55e}
+.red{background:#ef4444}
 </style>
-
 </head>
 
 <body>
 
-<!-- TOP -->
-<div class="top">
-  <div class="logo">COBRA SERVER</div>
-  <div>☰</div>
+<!-- LOGIN -->
+<div id="loginBox" class="login">
+<h2>ADMIN LOGIN</h2>
+<input id="u" placeholder="Username">
+<input id="p" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
 </div>
 
-<!-- WELCOME -->
-<div class="card welcome">
-  <h2>Welcome, COBRASERVER!</h2>
-  <p>Your account overview and recent activity</p>
-  <div class="icon" style="background:rgba(255,255,255,0.2)">👤</div>
+<!-- PANEL -->
+<div id="panel" style="display:none">
+
+<div class="topbar">
+<div onclick="toggleMenu()">☰</div>
+<div>ADMIN PANEL</div>
 </div>
 
-<!-- BALANCE -->
-<div class="card">
-  <div class="icon green">💰</div>
-  <h2>₹999960929</h2>
-  <div class="small">Account Balance</div>
+<div id="sidebar" class="sidebar">
+<div onclick="showTab('home')">Home</div>
+<div onclick="showTab('requests')">Requests</div>
+<div onclick="showTab('customer')">Customer</div>
+<div onclick="showTab('stock')">Stock</div>
+<div onclick="logout()">Logout</div>
 </div>
 
-<!-- LEVEL -->
-<div class="card">
-  <div class="icon blue">🛡️</div>
-  <h2>Owner</h2>
-  <div class="small">Account Level</div>
-</div>
+<div class="content" id="main"></div>
 
-<!-- EXPIRY -->
-<div class="card">
-  <div class="icon orange">⏰</div>
-  <h2 id="date"></h2>
-  <div class="small">Panel Expiry Date</div>
-</div>
-
-<div class="footer">
-  Copyright © 2026 - VIP<br>
-  All Rights Reserved
 </div>
 
 <script>
-// 🔥 Dynamic Date
-let d = new Date();
-document.getElementById("date").innerText =
-  d.toLocaleDateString() + " " + d.toLocaleTimeString();
+
+// 🔐 LOGIN
+function login(){
+ let u=document.getElementById("u").value;
+ let p=document.getElementById("p").value;
+
+ if(u==="COBRA SERVER" && p==="SAMI9166"){
+   localStorage.setItem("admin","1");
+   start();
+ }else alert("Wrong");
+}
+
+// 🔐 START
+function start(){
+ document.getElementById("loginBox").style.display="none";
+ document.getElementById("panel").style.display="block";
+ showTab("home");
+}
+if(localStorage.getItem("admin")=="1") start();
+
+// 🔐 LOGOUT
+function logout(){
+ localStorage.removeItem("admin");
+ location.reload();
+}
+
+// MENU
+function toggleMenu(){
+ document.getElementById("sidebar").classList.toggle("active");
+}
+
+// 🔥 TAB SWITCH
+function showTab(tab){
+
+let html="";
+
+if(tab==="home"){
+ html=`<h2>Dashboard</h2>
+ <button onclick="toggleSystem()" id="toggleBtn">Toggle System</button>`;
+ loadToggle();
+}
+
+if(tab==="requests"){
+ html="<h2>Requests</h2><div id='req'>Loading...</div>";
+ loadRequests();
+}
+
+if(tab==="customer"){
+ html=`<h2>Customer Control</h2>
+ <button onclick="toggleSystem()">ON/OFF PANEL</button>
+ <div class="card">
+ <input id="price" placeholder="Change Price">
+ <button onclick="updatePrice()">Update</button>
+ </div>`;
+}
+
+if(tab==="stock"){
+ html=`<h2>Stock</h2>
+ <div class="card">
+ <input id="key" placeholder="Add Key">
+ <button onclick="addKey()">Add</button>
+ </div>
+ <div id="stockList"></div>`;
+ loadStock();
+}
+
+document.getElementById("main").innerHTML=html;
+}
+
+// ================= API =================
+
+// REQUESTS
+function loadRequests(){
+ fetch("/requests")
+ .then(r=>r.json())
+ .then(data=>{
+   let h="";
+   data.forEach(x=>{
+     h+=`<div class="card">
+     ${x.user} - ${x.plan}
+     <br>
+     <button class="green" onclick="approve('${x.user}')">Approve</button>
+     <button class="red" onclick="reject('${x.user}')">Reject</button>
+     </div>`;
+   });
+   document.getElementById("req").innerHTML=h||"No Requests";
+ });
+}
+
+function approve(u){
+ fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
+ .then(loadRequests);
+}
+
+function reject(u){
+ fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
+ .then(loadRequests);
+}
+
+// TOGGLE
+function toggleSystem(){
+ fetch("/toggle",{method:"POST"})
+ .then(r=>r.json())
+ .then(d=>{
+   alert(d.on?"ON":"OFF");
+ });
+}
+
+function loadToggle(){
+ fetch("/status")
+ .then(r=>r.json())
+ .then(d=>{
+   let b=document.getElementById("toggleBtn");
+   if(b) b.innerText=d.on?"SYSTEM ON":"SYSTEM OFF";
+ });
+}
+
+// STOCK (FRONTEND DEMO)
+let stock=[];
+function addKey(){
+ let k=document.getElementById("key").value;
+ stock.push(k);
+ loadStock();
+}
+function loadStock(){
+ let h="";
+ stock.forEach(k=>{
+   h+=`<div class="card">${k}</div>`;
+ });
+ document.getElementById("stockList").innerHTML=h;
+}
+
+// PRICE
+function updatePrice(){
+ alert("Price Updated (connect backend later)");
+}
+
 </script>
 
 </body>
