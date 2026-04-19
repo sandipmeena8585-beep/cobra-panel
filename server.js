@@ -89,7 +89,17 @@ app.post("/admin/addkey",(req,res)=>{
   let data = loadData();
   let {plan,key} = req.body;
 
-  data.stock[plan].push(key);
+  // 🔥 FIX
+  if(!plan || !key){
+    return res.json({ok:false});
+  }
+
+  if(!data.stock[plan]){
+    data.stock[plan] = [];
+  }
+
+  data.stock[plan].push(key.trim());
+
   saveData(data);
 
   res.json({ok:true});
