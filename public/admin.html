@@ -14,13 +14,13 @@ body{
   color:white;
 }
 
-/* HEADER */
+/* HEADER FIX */
 .header{
   display:flex;
-  justify-content:space-between;
   align-items:center;
   padding:14px;
   border-bottom:1px solid #111;
+  gap:10px;
 }
 
 .menu{font-size:22px;cursor:pointer;}
@@ -109,7 +109,7 @@ button{
 
 button:active{transform:scale(0.97);}
 
-/* 🔥 TOGGLE SWITCH */
+/* TOGGLE */
 .switch{
   position:relative;
   display:inline-block;
@@ -121,11 +121,9 @@ button:active{transform:scale(0.97);}
 
 .slider{
   position:absolute;
-  cursor:pointer;
-  top:0; left:0; right:0; bottom:0;
+  top:0;left:0;right:0;bottom:0;
   background:#ccc;
   border-radius:34px;
-  transition:.3s;
 }
 
 .slider:before{
@@ -163,7 +161,7 @@ input:checked + .slider:before{
 <div class="sideItem" onclick="go('requestPage',this)">Requests</div>
 </div>
 
-<!-- HEADER -->
+<!-- HEADER FIXED -->
 <div class="header">
 <span class="menu" onclick="openMenu()">☰</span>
 <b>COBRA ADMIN</b>
@@ -189,7 +187,7 @@ input:checked + .slider:before{
 <div class="card" id="stockCount">Stock: 0</div>
 <div class="card" id="todaySales">Today: 0</div>
 
-<!-- 🔥 TOGGLE -->
+<!-- TOGGLE FIX -->
 <div class="card">
 <b>Customer Panel</b><br><br>
 
@@ -198,7 +196,7 @@ input:checked + .slider:before{
   <span class="slider"></span>
 </label>
 
-<div id="toggleStatus" style="margin-top:10px;">Loading...</div>
+<div id="toggleStatus" style="margin-top:10px;font-weight:bold;">OFF</div>
 
 </div>
 
@@ -265,7 +263,7 @@ go("dashboard");
 }else alert("Login failed");
 }
 
-// 🔥 LOAD SETTINGS
+// LOAD SETTINGS
 async function loadSettings(){
 let res=await fetch("/admin/settings");
 let s=await res.json();
@@ -274,7 +272,7 @@ customerToggle.checked = s.customerPanel;
 toggleStatus.innerText = s.customerPanel ? "ON" : "OFF";
 }
 
-// 🔥 TOGGLE CLICK
+// TOGGLE
 async function toggleCustomer(){
 let res=await fetch("/admin/toggleCustomer",{method:"POST"});
 let d=await res.json();
@@ -325,9 +323,7 @@ let data=await res.json();
 let html="";
 for(let p in data){
 html+=`<div class="card"><b>${p}</b><br>`;
-data[p].forEach(k=>{
-html+=`${k}<br>`;
-});
+data[p].forEach(k=>{html+=`${k}<br>`;});
 html+="</div>";
 }
 stockList.innerHTML=html;
