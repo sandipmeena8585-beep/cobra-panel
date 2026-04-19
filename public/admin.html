@@ -65,66 +65,65 @@ body{
   display:flex;
   flex-direction:column;
   gap:12px;
-  text-align:center;
 }
 
 .card{
   padding:15px;
   border-radius:15px;
   background:linear-gradient(135deg,#16a34a,#22c55e);
+  text-align:center;
 }
 
 /* LOGIN */
 .loginBox{
   width:90%;
   max-width:300px;
-  margin:90px auto;
+  margin:80px auto;
   border-radius:20px;
   overflow:hidden;
   background:#020617;
-  box-shadow:0 10px 40px rgba(0,0,0,0.5);
 }
 
 .loginTop{
-  padding:22px;
+  padding:25px;
   background:linear-gradient(135deg,#0f766e,#22c55e);
-  font-size:20px;
+  text-align:center;
+  font-size:22px;
   font-weight:bold;
 }
 
 .loginBody{
-  padding:18px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
+  padding:20px;
 }
 
 input,select{
-  width:80%;
-  padding:10px;
-  margin:6px 0;
-  border-radius:10px;
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border-radius:12px;
   border:none;
   background:#0f172a;
   color:white;
-  text-align:center;
 }
 
 button{
-  width:80%;
-  padding:11px;
+  width:100%;
+  padding:12px;
   border:none;
-  border-radius:10px;
+  border-radius:12px;
   background:linear-gradient(135deg,#22c55e,#16a34a);
   color:white;
   margin-top:10px;
+  font-weight:bold;
 }
 
+/* TELEGRAM */
 .telegram{
   position:fixed;
   bottom:15px;
   right:15px;
   padding:10px 14px;
+  font-size:13px;
   background:#0088cc;
   border-radius:10px;
 }
@@ -137,6 +136,7 @@ button{
 
 <div id="overlay" class="overlay" onclick="closeMenu()"></div>
 
+<!-- SIDEBAR -->
 <div id="sidebar" class="sidebar">
 <div class="sideItem" onclick="go('panel')">Home</div>
 <div class="sideItem" onclick="go('stockPage')">Stock</div>
@@ -152,7 +152,6 @@ button{
 <!-- LOGIN -->
 <div id="loginBox" class="loginBox">
 <div class="loginTop">Welcome Back</div>
-
 <div class="loginBody">
 <input id="user" placeholder="Enter username">
 <input id="pass" placeholder="Enter password">
@@ -163,26 +162,27 @@ button{
 <!-- DASHBOARD -->
 <div id="panel" class="container hidden">
 <div class="card">Dashboard</div>
+<div class="card" id="sales">Sales: 0</div>
+<div class="card" id="pending">Pending: 0</div>
+<div class="card" id="stockCount">Stock: 0</div>
 </div>
 
 <!-- STOCK -->
 <div id="stockPage" class="container hidden">
-
 <div class="card">STOCK PANEL</div>
 
 <select id="plan">
 <option value="1hour">1 Hour</option>
 <option value="3hour">3 Hour</option>
 <option value="1day">1 Day</option>
+<option value="3day">3 Day</option>
 <option value="7day">7 Day</option>
 </select>
 
 <input id="newkey" placeholder="Enter Key">
-
 <button onclick="addKey()">ADD KEY</button>
 
 <div id="stockList"></div>
-
 </div>
 
 <!-- REQUEST -->
@@ -191,22 +191,24 @@ button{
 <div id="data"></div>
 </div>
 
+<!-- TELEGRAM -->
 <div class="telegram" onclick="window.open('https://t.me/GODx_COBRA')">
 📢 Help
 </div>
 
 <script>
 
+// MENU
 function toggleMenu(){
   sidebar.classList.add("active");
   overlay.classList.add("active");
 }
-
 function closeMenu(){
   sidebar.classList.remove("active");
   overlay.classList.remove("active");
 }
 
+// NAV
 function go(p){
   closeMenu();
   panel.classList.add("hidden");
@@ -233,9 +235,50 @@ async function login(){
     loginBox.classList.add("hidden");
     panel.classList.remove("hidden");
     menuBtn.style.display="block";
+
+    load();
+    loadStockCount();
   }else{
     alert("Wrong Login");
   }
+}
+
+// LOAD REQUEST
+async function load(){
+  let res=await fetch("/admin/data");
+  let arr=await res.json();
+
+  let sales=0,pending=0,html="";
+
+  arr.forEach(x=>{
+    if(x.status==="pending"){
+      pending++;
+      html+=`
+      <div class="card">
+      ${x.plan}
+      <button onclick="verify(${x.id})">✔</button>
+      <button onclick="reject(${x.id})">❌</button>
+      </div>`;
+    }
+    if(x.status==="approved") sales++;
+  });
+
+  data.innerHTML=html;
+  sales.innerText="Sales: "+sales;
+  pending.innerText="Pending: "+pending;
+}
+
+// STOCK COUNT
+async function loadStockCount(){
+  let res = await fetch("/admin/stock");
+  let stock = await res.json();
+
+  let total = 0;
+  for(let p in stock){
+    total += stock[p].length;
+  }
+
+  stockCount.innerText="Stock: "+total;
 }
 
 // ADD KEY
@@ -250,25 +293,30 @@ async function addKey(){
   });
 
   newkey.value="";
-  loadStock();
+  loadStockCount();
 }
 
-// LOAD STOCK
-async function loadStock(){
-  let res = await fetch("/admin/stock");
-  let data = await res.json();
+// VERIFY
+async function verify(id){
+  await fetch("/admin/verify/"+id);
+  load();
+  loadStockCount();
+}
 
-  let html="";
+// REJECT
+async function reject(id){
+  await fetch("/admin/reject/"+id);
+  load();
+}
 
-  for(let p in data){
-    html+=`<div class="card">${p}<br>`;
-    data[p].forEach(k=>{
-      html+=k+"<br>";
-    });
-    html+="</div>";
-  }
+// AUTO REFRESH
+setInterval(()=>{
+  loadStockCount();
+},3000);
 
-  stockList.innerHTML = html;
+// LOGOUT
+function logout(){
+  location.reload();
 }
 
 </script>
