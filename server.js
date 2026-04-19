@@ -1,7 +1,9 @@
 const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
-const fetch = require("node-fetch");
+
+// 🔥 FIX fetch (node-fetch issue solve)
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const app = express();
 
@@ -11,11 +13,10 @@ app.use(express.static("public"));
 
 const upload = multer({dest:"uploads/"});
 
-// 🔥 TELEGRAM CONFIG
+// 🔥 ⚠️ TOKEN (NEW डालना)
 const BOT_TOKEN = "8390006157:AAFyEdJMkvxV_rPc9IHhQkXOJkKCWEDxJGg";
 const CHAT_ID = "7707237527";
 
-// 🔥 DATA FILE
 const FILE = "data.json";
 
 function loadData(){
@@ -38,10 +39,10 @@ function saveData(data){
   fs.writeFileSync(FILE, JSON.stringify(data,null,2));
 }
 
-// 🔥 TELEGRAM SEND
+// 🔥 TELEGRAM DEBUG SEND
 async function sendTelegram(msg){
   try{
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
+    let res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
       method:"POST",
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -49,26 +50,28 @@ async function sendTelegram(msg){
         text: msg
       })
     });
+
+    let data = await res.json();
+
+    console.log("📡 TELEGRAM RESPONSE:", data);
+
   }catch(e){
-    console.log("Telegram Error",e.message);
+    console.log("❌ TELEGRAM ERROR:", e.message);
   }
 }
 
-// 🔥 ADD KEY
+// ADD KEY
 app.post("/admin/addkey",(req,res)=>{
   let data = loadData();
   let {plan,key} = req.body;
 
-  if(!data.stock[plan]) data.stock[plan]=[];
-
   data.stock[plan].push(key);
 
   saveData(data);
-
   res.json({ok:true});
 });
 
-// 🔥 DELETE KEY
+// DELETE
 app.post("/admin/deletekey",(req,res)=>{
   let data = loadData();
   let {plan,key} = req.body;
@@ -76,25 +79,22 @@ app.post("/admin/deletekey",(req,res)=>{
   data.stock[plan] = data.stock[plan].filter(k=>k!==key);
 
   saveData(data);
-
   res.send("deleted");
 });
 
-// 🔥 GET STOCK
+// STOCK
 app.get("/admin/stock",(req,res)=>{
   let data = loadData();
   res.json({stock:data.stock});
 });
 
-// 🔥 BUY REQUEST + TELEGRAM ALERT
+// 🔥 BUY + TELEGRAM
 app.post("/buy", upload.single("file"), async (req,res)=>{
 
   let data = loadData();
 
-  let id = Date.now();
-
   let request = {
-    id,
+    id: Date.now(),
     plan:req.body.plan,
     utr:req.body.utr,
     time:req.body.time,
@@ -103,101 +103,75 @@ app.post("/buy", upload.single("file"), async (req,res)=>{
   };
 
   data.requests.push(request);
-
   saveData(data);
 
-  // 🔥 TELEGRAM ALERT
-  let msg = `
-🔥 NEW PAYMENT REQUEST
+  await sendTelegram(`
+🔥 NEW PAYMENT
 
-📦 Plan: ${request.plan}
-🧾 UTR: ${request.utr || "N/A"}
-⏰ Time: ${request.time}
-`;
-
-  await sendTelegram(msg);
+📦 ${request.plan}
+🧾 ${request.utr || "N/A"}
+⏰ ${request.time}
+`);
 
   res.send("ok");
 });
 
-// 🔥 ADMIN DATA
+// ADMIN DATA
 app.get("/admin/data",(req,res)=>{
-  let data = loadData();
-  res.json(data.requests);
+  res.json(loadData().requests);
 });
 
-// 🔥 VERIFY
+// VERIFY
 app.get("/admin/verify/:id", async (req,res)=>{
 
   let data = loadData();
   let id = parseInt(req.params.id);
 
-  let reqItem = data.requests.find(x=>x.id===id);
-  if(!reqItem) return res.send("not found");
+  let r = data.requests.find(x=>x.id===id);
+  if(!r) return res.send("not found");
 
-  let plan = reqItem.plan;
+  let key = data.stock[r.plan]?.shift() || "NO KEY";
 
-  // 🔥 SAFE STOCK REMOVE
-  let key = data.stock[plan] && data.stock[plan].length
-    ? data.stock[plan].shift()
-    : null;
-
-  reqItem.status = "approved";
-  reqItem.key = key || "NO KEY";
-  reqItem.expiry = new Date(Date.now()+86400000).toLocaleString();
-  reqItem.channel = "https://t.me/GODx_COBRA";
+  r.status="approved";
+  r.key=key;
+  r.expiry=new Date(Date.now()+86400000).toLocaleString();
+  r.channel="https://t.me/GODx_COBRA";
 
   saveData(data);
 
-  // 🔥 TELEGRAM VERIFY ALERT
-  let msg = `
-✅ PAYMENT VERIFIED
+  await sendTelegram(`
+✅ VERIFIED
 
-📦 Plan: ${reqItem.plan}
-🔑 Key: ${reqItem.key}
-⏰ Time: ${reqItem.time}
-`;
+📦 ${r.plan}
+🔑 ${key}
+`);
 
-  await sendTelegram(msg);
-
-  res.send("verified");
+  res.send("ok");
 });
 
-// 🔥 REJECT
+// REJECT
 app.get("/admin/reject/:id", async (req,res)=>{
   let data = loadData();
-  let id = parseInt(req.params.id);
+  let r = data.requests.find(x=>x.id==req.params.id);
 
-  let reqItem = data.requests.find(x=>x.id===id);
+  if(r){
+    r.status="rejected";
 
-  if(reqItem){
-    reqItem.status="rejected";
-
-    // 🔥 TELEGRAM REJECT ALERT
     await sendTelegram(`
-❌ PAYMENT REJECTED
+❌ REJECTED
 
-📦 Plan: ${reqItem.plan}
-⏰ Time: ${reqItem.time}
+📦 ${r.plan}
 `);
   }
 
   saveData(data);
-
-  res.send("rejected");
+  res.send("ok");
 });
 
-// 🔥 STATUS CHECK (CUSTOMER)
+// STATUS
 app.get("/status/:utr",(req,res)=>{
-
-  let data = loadData();
-  let utr = req.params.utr;
-
-  let r = data.requests.find(x=>x.utr==utr);
-
-  if(!r) return res.json({status:"pending"});
-
-  res.json(r);
+  let r = loadData().requests.find(x=>x.utr==req.params.utr);
+  res.json(r || {status:"pending"});
 });
 
 app.listen(3000,()=>console.log("🚀 SERVER RUNNING"));
