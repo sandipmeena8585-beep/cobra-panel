@@ -28,6 +28,21 @@ body{
   box-shadow:0 0 15px rgba(0,255,255,0.2);
 }
 
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+}
+
+.homeBtn{
+  background:#00f2ff;
+  color:black;
+  padding:6px 12px;
+  border-radius:8px;
+  font-size:12px;
+}
+
 h2{text-align:center;}
 
 select,input{
@@ -63,26 +78,26 @@ button{
   margin-top:10px;
   color:#00f2ff;
 }
-
-/* animation */
-.successBox{
-  animation:pop 0.6s ease;
-}
-@keyframes pop{
-  0%{transform:scale(0.6);opacity:0;}
-  100%{transform:scale(1);opacity:1;}
-}
-.glow{box-shadow:0 0 25px #00f2ff;}
 </style>
 </head>
 
 <body>
 
 <div class="container">
+
 <div class="card">
+
+<!-- 🔥 TOP BAR -->
+<div class="topbar">
+  <span style="font-weight:bold;letter-spacing:1px;">
+    COBRA SERVER PANNEL
+  </span>
+  <button class="homeBtn" onclick="goHome()">🏠 Home</button>
+</div>
 
 <h2>🎮 BGMI PANEL</h2>
 
+<!-- PLAN -->
 <select id="plan">
 <option value="">Select Plan</option>
 <option value="1hour">1 Hour - ₹30</option>
@@ -94,14 +109,22 @@ button{
 
 <button onclick="startBuy()">BUY KEY</button>
 
+<!-- PAYMENT -->
 <div id="payment" class="hidden">
 
 <p id="planShow" style="text-align:center;"></p>
 
-<div class="mono">UPI: godxcobra@axl</div>
+<!-- UPI -->
+<div class="mono">
+UPI: godxcobra@axl
+</div>
 
+<button onclick="copyUPI()">📋 Copy UPI</button>
+
+<!-- QR -->
 <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl"
-width="200" style="display:block;margin:auto;margin-top:10px;">
+width="200"
+style="display:block;margin:auto;margin-top:10px;">
 
 <select id="method" onchange="changeMethod()">
 <option value="utr">Enter UTR</option>
@@ -126,16 +149,28 @@ let selectedPlan="";
 let interval;
 let lock=false;
 
-// START
+// BUY
 function startBuy(){
+
   selectedPlan=document.getElementById("plan").value;
-  if(!selectedPlan){ alert("Select Plan"); return; }
+
+  if(!selectedPlan){
+    alert("⚠️ पहले Plan select करो");
+    return;
+  }
 
   let pay=document.getElementById("payment");
-  pay.classList.remove("hidden");
 
+  pay.classList.remove("hidden");
   document.getElementById("planShow").innerText="Selected: "+selectedPlan;
+
   pay.scrollIntoView({behavior:"smooth"});
+}
+
+// HOME
+function goHome(){
+  document.getElementById("payment").classList.add("hidden");
+  document.getElementById("status").innerText="";
 }
 
 // METHOD
@@ -143,6 +178,12 @@ function changeMethod(){
   let m=document.getElementById("method").value;
   document.getElementById("utr").style.display=(m==="utr")?"block":"none";
   document.getElementById("file").style.display=(m==="qr")?"block":"none";
+}
+
+// COPY UPI
+function copyUPI(){
+  navigator.clipboard.writeText("godxcobra@axl");
+  alert("UPI Copied");
 }
 
 // SUBMIT
@@ -205,70 +246,25 @@ function check(utr){
       clearInterval(interval);
       localStorage.removeItem("utr");
 
-      document.getElementById("status").innerText="❌ Payment Rejected";
+      document.getElementById("status").innerText="❌ Rejected";
+
       setTimeout(()=>location.reload(),3000);
     }
 
   },2000);
 }
 
-// 🔥 SUCCESS UI + COPY + TIMER
+// SUCCESS
 function showSuccess(key){
-
-  let expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour demo
-
   document.getElementById("payment").innerHTML=`
-  <div class="successBox glow">
+  <h3 style="text-align:center;">🎉 PAYMENT SUCCESS</h3>
 
-  <h3 style="text-align:center;">🎉 PAYMENT SUCCESS 🎉</h3>
+  <p style="text-align:center;">🔑 ${key}</p>
 
-  <div style="background:#071226;padding:15px;border-radius:12px;text-align:center;">
-
-  <p>🔑 Your Key:</p>
-  <h2 id="keyText" style="color:#00f2ff;">${key}</h2>
-
-  <button onclick="copyKey()">📋 Copy Key</button>
-
-  <p id="timer">⏳ Expiry loading...</p>
-
-  <button onclick="window.open('https://t.me/GODx_COBRA')">
-  📲 Join Telegram
+  <button onclick="navigator.clipboard.writeText('${key}')">
+  📋 Copy Key
   </button>
-
-  </div>
-  </div>
   `;
-
-  startExpiryTimer(expiryTime);
-}
-
-// COPY
-function copyKey(){
-  let text=document.getElementById("keyText").innerText;
-  navigator.clipboard.writeText(text);
-  alert("Key copied!");
-}
-
-// TIMER
-function startExpiryTimer(end){
-
-  let t=setInterval(()=>{
-
-    let diff=end-Date.now();
-
-    if(diff<=0){
-      clearInterval(t);
-      document.getElementById("timer").innerText="❌ Expired";
-      return;
-    }
-
-    let m=Math.floor(diff/60000);
-    let s=Math.floor((diff%60000)/1000);
-
-    document.getElementById("timer").innerText=
-    "⏳ Expiry: "+m+"m "+s+"s";
-
-  },1000);
 }
 
 // RESUME
