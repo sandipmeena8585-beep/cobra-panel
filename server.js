@@ -2,7 +2,7 @@ const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
 
-// ✅ FIX fetch (important)
+// ✅ fetch fix
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const app = express();
@@ -13,8 +13,8 @@ app.use(express.static("public"));
 
 const upload = multer({dest:"uploads/"});
 
-// ⚠️ NEW TOKEN USE KAR (old leak ho chuka hai)
-const BOT_TOKEN = "8390006157:AAFyEdJMkvxV_rPc9IHhQkXOJkKCWEDxJGg";
+// ⚠️ IMPORTANT: NEW TOKEN USE KAR (old leak ho gaya hai)
+const BOT_TOKEN = "PUT_NEW_TOKEN_HERE";
 const CHAT_ID = "7707237527";
 
 const FILE = "data.json";
@@ -40,20 +40,14 @@ function saveData(data){
   fs.writeFileSync(FILE, JSON.stringify(data,null,2));
 }
 
-// ===== TELEGRAM SEND (DEBUG VERSION) =====
+// ===== ✅ TELEGRAM SEND (FINAL FIX) =====
 async function sendTelegram(msg){
   try{
     console.log("📤 Sending Telegram...");
 
-    let res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
-      method:"POST",
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        chat_id: CHAT_ID,
-        text: msg
-      })
-    });
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}`;
 
+    let res = await fetch(url);
     let data = await res.json();
 
     console.log("📡 TELEGRAM RESPONSE:", data);
