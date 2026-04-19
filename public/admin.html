@@ -5,35 +5,86 @@
 <title>ADMIN PANEL</title>
 
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:white}
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
+}
 
 /* LOGIN */
 .login{
- display:flex;flex-direction:column;justify-content:center;align-items:center;
- height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:center;
+ height:100vh;
+ background:linear-gradient(135deg,#0f766e,#22c55e);
 }
 .login input,.login button{
- width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;
+ width:80%;
+ max-width:300px;
+ padding:12px;
+ margin:10px;
+ border:none;
+ border-radius:6px;
 }
 .login button{background:#000;color:#fff}
 
 /* TOP */
-.topbar{display:flex;justify-content:space-between;padding:12px;background:#020617}
+.topbar{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ padding:12px;
+ background:#020617;
+ position:fixed;
+ width:100%;
+ top:0;
+ z-index:1000;
+}
 
 /* SIDEBAR */
 .sidebar{
- position:fixed;top:0;left:-250px;width:250px;height:100%;
- background:#1e293b;padding:20px;transition:.3s;
+ position:fixed;
+ top:0;
+ left:-250px;
+ width:250px;
+ height:100%;
+ background:#1e293b;
+ padding-top:60px;
+ transition:.3s;
+ z-index:999;
 }
 .sidebar.active{left:0}
 .sidebar div{
- padding:12px;background:#334155;margin:8px 0;border-radius:8px;
+ padding:12px;
+ background:#334155;
+ margin:8px;
+ border-radius:8px;
 }
 
-/* CONTENT */
-.content{padding:10px}
-.card{background:#1e293b;padding:15px;border-radius:10px;margin:10px 0}
-button{padding:10px;border:none;border-radius:6px;margin:5px}
+/* CONTENT FIX */
+.content{
+ margin-top:60px;
+ padding:10px;
+}
+
+/* CARD */
+.card{
+ background:#1e293b;
+ padding:15px;
+ border-radius:10px;
+ margin:10px 0;
+}
+
+/* BUTTON */
+button{
+ padding:10px;
+ border:none;
+ border-radius:6px;
+ margin:5px;
+}
 .green{background:#22c55e}
 .red{background:#ef4444}
 </style>
@@ -103,6 +154,9 @@ function toggleMenu(){
 
 // 🔥 TAB SWITCH
 function showTab(tab){
+
+// 🔥 auto close menu (mobile fix)
+document.getElementById("sidebar").classList.remove("active");
 
 let html="";
 
