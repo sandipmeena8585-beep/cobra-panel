@@ -1,247 +1,33 @@
+<!-- 📊 REAL GRAPH (ADD INSIDE DASHBOARD CARD) -->
+<canvas id="salesChart" style="width:100%;margin-top:10px;"></canvas>
+
+<!-- 📦 CHART.JS CDN (ADD BEFORE </body>) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
+// 📊 DEMO GRAPH DATA (UI ONLY)
+const ctx = document.getElementById('salesChart');
 
-// ✅ ELEMENT FIX (MOST IMPORTANT)
-const dashboard = document.getElementById("dashboard");
-const stockPage = document.getElementById("stockPage");
-const requestPage = document.getElementById("requestPage");
-const sidebar = document.getElementById("sidebar");
-const overlay = document.getElementById("overlay");
-const loginWrap = document.getElementById("loginWrap");
-
-const totalSales = document.getElementById("totalSales");
-const pendingReq = document.getElementById("pendingReq");
-const todaySales = document.getElementById("todaySales");
-const stockCount = document.getElementById("stockCount");
-const graph = document.getElementById("graph");
-const data = document.getElementById("data");
-const stockList = document.getElementById("stockList");
-
-const user = document.getElementById("user");
-const pass = document.getElementById("pass");
-const plan = document.getElementById("plan");
-const newkey = document.getElementById("newkey");
-
-// MENU
-function openMenu(){
-  sidebar.classList.add("active");
-  overlay.classList.add("active");
-}
-function closeMenu(){
-  sidebar.classList.remove("active");
-  overlay.classList.remove("active");
-}
-
-// NAV
-function go(p,el){
-
-  document.querySelectorAll(".sideItem").forEach(x=>{
-    x.classList.remove("active");
-  });
-
-  if(el) el.classList.add("active");
-
-  dashboard.classList.add("hidden");
-  stockPage.classList.add("hidden");
-  requestPage.classList.add("hidden");
-
-  document.getElementById(p).classList.remove("hidden");
-
-  if(p==="dashboard") loadDashboard();
-  if(p==="requestPage") loadRequests();
-  if(p==="stockPage") loadStock();
-
-  closeMenu();
-}
-
-// LOGIN
-async function login(){
-  let res=await fetch("/login",{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      user:user.value,
-      pass:pass.value,
-      device:navigator.userAgent
-    })
-  });
-
-  let d=await res.json();
-
-  if(d.status==="ok"){
-
-    loginWrap.style.display="none";
-
-    go("dashboard");
-
-    document.querySelectorAll(".sideItem")[0].classList.add("active");
-
-  }else{
-    alert("Wrong Login");
-  }
-}
-
-// DASHBOARD
-async function loadDashboard(){
-
-  let res=await fetch("/admin/data");
-  let arr=await res.json();
-
-  let sales=0,pending=0,today=0;
-  let stats={"1hour":0,"3hour":0,"1day":0,"3day":0,"7day":0};
-
-  let todayDate=new Date().toDateString();
-
-  arr.forEach(x=>{
-    if(x.status==="approved"){
-      sales++;
-      stats[x.plan]++;
-
-      if(new Date(x.id).toDateString()===todayDate){
-        today++;
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: ['1hour','3hour','1day','3day','7day'],
+    datasets: [{
+      label: 'Sales',
+      data: [5, 8, 12, 6, 9],
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins:{
+      legend:{display:false}
+    },
+    scales: {
+      y: {
+        beginAtZero: true
       }
     }
-    if(x.status==="pending") pending++;
-  });
-
-  totalSales.innerText="Total Sales: "+sales;
-  pendingReq.innerText="Pending: "+pending;
-  todaySales.innerText="Today Sales: "+today;
-
-  let g="";
-  for(let p in stats){
-    g+=`${p}<div class="bar" style="width:${stats[p]*25}px"></div>`;
   }
-  graph.innerHTML=g;
-
-  loadStockCount();
-}
-
-// STOCK COUNT
-async function loadStockCount(){
-  let res=await fetch("/admin/stock");
-  let data=await res.json();
-
-  let total=0;
-  for(let p in data){
-    total+=data[p].length;
-  }
-
-  stockCount.innerText="Stock: "+total;
-}
-
-// REQUEST
-async function loadRequests(){
-
-  let res=await fetch("/admin/data");
-  let arr=await res.json();
-
-  let html="";
-
-  arr.reverse().forEach(x=>{
-    if(x.status==="pending"){
-
-      html+=`
-      <div class="card">
-
-      <b>Plan:</b> ${x.plan}<br><br>
-      <b>UTR:</b> ${x.utr || "N/A"}<br><br>
-      <b>Time:</b> ${x.time || "N/A"}<br><br>
-
-      ${x.file ? `<img src="/uploads/${x.file}" style="width:100%;border-radius:10px;"><br><br>`:""}
-
-      <button onclick="verify(${x.id},this)">✅ YES</button>
-      <button onclick="reject(${x.id},this)">❌ NO</button>
-
-      </div>`;
-    }
-  });
-
-  data.innerHTML = html || "<div class='card'>No Requests</div>";
-}
-
-// VERIFY
-async function verify(id,btn){
-  btn.parentElement.style.opacity="0";
-  setTimeout(()=>btn.parentElement.remove(),200);
-
-  await fetch("/admin/verify/"+id);
-
-  loadDashboard();
-  loadStock();
-}
-
-// REJECT
-async function reject(id,btn){
-  btn.parentElement.style.opacity="0";
-  setTimeout(()=>btn.parentElement.remove(),200);
-
-  await fetch("/admin/reject/"+id);
-}
-
-// STOCK
-async function loadStock(){
-
-  let res=await fetch("/admin/stock");
-  let data=await res.json();
-
-  let html="";
-
-  for(let p in data){
-
-    html+=`<div class="card"><b>${p}</b><br>`;
-
-    if(data[p].length < 3){
-      html+="⚠ Low Stock<br>";
-    }
-
-    if(data[p].length===0){
-      html+="No Keys<br>";
-    }
-
-    data[p].forEach(k=>{
-      html+=`${k}<br>`;
-    });
-
-    html+="</div>";
-  }
-
-  stockList.innerHTML=html;
-}
-
-// ADD KEY
-async function addKey(){
-
-  if(!newkey.value.trim()) return;
-
-  await fetch("/admin/addkey",{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      plan:plan.value,
-      key:newkey.value
-    })
-  });
-
-  newkey.value="";
-  loadStock();
-  loadStockCount();
-}
-
-// AUTO REFRESH
-setInterval(()=>{
-
-  if(!dashboard.classList.contains("hidden")){
-    loadDashboard();
-  }
-
-  if(!requestPage.classList.contains("hidden")){
-    loadRequests();
-  }
-
-  if(!stockPage.classList.contains("hidden")){
-    loadStock();
-  }
-
-},3000);
-
+});
 </script>
