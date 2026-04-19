@@ -8,7 +8,7 @@
 body{
   margin:0;
   font-family:sans-serif;
-  background:#050d1a;
+  background:#040b16;
   color:white;
 }
 
@@ -18,52 +18,30 @@ body{
   padding:15px;
 }
 
-/* 🔥 CARD */
 .card{
   border-radius:20px;
   padding:20px;
   margin-top:20px;
-  background:#0a1628;
+  background:#081426;
   box-shadow:0 0 20px rgba(0,255,255,0.15);
-  transition:0.3s;
 }
 
-/* 🔥 TITLE */
+/* STEP 1 TITLE */
 .title{
   text-align:center;
   font-size:22px;
   font-weight:bold;
   margin-bottom:20px;
-  letter-spacing:1px;
   color:#00f2ff;
-  text-shadow:0 0 10px #00f2ff,0 0 20px #007bff;
+  text-shadow:0 0 15px #00f2ff;
 }
 
-/* 🔥 HEADER */
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:15px;
-}
-
-.btnTop{
-  background:#00f2ff;
-  color:black;
-  border:none;
-  padding:6px 12px;
-  border-radius:8px;
-}
-
-/* INPUT */
-select,input{
-  width:100%;
-  padding:14px;
-  margin:10px 0;
-  border-radius:12px;
-  border:none;
-  background:#09192e;
-  color:white;
+/* HEADER CENTER */
+.centerTitle{
+  text-align:center;
+  font-size:18px;
+  margin-bottom:20px;
+  color:#00f2ff;
 }
 
 /* BUTTON */
@@ -77,6 +55,17 @@ button{
   font-weight:bold;
 }
 
+/* INPUT */
+select,input{
+  width:100%;
+  padding:14px;
+  margin:10px 0;
+  border-radius:12px;
+  border:none;
+  background:#0a1c33;
+  color:white;
+}
+
 /* UPI */
 .mono{
   background:#000;
@@ -86,6 +75,20 @@ button{
   font-family:monospace;
   margin-top:10px;
   border:1px solid #00f2ff;
+}
+
+/* QR */
+.qr{
+  display:block;
+  margin:auto;
+  margin-top:20px;
+}
+
+/* STATUS */
+.status{
+  text-align:center;
+  color:#00f2ff;
+  margin-top:15px;
 }
 
 .hidden{display:none;}
@@ -114,35 +117,31 @@ button{
 
 </div>
 
-<!-- 🔥 STEP 2 -->
+<!-- 🔥 STEP 2 (PAYMENT) -->
 <div id="step2" class="card hidden">
 
-<div class="header">
-<button class="btnTop" onclick="goBack1()">⬅</button>
-<div>PAYMENT</div>
-<button class="btnTop" onclick="goHome()">🏠</button>
-</div>
+<div class="centerTitle">PAYMENT</div>
+
+<div style="margin-top:20px;">
 
 <div class="mono" onclick="copyUPI()">
 UPI: godxcobra@axl
 </div>
 
-<img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa=godxcobra@axl"
-width="220"
-style="display:block;margin:auto;margin-top:15px;">
-
-<button onclick="goStep3()">NEXT</button>
+<img class="qr"
+src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa=godxcobra@axl"
+width="220">
 
 </div>
 
-<!-- 🔥 STEP 3 -->
+<button style="margin-top:25px;" onclick="goStep3()">NEXT</button>
+
+</div>
+
+<!-- 🔥 STEP 3 (VERIFY) -->
 <div id="step3" class="card hidden">
 
-<div class="header">
-<button class="btnTop" onclick="goBack2()">⬅</button>
-<div>VERIFY</div>
-<button class="btnTop" onclick="goHome()">🏠</button>
-</div>
+<div class="centerTitle">VERIFY PAYMENT</div>
 
 <select id="method" onchange="changeMethod()">
 <option value="utr">Enter UTR</option>
@@ -154,7 +153,7 @@ style="display:block;margin:auto;margin-top:15px;">
 
 <button onclick="submitPayment()">SUBMIT</button>
 
-<p id="status" style="text-align:center;color:#00f2ff;"></p>
+<p id="status" class="status">⏳ Please wait admin verify...</p>
 
 </div>
 
@@ -185,20 +184,10 @@ function goStep3(){
   document.getElementById("step3").classList.remove("hidden");
 }
 
-// BACK
-function goBack1(){
-  document.getElementById("step2").classList.add("hidden");
-  document.getElementById("step1").classList.remove("hidden");
-}
-
-function goBack2(){
-  document.getElementById("step3").classList.add("hidden");
-  document.getElementById("step2").classList.remove("hidden");
-}
-
-// HOME
-function goHome(){
-  location.reload();
+// COPY
+function copyUPI(){
+  navigator.clipboard.writeText("godxcobra@axl");
+  alert("UPI Copied");
 }
 
 // METHOD
@@ -206,12 +195,6 @@ function changeMethod(){
   let m=document.getElementById("method").value;
   document.getElementById("utr").style.display=(m==="utr")?"block":"none";
   document.getElementById("file").style.display=(m==="qr")?"block":"none";
-}
-
-// COPY
-function copyUPI(){
-  navigator.clipboard.writeText("godxcobra@axl");
-  alert("UPI Copied");
 }
 
 // SUBMIT
@@ -240,7 +223,7 @@ async function submitPayment(){
   check(finalUTR);
 }
 
-// STATUS
+// STATUS CHECK
 function check(utr){
 
   clearInterval(interval);
@@ -254,7 +237,7 @@ function check(utr){
       clearInterval(interval);
 
       document.getElementById("step3").innerHTML=`
-      <h3 style="text-align:center;color:#00f2ff;">🎉 SUCCESS</h3>
+      <h3 style="text-align:center;color:#00f2ff;">🎉 PAYMENT SUCCESS</h3>
       <p style="text-align:center;">🔑 ${d.key}</p>
       <button onclick="navigator.clipboard.writeText('${d.key}')">
       📋 Copy Key
