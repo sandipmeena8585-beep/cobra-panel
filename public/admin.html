@@ -2,164 +2,128 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COBRA SERVER</title>
 
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:white}
-
-/* LOGIN */
-.login{
- display:flex;
- flex-direction:column;
- justify-content:center;
- align-items:center;
- height:100vh;
- background:linear-gradient(135deg,#0f766e,#14b8a6);
+body{
+  margin:0;
+  font-family:Arial;
+  background:#f1f5f9;
 }
-.login input,.login button{
- width:80%;
- max-width:300px;
- padding:12px;
- margin:10px;
- border:none;
- border-radius:6px;
-}
-.login button{background:#22c55e;color:white}
 
-/* DASHBOARD */
-.topbar{padding:12px;background:#020617;display:flex;justify-content:space-between}
-.toggle{width:90%;margin:10px;padding:15px;border:none;border-radius:10px;background:#22c55e}
-.off{background:#ef4444}
-.card{background:#1e293b;padding:15px;border-radius:10px;margin:10px}
-.center{text-align:center;margin-top:20px}
+/* TOP */
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px;
+  background:white;
+  box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+
+.logo{
+  font-weight:bold;
+  font-size:20px;
+  color:#0f766e;
+}
+
+/* CARD */
+.card{
+  background:white;
+  margin:15px;
+  padding:20px;
+  border-radius:15px;
+  text-align:center;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* WELCOME */
+.welcome{
+  background:linear-gradient(135deg,#0f766e,#22c55e);
+  color:white;
+}
+
+/* ICON */
+.icon{
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:auto;
+  font-size:25px;
+  color:white;
+}
+
+.green{background:#22c55e;}
+.blue{background:#3b82f6;}
+.orange{background:#f59e0b;}
+
+h2{
+  margin:10px 0;
+}
+
+.small{
+  color:#6b7280;
+}
+
+/* FOOTER */
+.footer{
+  text-align:center;
+  padding:15px;
+  color:#6b7280;
+}
 </style>
+
 </head>
 
 <body>
 
-<!-- LOGIN SCREEN -->
-<div id="loginBox" class="login">
-  <h2>ADMIN LOGIN</h2>
-  <input id="user" placeholder="Username">
-  <input id="pass" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
+<!-- TOP -->
+<div class="top">
+  <div class="logo">COBRA SERVER</div>
+  <div>☰</div>
 </div>
 
-<!-- DASHBOARD -->
-<div id="panel" style="display:none">
-
-<div class="topbar">
-<div>☰</div>
-<div>ADMIN PANEL</div>
+<!-- WELCOME -->
+<div class="card welcome">
+  <h2>Welcome, COBRASERVER!</h2>
+  <p>Your account overview and recent activity</p>
+  <div class="icon" style="background:rgba(255,255,255,0.2)">👤</div>
 </div>
 
-<h2 style="text-align:center">⚡ DASHBOARD</h2>
+<!-- BALANCE -->
+<div class="card">
+  <div class="icon green">💰</div>
+  <h2>₹999960929</h2>
+  <div class="small">Account Balance</div>
+</div>
 
-<button id="toggleBtn" class="toggle">LOADING...</button>
+<!-- LEVEL -->
+<div class="card">
+  <div class="icon blue">🛡️</div>
+  <h2>Owner</h2>
+  <div class="small">Account Level</div>
+</div>
 
-<div id="requests" class="center">Loading...</div>
+<!-- EXPIRY -->
+<div class="card">
+  <div class="icon orange">⏰</div>
+  <h2 id="date"></h2>
+  <div class="small">Panel Expiry Date</div>
+</div>
 
-<button onclick="logout()" style="margin:10px">Logout</button>
-
+<div class="footer">
+  Copyright © 2026 - VIP<br>
+  All Rights Reserved
 </div>
 
 <script>
-
-// 🔐 AUTO LOGIN CHECK
-if(localStorage.getItem("adminLogin")==="true"){
-  showPanel();
-}
-
-// 🔐 LOGIN
-function login(){
- let u=document.getElementById("user").value;
- let p=document.getElementById("pass").value;
-
- if(u==="COBRA SERVER" && p==="SAMI9166"){
-   localStorage.setItem("adminLogin","true");
-   showPanel();
- }else{
-   alert("Wrong login");
- }
-}
-
-// 🔐 SHOW PANEL
-function showPanel(){
- document.getElementById("loginBox").style.display="none";
- document.getElementById("panel").style.display="block";
- render();
- loadToggle();
-}
-
-// 🔐 LOGOUT
-function logout(){
- localStorage.removeItem("adminLogin");
- location.reload();
-}
-
-// 🔄 LOAD REQUESTS
-function render(){
- fetch("/requests")
- .then(r=>r.json())
- .then(data=>{
-   let html="";
-   if(!data.length) html="No Requests";
-
-   data.forEach(x=>{
-     html+=`
-     <div class="card">
-     <p>${x.user}</p>
-     <p>${x.plan}</p>
-     <button onclick="approve('${x.user}')">Approve</button>
-     <button onclick="reject('${x.user}')">Reject</button>
-     </div>`;
-   });
-
-   document.getElementById("requests").innerHTML=html;
- })
- .catch(()=>{
-   document.getElementById("requests").innerHTML="Server Error";
- });
-}
-
-// ✅ APPROVE
-function approve(u){
- fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
- .then(render);
-}
-
-// ❌ REJECT
-function reject(u){
- fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
- .then(render);
-}
-
-// 🔘 TOGGLE
-function loadToggle(){
- fetch("/status")
- .then(r=>r.json())
- .then(d=>updateToggle(d.on));
-}
-
-function toggle(){
- fetch("/toggle",{method:"POST"})
- .then(r=>r.json())
- .then(d=>updateToggle(d.on));
-}
-
-function updateToggle(on){
- let b=document.getElementById("toggleBtn");
- b.onclick=toggle;
- b.innerText=on?"SYSTEM ON":"SYSTEM OFF";
- if(!on) b.classList.add("off"); else b.classList.remove("off");
-}
-
-// 🔁 AUTO REFRESH
-setInterval(()=>{
- if(document.getElementById("panel").style.display==="block"){
-   render();
- }
-},4000);
-
+// 🔥 Dynamic Date
+let d = new Date();
+document.getElementById("date").innerText =
+  d.toLocaleDateString() + " " + d.toLocaleTimeString();
 </script>
 
 </body>
