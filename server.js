@@ -11,8 +11,8 @@ app.use(express.static("public"));
 
 const upload = multer({dest:"uploads/"});
 
-// 🔐 TELEGRAM
-const BOT_TOKEN = "YOUR_NEW_TOKEN";
+// 🔥 TELEGRAM CONFIG
+const BOT_TOKEN = "8390006157:AAHs0JAnW19B1iOIa8uUmfGfU5suLvtYwUo";
 const CHAT_ID = "7707237527";
 
 const FILE = "data.json";
@@ -29,7 +29,7 @@ function loadData(){
         "7day":[]
       },
       requests:[],
-      devices:{} // 🔥 DEVICE STORAGE
+      devices:{}
     }));
   }
   return JSON.parse(fs.readFileSync(FILE));
@@ -39,80 +39,44 @@ function saveData(data){
   fs.writeFileSync(FILE, JSON.stringify(data,null,2));
 }
 
-// ===== TELEGRAM =====
+// ===== TELEGRAM FUNCTION =====
 async function sendTelegram(msg){
   try{
     await axios.get(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
-      params:{ chat_id: CHAT_ID, text: msg }
+      params:{
+        chat_id: CHAT_ID,
+        text: msg
+      }
     });
   }catch(e){
     console.log("Telegram Error:", e.message);
   }
 }
 
-// ===== 🔐 LOGIN WITH DEVICE LOCK =====
-app.post("/login", async (req,res)=>{
-
+// ===== LOGIN =====
+app.post("/login",(req,res)=>{
   let data = loadData();
   let {user,pass,device} = req.body;
 
-  // 🔑 YOUR LOGIN
   if(user==="COBRA SERVER" && pass==="SAMI9166"){
-
-    // first login save device
     if(!data.devices[user]){
-      data.devices[user] = device;
-
-      await sendTelegram(
-`🆕 FIRST LOGIN
-
-User: ${user}
-Device: ${device}`
-      );
+      data.devices[user]=device;
     }
 
-    // device check
-    if(data.devices[user] !== device){
+    if(data.devices[user]!==device){
       return res.json({status:"blocked"});
     }
 
     saveData(data);
-
-    await sendTelegram(
-`🔐 LOGIN SUCCESS
-
-User: ${user}`
-    );
-
     return res.json({status:"ok"});
-
-  }else{
-    return res.json({status:"fail"});
   }
+
+  res.json({status:"fail"});
 });
 
-// ===== ADD KEY =====
-app.post("/admin/addkey",(req,res)=>{
-  let data = loadData();
-  let {plan,key} = req.body;
-
-  if(!data.stock[plan]) data.stock[plan] = [];
-
-  data.stock[plan].push(key);
-
-  saveData(data);
-  res.json({ok:true});
-});
-
-// ===== DELETE =====
-app.post("/admin/deletekey",(req,res)=>{
-  let data = loadData();
-  let {plan,key} = req.body;
-
-  data.stock[plan] = data.stock[plan].filter(k=>k!==key);
-
-  saveData(data);
-  res.send("deleted");
+// ===== ADMIN DATA =====
+app.get("/admin/data",(req,res)=>{
+  res.json(loadData().requests);
 });
 
 // ===== STOCK =====
@@ -120,7 +84,18 @@ app.get("/admin/stock",(req,res)=>{
   res.json(loadData().stock);
 });
 
-// ===== BUY =====
+// ===== ADD KEY =====
+app.post("/admin/addkey",(req,res)=>{
+  let data = loadData();
+  let {plan,key} = req.body;
+
+  data.stock[plan].push(key);
+  saveData(data);
+
+  res.json({ok:true});
+});
+
+// ===== BUY (🔥 TELEGRAM ALERT HERE) =====
 app.post("/buy", upload.single("file"), async (req,res)=>{
 
   let data = loadData();
@@ -137,8 +112,9 @@ app.post("/buy", upload.single("file"), async (req,res)=>{
   data.requests.push(request);
   saveData(data);
 
+  // 🔥 TELEGRAM ALERT
   await sendTelegram(
-`🔥 NEW PAYMENT
+`🔥 NEW REQUEST
 
 📦 Plan: ${request.plan}
 🧾 UTR: ${request.utr}
@@ -150,24 +126,19 @@ app.post("/buy", upload.single("file"), async (req,res)=>{
 
 // ===== VERIFY =====
 app.get("/admin/verify/:id", async (req,res)=>{
-
   let data = loadData();
-  let id = parseInt(req.params.id);
-
-  let r = data.requests.find(x=>x.id===id);
-  if(!r) return res.send("not found");
+  let r = data.requests.find(x=>x.id==req.params.id);
 
   let key = data.stock[r.plan]?.shift() || "NO KEY";
 
   r.status="approved";
   r.key=key;
-  r.expiry=new Date(Date.now()+86400000).toLocaleString();
-  r.channel="https://t.me/GODx_COBRA";
 
   saveData(data);
 
+  // 🔥 TELEGRAM VERIFIED
   await sendTelegram(
-`✅ PAYMENT VERIFIED
+`✅ VERIFIED
 
 📦 ${r.plan}
 🔑 ${key}`
@@ -185,7 +156,7 @@ app.get("/admin/reject/:id", async (req,res)=>{
     r.status="rejected";
 
     await sendTelegram(
-`❌ PAYMENT REJECTED
+`❌ REJECTED
 
 📦 ${r.plan}`
     );
@@ -201,4 +172,5 @@ app.get("/status/:utr",(req,res)=>{
   res.json(r || {status:"pending"});
 });
 
+// ===== START =====
 app.listen(3000,()=>console.log("🚀 SERVER RUNNING"));
