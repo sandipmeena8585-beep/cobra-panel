@@ -1,95 +1,203 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>COBRA ADMIN</title>
+  <title>Admin Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
       margin: 0;
       font-family: Arial;
-      height: 100vh;
-      background: linear-gradient(135deg, #0f766e, #14b8a6);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      background: #0f172a;
       color: white;
     }
 
-    .icon {
-      width: 80px;
+    /* 🔹 TOP BAR */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px;
+      background: #020617;
+    }
+
+    .menu-btn {
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    /* 🔹 SIDEBAR */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -250px;
+      width: 250px;
+      height: 100%;
+      background: #1e293b;
+      padding: 20px;
+      transition: 0.3s;
+      z-index: 1000;
+    }
+
+    .sidebar.active {
+      left: 0;
+    }
+
+    .sidebar h3 {
       margin-bottom: 20px;
     }
 
-    .box {
-      width: 90%;
-      max-width: 320px;
-    }
-
-    input {
-      width: 100%;
-      padding: 14px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 14px;
-      margin-top: 10px;
-      border: none;
-      border-radius: 5px;
-      font-size: 18px;
-      background: #2dd4bf;
+    .sidebar a {
+      display: block;
+      padding: 12px;
+      margin: 8px 0;
+      background: #334155;
+      border-radius: 8px;
+      text-decoration: none;
       color: white;
     }
 
-    .link {
-      text-align: center;
-      margin-top: 15px;
-      font-size: 14px;
+    /* 🔹 CONTENT */
+    .content {
+      padding: 10px;
     }
 
-    .create {
-      margin-top: 30px;
-      padding: 12px;
-      border: 1px solid white;
-      text-align: center;
-      border-radius: 5px;
+    .toggle {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      margin: 10px 0;
+      background: #22c55e;
     }
+
+    .off {
+      background: #ef4444;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 12px;
+      margin: 10px 0;
+    }
+
+    .btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .approve { background: #22c55e; }
+    .reject { background: #ef4444; }
   </style>
 </head>
 
 <body>
 
-<!-- 🐍 COBRA ICON -->
-<img class="icon" src="https://cdn-icons-png.flaticon.com/512/616/616408.png">
+<!-- 🔹 SIDEBAR -->
+<div id="sidebar" class="sidebar">
+  <h3>⚡ MENU</h3>
 
-<div class="box">
-  <input type="text" id="user" placeholder="Username">
-  <input type="password" id="pass" placeholder="Password">
+  <a href="#">Dashboard</a>
+  <a href="#">Users</a>
+  <a href="#">Payments</a>
+  <a href="#" onclick="logout()">Logout</a>
+</div>
 
-  <button class="btn" onclick="login()">Sign In</button>
+<!-- 🔹 TOP BAR -->
+<div class="topbar">
+  <div class="menu-btn" onclick="toggleMenu()">☰</div>
+  <div>ADMIN PANEL</div>
+</div>
 
-  <div class="link">Forgot Password?</div>
+<!-- 🔹 MAIN CONTENT -->
+<div class="content">
 
-  <div class="create">Create New Account</div>
+  <button id="toggleBtn" class="toggle" onclick="toggleSystem()">SYSTEM: ON</button>
+
+  <div id="requests"></div>
+
 </div>
 
 <script>
-function login(){
-  let u = document.getElementById("user").value;
-  let p = document.getElementById("pass").value;
+let systemOn = true;
 
-  if(u === "admin" && p === "1234"){
-    window.location.href = "/admin-panel.html";
+let data = [
+  { user: "Rahul", plan: "1 DAY" },
+  { user: "Amit", plan: "7 DAYS" }
+];
+
+// 🔹 Sidebar toggle
+function toggleMenu(){
+  document.getElementById("sidebar").classList.toggle("active");
+}
+
+// 🔹 Render data
+function render(){
+  let html = "";
+
+  data.forEach((item, i) => {
+    html += `
+      <div class="card">
+        <p><b>User:</b> ${item.user}</p>
+        <p><b>Plan:</b> ${item.plan}</p>
+
+        <div class="btns">
+          <button class="approve" onclick="approve(${i})">Approve</button>
+          <button class="reject" onclick="reject(${i})">Reject</button>
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById("requests").innerHTML = html;
+}
+
+// 🔹 Approve
+function approve(i){
+  alert("Approved: " + data[i].user);
+  data.splice(i,1);
+  render();
+}
+
+// 🔹 Reject
+function reject(i){
+  alert("Rejected: " + data[i].user);
+  data.splice(i,1);
+  render();
+}
+
+// 🔹 Toggle system
+function toggleSystem(){
+  systemOn = !systemOn;
+
+  let btn = document.getElementById("toggleBtn");
+
+  if(systemOn){
+    btn.innerText = "SYSTEM: ON";
+    btn.classList.remove("off");
   } else {
-    alert("Wrong login");
+    btn.innerText = "SYSTEM: OFF";
+    btn.classList.add("off");
   }
 }
+
+// 🔹 Logout
+function logout(){
+  window.location.href = "/admin";
+}
+
+render();
 </script>
 
 </body>
