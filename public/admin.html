@@ -12,7 +12,7 @@ body{
   font-family:system-ui;
 }
 
-/* VIP LOGIN */
+/* LOGIN */
 .loginBox{
   max-width:320px;
   margin:80px auto;
@@ -34,7 +34,6 @@ body{
   border-radius:16px;
   padding:12px;
   margin:10px 0;
-  box-shadow:0 0 10px rgba(0,255,255,0.08);
 }
 
 h3{
@@ -85,6 +84,8 @@ button{
 
 <div id="panel" class="container hidden">
 
+<button onclick="logout()">🚪 LOGOUT</button>
+
 <h3>📊 DASHBOARD</h3>
 
 <div class="card" onclick="openStock()">📦 STOCK PANEL</div>
@@ -100,7 +101,7 @@ button{
 
 </div>
 
-<!-- STOCK PAGE -->
+<!-- STOCK -->
 <div id="stockPage" class="container hidden">
 
 <button onclick="back()">⬅ BACK</button>
@@ -142,14 +143,43 @@ button{
 
 let temp=[];
 
-// LOGIN
-function login(){
-  if(user.value==="COBRA SERVER" && pass.value==="SAMI9166"){
+// 🔥 AUTO LOGIN (1 HOUR)
+(function(){
+  let t = localStorage.getItem("adminLogin");
+
+  if(t && (Date.now() - t < 60*60*1000)){
     loginBox.style.display="none";
     panel.classList.remove("hidden");
     load();
     loadAnalytics();
-  }else alert("Wrong Login");
+  }
+})();
+
+// LOGIN
+function login(){
+
+  let u=user.value.trim();
+  let p=pass.value.trim();
+
+  if(u==="COBRA SERVER" && p==="SAMI9166"){
+
+    localStorage.setItem("adminLogin", Date.now());
+
+    loginBox.style.display="none";
+    panel.classList.remove("hidden");
+
+    load();
+    loadAnalytics();
+
+  }else{
+    alert("❌ Wrong Username or Password");
+  }
+}
+
+// LOGOUT
+function logout(){
+  localStorage.removeItem("adminLogin");
+  location.reload();
 }
 
 // NAV
@@ -273,7 +303,6 @@ async function loadStock(){
 
   stockList.innerHTML=html;
 
-  // TEMP
   let now=Date.now();
   temp=temp.filter(t=>now-t.time<30000);
 
