@@ -7,9 +7,9 @@
 <style>
 body{
   margin:0;
-  background:linear-gradient(135deg,#071226,#0f1c2e);
   font-family:sans-serif;
   color:white;
+  background:#071226;
 }
 
 .container{
@@ -18,14 +18,18 @@ body{
   padding:15px;
 }
 
+/* STEP UI COLORS */
+.step1{background:#0f1c2e;}
+.step2{background:#102a43;}
+.step3{background:#1a1f3a;}
+
 .card{
-  background:#0f1c2e;
-  border-radius:18px;
+  border-radius:20px;
   padding:20px;
   margin-top:20px;
-  box-shadow:0 0 15px rgba(0,255,255,0.2);
 }
 
+/* HEADER */
 .header{
   display:flex;
   justify-content:space-between;
@@ -35,27 +39,11 @@ body{
 
 .title{
   text-align:center;
-  font-size:22px;
+  font-size:20px;
   font-weight:bold;
-  letter-spacing:1px;
 }
 
-.btnTop{
-  background:#00f2ff;
-  color:black;
-  border:none;
-  padding:6px 10px;
-  border-radius:8px;
-}
-
-select,input{
-  width:100%;
-  padding:14px;
-  margin:10px 0;
-  border-radius:12px;
-  border:none;
-}
-
+/* BUTTON */
 button{
   width:100%;
   padding:14px;
@@ -65,13 +53,21 @@ button{
   color:white;
 }
 
+/* INPUT */
+select,input{
+  width:100%;
+  padding:14px;
+  margin:10px 0;
+  border-radius:12px;
+  border:none;
+}
+
 .mono{
-  background:#000;
+  background:black;
   padding:12px;
   border-radius:10px;
   text-align:center;
   font-family:monospace;
-  margin-top:10px;
 }
 
 .hidden{display:none;}
@@ -82,22 +78,11 @@ button{
 
 <div class="container">
 
-<div class="card">
+<!-- 🔥 STEP 1 -->
+<div id="step1" class="card step1">
 
-<!-- 🔥 HEADER -->
-<div id="headerNormal" class="title">
-COBRA SERVER PANNEL
-</div>
+<div class="title">COBRA SERVER PANNEL</div>
 
-<!-- 🔥 PAYMENT HEADER -->
-<div id="headerPayment" class="header hidden">
-<button class="btnTop" onclick="goBack()">⬅ Back</button>
-<div>PAYMENT</div>
-<button class="btnTop" onclick="goHome()">🏠 Home</button>
-</div>
-
-<!-- PLAN -->
-<div id="planBox">
 <select id="plan">
 <option value="">Select Plan</option>
 <option value="1hour">1 Hour - ₹30</option>
@@ -107,21 +92,39 @@ COBRA SERVER PANNEL
 <option value="7day">7 Day - ₹400</option>
 </select>
 
-<button onclick="startBuy()">BUY KEY</button>
+<button onclick="goStep2()">BUY KEY</button>
+
 </div>
 
-<!-- PAYMENT -->
-<div id="payment" class="hidden">
+<!-- 🔥 STEP 2 -->
+<div id="step2" class="card step2 hidden">
 
-<!-- UPI -->
+<div class="header">
+<button onclick="goBack1()">⬅ Back</button>
+<div>PAYMENT</div>
+<button onclick="goHome()">🏠 Home</button>
+</div>
+
 <div class="mono" onclick="copyUPI()">
 UPI: godxcobra@axl (tap to copy)
 </div>
 
-<!-- QR -->
 <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl"
 width="200"
 style="display:block;margin:auto;margin-top:15px;">
+
+<button onclick="goStep3()">NEXT</button>
+
+</div>
+
+<!-- 🔥 STEP 3 -->
+<div id="step3" class="card step3 hidden">
+
+<div class="header">
+<button onclick="goBack2()">⬅ Back</button>
+<div>VERIFY</div>
+<button onclick="goHome()">🏠 Home</button>
+</div>
 
 <select id="method" onchange="changeMethod()">
 <option value="utr">Enter UTR</option>
@@ -138,16 +141,14 @@ style="display:block;margin:auto;margin-top:15px;">
 </div>
 
 </div>
-</div>
 
 <script>
 
 let selectedPlan="";
 let interval;
 
-// BUY
-function startBuy(){
-
+// STEP 1 → STEP 2
+function goStep2(){
   selectedPlan=document.getElementById("plan").value;
 
   if(!selectedPlan){
@@ -155,25 +156,30 @@ function startBuy(){
     return;
   }
 
-  document.getElementById("planBox").classList.add("hidden");
-  document.getElementById("payment").classList.remove("hidden");
+  document.getElementById("step1").classList.add("hidden");
+  document.getElementById("step2").classList.remove("hidden");
+}
 
-  document.getElementById("headerNormal").classList.add("hidden");
-  document.getElementById("headerPayment").classList.remove("hidden");
+// STEP 2 → STEP 3
+function goStep3(){
+  document.getElementById("step2").classList.add("hidden");
+  document.getElementById("step3").classList.remove("hidden");
+}
+
+// BACK
+function goBack1(){
+  document.getElementById("step2").classList.add("hidden");
+  document.getElementById("step1").classList.remove("hidden");
+}
+
+function goBack2(){
+  document.getElementById("step3").classList.add("hidden");
+  document.getElementById("step2").classList.remove("hidden");
 }
 
 // HOME
 function goHome(){
-  document.getElementById("payment").classList.add("hidden");
-  document.getElementById("planBox").classList.remove("hidden");
-
-  document.getElementById("headerPayment").classList.add("hidden");
-  document.getElementById("headerNormal").classList.remove("hidden");
-}
-
-// BACK
-function goBack(){
-  goHome();
+  location.reload();
 }
 
 // METHOD
@@ -183,7 +189,7 @@ function changeMethod(){
   document.getElementById("file").style.display=(m==="qr")?"block":"none";
 }
 
-// COPY UPI
+// COPY
 function copyUPI(){
   navigator.clipboard.writeText("godxcobra@axl");
   alert("UPI Copied");
@@ -228,7 +234,7 @@ function check(utr){
     if(d.status==="approved"){
       clearInterval(interval);
 
-      document.getElementById("payment").innerHTML=`
+      document.getElementById("step3").innerHTML=`
       <h3 style="text-align:center;">🎉 SUCCESS</h3>
       <p style="text-align:center;">🔑 ${d.key}</p>
       `;
@@ -237,8 +243,6 @@ function check(utr){
     if(d.status==="rejected"){
       clearInterval(interval);
       document.getElementById("status").innerText="❌ Rejected";
-
-      setTimeout(()=>location.reload(),3000);
     }
 
   },2000);
