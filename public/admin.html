@@ -35,7 +35,7 @@ go("dashboard");
 }else alert("Login failed");
 }
 
-// 🔥 SETTINGS LOAD FIX
+// 🔥 SETTINGS LOAD (FIXED)
 async function loadSettings(){
 toggleStatus.innerText="Please Wait...";
 
@@ -43,27 +43,34 @@ try{
 let res=await fetch("/admin/settings");
 let s=await res.json();
 
-customerToggle.checked = s.customerPanel;
+// ✅ FIX
+customerToggle.checked = s.customerEnabled;
+toggleStatus.innerText = s.customerEnabled ? "ON" : "OFF";
 
-toggleStatus.innerText = s.customerPanel ? "ON" : "OFF";
 }catch{
 toggleStatus.innerText="Error";
 }
 }
 
-// 🔥 TOGGLE FIX (REAL UPDATE)
+// 🔥 TOGGLE (REAL FIX)
 async function toggleCustomer(){
 
 toggleStatus.innerText="Please Wait...";
 
 try{
-let res=await fetch("/admin/toggleCustomer",{method:"POST"});
+let res=await fetch("/admin/toggleCustomer",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+
+// ✅ IMPORTANT (send value)
+body:JSON.stringify({ enabled: customerToggle.checked })
+});
+
 let d=await res.json();
 
-customerToggle.checked = d.status;
-
-// 🔥 FINAL STATUS SHOW
-toggleStatus.innerText = d.status ? "ON" : "OFF";
+// ✅ FIX
+customerToggle.checked = d.customerEnabled;
+toggleStatus.innerText = d.customerEnabled ? "ON" : "OFF";
 
 }catch{
 toggleStatus.innerText="Error";
