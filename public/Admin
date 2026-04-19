@@ -1,1 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>COBRA ADMIN</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      height: 100vh;
+      background: linear-gradient(135deg, #0f766e, #14b8a6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .icon {
+      width: 80px;
+      margin-bottom: 20px;
+    }
+
+    .box {
+      width: 90%;
+      max-width: 320px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 5px;
+      font-size: 18px;
+      background: #2dd4bf;
+      color: white;
+    }
+
+    .link {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    .create {
+      margin-top: 30px;
+      padding: 12px;
+      border: 1px solid white;
+      text-align: center;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- 🐍 COBRA ICON -->
+<img class="icon" src="https://cdn-icons-png.flaticon.com/512/616/616408.png">
+
+<div class="box">
+  <input type="text" id="user" placeholder="Username">
+  <input type="password" id="pass" placeholder="Password">
+
+  <button class="btn" onclick="login()">Sign In</button>
+
+  <div class="link">Forgot Password?</div>
+
+  <div class="create">Create New Account</div>
+</div>
+
+<script>
+function login(){
+  let u = document.getElementById("user").value;
+  let p = document.getElementById("pass").value;
+
+  if(u === "admin" && p === "1234"){
+    window.location.href = "/admin-panel.html";
+  } else {
+    alert("Wrong login");
+  }
+}
+</script>
+
+</body>
+</html>
