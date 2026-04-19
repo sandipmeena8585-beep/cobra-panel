@@ -12,7 +12,7 @@ app.use(express.static("public"));
 const upload = multer({dest:"uploads/"});
 
 // 🔐 TOKEN
-const BOT_TOKEN = "8390006157:AAH_RN5sNPtD3hgsizK2DXkoiquLTRUYpEI";
+const BOT_TOKEN = "8390006157:AAHs0JAnW19B1iOIa8uUmfGfU5suLvtYwUo";
 const CHAT_ID = "7707237527";
 
 const FILE = "data.json";
