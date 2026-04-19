@@ -8,6 +8,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(express.static("public"));
+app.use("/uploads", express.static("uploads")); // ✅ IMPORTANT
 
 const upload = multer({dest:"uploads/"});
 
@@ -92,6 +93,7 @@ app.post("/admin/addkey",(req,res)=>{
   let {plan,key}=req.body;
 
   if(!d.stock[plan]) d.stock[plan]=[];
+
   d.stock[plan].push(key);
 
   d.history.added.push({
@@ -108,6 +110,8 @@ app.post("/admin/addkey",(req,res)=>{
 app.post("/admin/deletekey",(req,res)=>{
   let d=loadData();
   let {plan,key}=req.body;
+
+  if(!d.stock[plan]) return res.send("no plan");
 
   d.stock[plan]=d.stock[plan].filter(k=>k!==key);
 
@@ -161,13 +165,21 @@ app.get("/admin/verify/:id", async (req,res)=>{
 
   if(!r) return res.send("not found");
 
-  let key = d.stock[r.plan]?.shift() || "NO KEY";
+  if(r.status!=="pending") return res.send("already done");
+
+  // 🔥 REMOVE KEY FROM STOCK
+  let key = "NO KEY";
+
+  if(d.stock[r.plan] && d.stock[r.plan].length>0){
+    key = d.stock[r.plan].shift();
+  }
 
   r.status="approved";
   r.key=key;
 
   let expiry = new Date(Date.now()+86400000).toLocaleString();
 
+  // HISTORY
   d.history.removed.push({
     key,
     plan:r.plan,
@@ -177,7 +189,6 @@ app.get("/admin/verify/:id", async (req,res)=>{
 
   saveData(d);
 
-  // ✅ BOT VERIFIED YES
   await sendTelegram(
 `✅ PAYMENT RECEIVED
 
@@ -202,18 +213,19 @@ app.get("/admin/reject/:id", async (req,res)=>{
   let d=loadData();
   let r=d.requests.find(x=>x.id==req.params.id);
 
-  if(r){
-    r.warn++;
+  if(!r) return res.send("not found");
 
-    // ❌ BOT VERIFIED NO
-    if(r.warn==1){
-      await sendTelegram(`⚠ WARNING\nFake Payment Attempt\nPlan: ${r.plan}`);
-    }else{
-      await sendTelegram(`🚫 FINAL WARNING\nAccount Risk\nPlan: ${r.plan}`);
-    }
+  if(r.status!=="pending") return res.send("already done");
 
-    r.status="rejected";
+  r.warn++;
+
+  if(r.warn==1){
+    await sendTelegram(`⚠ WARNING\nFake Payment Attempt\nPlan: ${r.plan}`);
+  }else{
+    await sendTelegram(`🚫 FINAL WARNING\nAccount Risk\nPlan: ${r.plan}`);
   }
+
+  r.status="rejected";
 
   saveData(d);
   res.send("ok");
