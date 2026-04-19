@@ -5,8 +5,6 @@
 <title>COBRA PANEL</title>
 
 <style>
-*{box-sizing:border-box;}
-
 body{
   margin:0;
   background:linear-gradient(135deg,#071226,#0f1c2e);
@@ -28,22 +26,27 @@ body{
   box-shadow:0 0 15px rgba(0,255,255,0.2);
 }
 
-.topbar{
+.header{
   display:flex;
   justify-content:space-between;
   align-items:center;
   margin-bottom:10px;
 }
 
-.homeBtn{
-  background:#00f2ff;
-  color:black;
-  padding:6px 12px;
-  border-radius:8px;
-  font-size:12px;
+.title{
+  text-align:center;
+  font-size:22px;
+  font-weight:bold;
+  letter-spacing:1px;
 }
 
-h2{text-align:center;}
+.btnTop{
+  background:#00f2ff;
+  color:black;
+  border:none;
+  padding:6px 10px;
+  border-radius:8px;
+}
 
 select,input{
   width:100%;
@@ -64,20 +67,14 @@ button{
 
 .mono{
   background:#000;
-  padding:10px;
-  border-radius:8px;
+  padding:12px;
+  border-radius:10px;
   text-align:center;
   font-family:monospace;
   margin-top:10px;
 }
 
 .hidden{display:none;}
-
-.status{
-  text-align:center;
-  margin-top:10px;
-  color:#00f2ff;
-}
 </style>
 </head>
 
@@ -87,17 +84,20 @@ button{
 
 <div class="card">
 
-<!-- 🔥 TOP BAR -->
-<div class="topbar">
-  <span style="font-weight:bold;letter-spacing:1px;">
-    COBRA SERVER PANNEL
-  </span>
-  <button class="homeBtn" onclick="goHome()">🏠 Home</button>
+<!-- 🔥 HEADER -->
+<div id="headerNormal" class="title">
+COBRA SERVER PANNEL
 </div>
 
-<h2>🎮 BGMI PANEL</h2>
+<!-- 🔥 PAYMENT HEADER -->
+<div id="headerPayment" class="header hidden">
+<button class="btnTop" onclick="goBack()">⬅ Back</button>
+<div>PAYMENT</div>
+<button class="btnTop" onclick="goHome()">🏠 Home</button>
+</div>
 
 <!-- PLAN -->
+<div id="planBox">
 <select id="plan">
 <option value="">Select Plan</option>
 <option value="1hour">1 Hour - ₹30</option>
@@ -108,23 +108,20 @@ button{
 </select>
 
 <button onclick="startBuy()">BUY KEY</button>
+</div>
 
 <!-- PAYMENT -->
 <div id="payment" class="hidden">
 
-<p id="planShow" style="text-align:center;"></p>
-
 <!-- UPI -->
-<div class="mono">
-UPI: godxcobra@axl
+<div class="mono" onclick="copyUPI()">
+UPI: godxcobra@axl (tap to copy)
 </div>
-
-<button onclick="copyUPI()">📋 Copy UPI</button>
 
 <!-- QR -->
 <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=godxcobra@axl"
 width="200"
-style="display:block;margin:auto;margin-top:10px;">
+style="display:block;margin:auto;margin-top:15px;">
 
 <select id="method" onchange="changeMethod()">
 <option value="utr">Enter UTR</option>
@@ -134,9 +131,9 @@ style="display:block;margin:auto;margin-top:10px;">
 <input id="utr" placeholder="Enter UTR">
 <input type="file" id="file" class="hidden">
 
-<button id="submitBtn" onclick="submitPayment()">SUBMIT</button>
+<button onclick="submitPayment()">SUBMIT</button>
 
-<p id="status" class="status"></p>
+<p id="status" style="text-align:center;color:#00f2ff;"></p>
 
 </div>
 
@@ -147,7 +144,6 @@ style="display:block;margin:auto;margin-top:10px;">
 
 let selectedPlan="";
 let interval;
-let lock=false;
 
 // BUY
 function startBuy(){
@@ -155,22 +151,29 @@ function startBuy(){
   selectedPlan=document.getElementById("plan").value;
 
   if(!selectedPlan){
-    alert("⚠️ पहले Plan select करो");
+    alert("Select Plan First");
     return;
   }
 
-  let pay=document.getElementById("payment");
+  document.getElementById("planBox").classList.add("hidden");
+  document.getElementById("payment").classList.remove("hidden");
 
-  pay.classList.remove("hidden");
-  document.getElementById("planShow").innerText="Selected: "+selectedPlan;
-
-  pay.scrollIntoView({behavior:"smooth"});
+  document.getElementById("headerNormal").classList.add("hidden");
+  document.getElementById("headerPayment").classList.remove("hidden");
 }
 
 // HOME
 function goHome(){
   document.getElementById("payment").classList.add("hidden");
-  document.getElementById("status").innerText="";
+  document.getElementById("planBox").classList.remove("hidden");
+
+  document.getElementById("headerPayment").classList.add("hidden");
+  document.getElementById("headerNormal").classList.remove("hidden");
+}
+
+// BACK
+function goBack(){
+  goHome();
 }
 
 // METHOD
@@ -188,11 +191,6 @@ function copyUPI(){
 
 // SUBMIT
 async function submitPayment(){
-
-  if(lock){
-    alert("Already submitted");
-    return;
-  }
 
   let utr=document.getElementById("utr").value.trim();
   let file=document.getElementById("file").files[0];
@@ -212,10 +210,6 @@ async function submitPayment(){
 
   await fetch("/buy",{method:"POST",body:form});
 
-  lock=true;
-  localStorage.setItem("utr",finalUTR);
-
-  document.getElementById("submitBtn").disabled=true;
   document.getElementById("status").innerText="⏳ Please wait admin verify...";
 
   check(finalUTR);
@@ -233,19 +227,15 @@ function check(utr){
 
     if(d.status==="approved"){
       clearInterval(interval);
-      localStorage.removeItem("utr");
 
-      showSuccess(d.key);
-
-      setTimeout(()=>{
-        window.open("https://t.me/GODx_COBRA","_blank");
-      },1500);
+      document.getElementById("payment").innerHTML=`
+      <h3 style="text-align:center;">🎉 SUCCESS</h3>
+      <p style="text-align:center;">🔑 ${d.key}</p>
+      `;
     }
 
     if(d.status==="rejected"){
       clearInterval(interval);
-      localStorage.removeItem("utr");
-
       document.getElementById("status").innerText="❌ Rejected";
 
       setTimeout(()=>location.reload(),3000);
@@ -253,32 +243,6 @@ function check(utr){
 
   },2000);
 }
-
-// SUCCESS
-function showSuccess(key){
-  document.getElementById("payment").innerHTML=`
-  <h3 style="text-align:center;">🎉 PAYMENT SUCCESS</h3>
-
-  <p style="text-align:center;">🔑 ${key}</p>
-
-  <button onclick="navigator.clipboard.writeText('${key}')">
-  📋 Copy Key
-  </button>
-  `;
-}
-
-// RESUME
-window.onload=()=>{
-  let utr=localStorage.getItem("utr");
-
-  if(utr){
-    document.getElementById("payment").classList.remove("hidden");
-    document.getElementById("submitBtn").disabled=true;
-    document.getElementById("status").innerText="⏳ Please wait admin verify...";
-
-    check(utr);
-  }
-};
 
 </script>
 
