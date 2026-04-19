@@ -4,9 +4,13 @@
   <title>Admin Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- 🔒 LOGIN PROTECTION -->
+  <!-- 🔒 SAFE LOGIN CHECK (FIXED) -->
   <script>
-    if(localStorage.getItem("adminLogin") !== "true"){
+    try {
+      if(localStorage.getItem("adminLogin") !== "true"){
+        window.location.href = "/admin";
+      }
+    } catch(e){
       window.location.href = "/admin";
     }
   </script>
@@ -141,7 +145,7 @@
 
 <h2>⚡ ADMIN DASHBOARD</h2>
 
-<button id="toggleBtn" class="toggle" onclick="toggleSystem()">SYSTEM: ON</button>
+<button id="toggleBtn" class="toggle">SYSTEM: LOADING...</button>
 
 <div id="requests" class="center">Loading...</div>
 
@@ -156,15 +160,12 @@ function toggleMenu(){
   document.getElementById("sidebar").classList.toggle("active");
 }
 
-// 🔹 Load requests (FIXED)
+// 🔹 Load requests (SAFE)
 function render(){
   document.getElementById("requests").innerHTML = "Loading...";
 
   fetch("/requests")
-  .then(res => {
-    if(!res.ok) throw new Error("Server error");
-    return res.json();
-  })
+  .then(res => res.json())
   .then(data => {
 
     let html = "";
@@ -189,10 +190,9 @@ function render(){
 
     document.getElementById("requests").innerHTML = html;
   })
-  .catch(err => {
+  .catch(() => {
     document.getElementById("requests").innerHTML =
-      "<div class='center'>⚠️ Server Error / Loading Issue</div>";
-    console.error(err);
+      "<div class='center'>⚠️ Server Error</div>";
   });
 }
 
@@ -202,7 +202,7 @@ function approve(user){
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ user })
-  }).then(() => render());
+  }).then(render);
 }
 
 // 🔹 Reject
@@ -211,24 +211,35 @@ function reject(user){
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ user })
-  }).then(() => render());
+  }).then(render);
 }
 
 // 🔹 Toggle system
+function loadToggle(){
+  fetch("/status")
+  .then(res => res.json())
+  .then(data => {
+    updateToggleUI(data.on);
+  });
+}
+
 function toggleSystem(){
   fetch("/toggle", { method: "POST" })
   .then(res => res.json())
-  .then(data => {
-    let btn = document.getElementById("toggleBtn");
+  .then(data => updateToggleUI(data.on));
+}
 
-    if(data.on){
-      btn.innerText = "SYSTEM: ON";
-      btn.classList.remove("off");
-    } else {
-      btn.innerText = "SYSTEM: OFF";
-      btn.classList.add("off");
-    }
-  });
+function updateToggleUI(on){
+  let btn = document.getElementById("toggleBtn");
+  btn.onclick = toggleSystem;
+
+  if(on){
+    btn.innerText = "SYSTEM: ON";
+    btn.classList.remove("off");
+  } else {
+    btn.innerText = "SYSTEM: OFF";
+    btn.classList.add("off");
+  }
 }
 
 // 🔹 Logout
@@ -237,11 +248,14 @@ function logout(){
   window.location.href = "/admin";
 }
 
-// 🔹 Auto refresh
-setInterval(render, 3000);
+// 🔹 START (IMPORTANT FIX)
+window.onload = () => {
+  render();
+  loadToggle();
+};
 
-// 🔹 First load
-render();
+// 🔹 Auto refresh
+setInterval(render, 4000);
 
 </script>
 
