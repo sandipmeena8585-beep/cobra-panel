@@ -4,9 +4,75 @@
 <title>COBRA ADMIN</title><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet"><style>
 body{
   margin:0;
+  font-family:'Poppins',sans-serif;
+  background:#020617;
+  color:white;
+}
+
+/* TOP */
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  padding:12px;
+  background:#020617;
+}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;
+  top:0;
+  left:-260px;
+  width:240px;
+  height:100%;
+  background:#020617;
+  padding:15px;
+  transition:0.3s;
+}
+
+.sidebar.active{left:0;}
+
+.sideItem{
+  padding:12px;
+  margin:8px 0;
+  border-radius:10px;
+  background:#0f172a;
+}
+
+/* CONTAINER */
+.container{
+  padding:15px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* CARD */
+.card{
+  padding:15px;
+  border-radius:15px;
+  background:linear-gradient(135deg,#16a34a,#22c55e);
+  text-align:center;
+}
+
+/* INPUT */
+input,select{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:none;
   background:#0f172a;
   color:white;
-  font-family:'Poppins',sans-serif;
+}
+
+/* BUTTON */
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  color:white;
+  margin-top:6px;
 }
 
 /* LOGIN */
@@ -17,225 +83,164 @@ body{
   background:#020617;
   border-radius:20px;
   text-align:center;
-  box-shadow:0 0 30px rgba(0,255,255,0.2);
 }
 
-/* CONTAINER */
-.container{
-  max-width:420px;
-  margin:auto;
-  padding:12px;
-}
-
-/* VIP CARD */
-.card{
-  background:linear-gradient(135deg,#0f766e,#22c55e);
-  border-radius:18px;
-  padding:15px;
-  margin:10px 0;
-  box-shadow:0 10px 25px rgba(0,0,0,0.5);
-}
-
-/* TEXT */
-h3{
+/* TELEGRAM BUTTON */
+.telegram{
+  position:fixed;
+  bottom:15px;
+  left:15px;
+  right:15px;
+  padding:14px;
   text-align:center;
-  color:#22c55e;
-}
-
-/* INPUT */
-input,select{
-  width:100%;
-  padding:12px;
-  margin:6px 0;
+  background:#0088cc;
   border-radius:12px;
-  border:none;
-  background:#1e293b;
-  color:white;
-}
-
-/* BUTTON */
-button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:12px;
-  background:linear-gradient(135deg,#22c55e,#16a34a);
-  color:white;
-  margin-top:6px;
-  font-weight:bold;
-}
-
-/* REQUEST */
-.req{
-  background:#020617;
-  padding:10px;
-  border-radius:10px;
-  margin-top:10px;
 }
 
 .hidden{display:none;}
-</style></head><body><!-- LOGIN --><div id="loginBox" class="loginBox">
-<h3>🔐 COBRA LOGIN</h3>
+</style></head><body><!-- SIDEBAR --><div id="sidebar" class="sidebar">
+<div class="sideItem" onclick="showPage('panel')">🏠 Home</div>
+<div class="sideItem" onclick="showPage('stockPage')">📦 Stock</div>
+<div class="sideItem" onclick="showPage('requestPage')">📥 Requests</div>
+<div class="sideItem" onclick="logout()">🚪 Logout</div>
+</div><!-- TOP --><div class="topbar">
+<span onclick="toggleMenu()">☰</span>
+<b>COBRA ADMIN</b>
+</div><!-- LOGIN --><div id="loginBox" class="loginBox">
+<h3>🔐 LOGIN</h3>
 <input id="user" placeholder="Username">
 <input id="pass" placeholder="Password">
 <button onclick="login()">LOGIN</button>
-</div><div id="panel" class="container hidden"><button onclick="logout()">🚪 LOGOUT</button>
-
-<h3>📊 DASHBOARD</h3><div class="card" onclick="openStock()">📦 STOCK PANEL</div><div class="card" id="sales">Sales: 0</div>
-<div class="card" id="pending">Pending: 0</div><h3>📊 ANALYTICS</h3>
-<div id="analytics"></div><h3>📥 REQUESTS</h3>
-<div id="data"></div></div><!-- STOCK --><div id="stockPage" class="container hidden"><button onclick="back()">⬅ BACK</button>
-
-<h3>📦 STOCK PANEL</h3><button onclick="openAvailable()">📦 VIEW ALL KEYS</button>
-
-<select id="plan">
+</div><!-- DASHBOARD --><div id="panel" class="container hidden">
+<div class="card">📊 Dashboard</div>
+<div class="card" id="sales">💰 Sales: 0</div>
+<div class="card" id="pending">⏳ Pending: 0</div>
+<div id="analytics"></div>
+</div><!-- STOCK --><div id="stockPage" class="container hidden">
+<div class="card">📦 STOCK PANEL</div><select id="plan">
 <option value="1hour">1 Hour</option>
-<option value="3hour">3 Hour</option>
 <option value="1day">1 Day</option>
-<option value="3day">3 Day</option>
 <option value="7day">7 Day</option>
 </select><input id="newkey" placeholder="Enter Key">
-<button onclick="addKey()">ADD KEY</button><h3>🔥 TEMP KEYS</h3>
-<div id="tempKeys"></div><h3>📦 STOCK</h3>
-<div id="stockList"></div></div><!-- FLOOR 4 --><div id="availablePage" class="container hidden"><button onclick="backToStock()">⬅ BACK</button>
+<button onclick="addKey()">ADD KEY</button><div id="stockList"></div>
+</div><!-- REQUEST PAGE --><div id="requestPage" class="container hidden">
+<div class="card">📥 REQUESTS</div>
+<div id="data"></div>
+</div><!-- TELEGRAM --><div class="telegram" onclick="openTG()">
+📢 Help Telegram - @GODx_COBRA
+</div><script>
 
-<h3>📦 ALL KEYS</h3>
-<div id="allKeys"></div></div><script>
+// MENU
+function toggleMenu(){
+  sidebar.classList.toggle("active");
+}
 
-let temp=[];
+// PAGE SWITCH
+function showPage(p){
+  panel.classList.add("hidden");
+  stockPage.classList.add("hidden");
+  requestPage.classList.add("hidden");
 
-// 🔥 AUTO LOGIN
-(function(){
-  let t = localStorage.getItem("adminLogin");
+  document.getElementById(p).classList.remove("hidden");
+}
 
-  if(t && (Date.now() - t < 60*60*1000)){
-    loginBox.style.display="none";
+// TELEGRAM
+function openTG(){
+  window.open("https://t.me/GODx_COBRA","_blank");
+}
+
+// LOGIN
+async function login(){
+  let res = await fetch("/login",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      user:user.value,
+      pass:pass.value,
+      device:navigator.userAgent
+    })
+  });
+
+  let d = await res.json();
+
+  if(d.status==="ok"){
+    loginBox.classList.add("hidden");
     panel.classList.remove("hidden");
     load();
-    loadAnalytics();
-  }
-})();
-
-// 🔐 SERVER LOGIN + DEVICE LOCK
-async function login(){
-
-  let u = user.value.trim();
-  let p = pass.value.trim();
-
-  let device = navigator.userAgent + screen.width + screen.height;
-
-  try{
-
-    let res = await fetch("/login",{
-      method:"POST",
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({user:u,pass:p,device:device})
-    });
-
-    let data = await res.json();
-
-    if(data.status==="ok"){
-      localStorage.setItem("adminLogin", Date.now());
-
-      loginBox.style.display="none";
-      panel.classList.remove("hidden");
-
-      load();
-      loadAnalytics();
-    }
-    else if(data.status==="blocked"){
-      alert("❌ Device not allowed");
-    }
-    else{
-      alert("❌ Wrong Username or Password");
-    }
-
-  }catch(e){
-    alert("⚠️ Server not responding");
+  }else{
+    alert("Wrong Login");
   }
 }
 
 // LOGOUT
 function logout(){
-  localStorage.removeItem("adminLogin");
   location.reload();
 }
 
-// NAV
-function openStock(){
-  panel.classList.add("hidden");
-  stockPage.classList.remove("hidden");
-  loadStock();
-}
-
-function back(){
-  stockPage.classList.add("hidden");
-  panel.classList.remove("hidden");
-}
-
-function openAvailable(){
-  stockPage.classList.add("hidden");
-  availablePage.classList.remove("hidden");
-  loadAll();
-}
-
-function backToStock(){
-  availablePage.classList.add("hidden");
-  stockPage.classList.remove("hidden");
-}
-
-// बाकी same code
+// LOAD DATA
 async function load(){
-  let res=await fetch("/admin/data?"+Date.now());
+  let res=await fetch("/admin/data");
   let arr=await res.json();
 
-  let html="",sales=0,pending=0;
+  let sales=0,pending=0,html="";
 
   arr.forEach(x=>{
     if(x.status==="pending"){
       pending++;
-      html+=`<div class="req">
+      html+=`
+      <div class="card">
       📦 ${x.plan}<br>
-      🧾 ${x.utr || "N/A"}<br>
-      ⏰ ${x.time || ""}<br>
-      <button onclick="verify(${x.id},this)">VERIFY</button>
-      <button onclick="reject(${x.id},this)">REJECT</button>
+      <button onclick="verify(${x.id})">✔ Verify</button>
+      <button onclick="reject(${x.id})">❌ Reject</button>
       </div>`;
     }
     if(x.status==="approved") sales++;
   });
 
   data.innerHTML=html;
-  sales.innerText="Sales: "+sales;
-  pending.innerText="Pending: "+pending;
+  sales.innerText="💰 Sales: "+sales;
+  pending.innerText="⏳ Pending: "+pending;
 }
 
-async function loadAnalytics(){
-  let res=await fetch("/admin/data");
-  let arr=await res.json();
+// VERIFY
+async function verify(id){
+  await fetch("/admin/verify/"+id);
+  load();
+}
 
-  let total=0;
-  let stats={"1hour":0,"3hour":0,"1day":0,"3day":0,"7day":0};
+// REJECT
+async function reject(id){
+  await fetch("/admin/reject/"+id);
+  load();
+}
 
-  arr.forEach(x=>{
-    if(x.status==="approved"){
-      total++;
-      stats[x.plan]++;
-    }
-  });
+// STOCK
+async function loadStock(){
+  let res=await fetch("/admin/stock");
+  let st=await res.json();
 
-  let html=`<div class="card">Total Sales: ${total}</div><div class="card">`;
-
-  for(let p in stats){
-    html+=`${p} → ${stats[p]}<br>`;
+  let html="";
+  for(let p in st){
+    html+=`<div class="card">${p}: ${st[p].length}</div>`;
   }
 
-  html+="</div>";
-
-  analytics.innerHTML=html;
+  stockList.innerHTML=html;
 }
 
-// बाकी same functions...
+// ADD KEY
+async function addKey(){
+  await fetch("/admin/addkey",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      plan:plan.value,
+      key:newkey.value
+    })
+  });
+
+  newkey.value="";
+  loadStock();
+}
 
 </script></body>
 </html>
