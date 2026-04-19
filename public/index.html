@@ -28,7 +28,6 @@ body{
   box-shadow:0 0 18px rgba(0,255,255,0.12);
 }
 
-/* TOP BAR */
 .topbar{
   display:flex;
   justify-content:space-between;
@@ -40,7 +39,6 @@ body{
   cursor:pointer;
 }
 
-/* HEADING */
 .heading{
   text-align:center;
   font-size:18px;
@@ -49,7 +47,6 @@ body{
   color:#00f2ff;
 }
 
-/* INPUT */
 select,input{
   width:100%;
   padding:12px;
@@ -60,7 +57,6 @@ select,input{
   color:white;
 }
 
-/* BUTTON */
 button{
   width:100%;
   padding:12px;
@@ -71,7 +67,6 @@ button{
   margin-top:10px;
 }
 
-/* BOX */
 .mono{
   background:#000;
   padding:12px;
@@ -92,6 +87,27 @@ button{
 }
 
 .hidden{display:none;}
+
+/* SPINNER */
+.spinner{
+  width:40px;
+  height:40px;
+  border:4px solid rgba(0,255,255,0.2);
+  border-top:4px solid #00f2ff;
+  border-radius:50%;
+  margin:12px auto;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* SUCCESS */
+.successAnim{
+  animation:pop 0.5s ease;
+}
+@keyframes pop{
+  0%{transform:scale(0.6);opacity:0;}
+  100%{transform:scale(1);opacity:1;}
+}
 </style>
 </head>
 
@@ -117,7 +133,6 @@ button{
 
 <!-- STEP 2 -->
 <div id="step2" class="card hidden">
-
 <div class="topbar">
 <span class="icon" onclick="show('step1')">⬅</span>
 <span class="icon" onclick="goHome()">🏠</span>
@@ -136,7 +151,6 @@ width="200">
 
 <!-- STEP 3 -->
 <div id="step3" class="card hidden">
-
 <div class="topbar">
 <span class="icon" onclick="show('step2')">⬅</span>
 <span class="icon" onclick="goHome()">🏠</span>
@@ -152,23 +166,24 @@ width="200">
 <input id="utr" placeholder="Enter UTR">
 <input type="file" id="file" class="hidden">
 
-<button onclick="submitPayment()">SUBMIT</button>
+<button id="submitBtn" onclick="submitPayment()">SUBMIT</button>
+
+<div id="loaderBox" class="hidden">
+  <div class="spinner"></div>
+  <p class="status">⏳ PLEASE WAIT VERIFY ADMIN</p>
+</div>
 
 <p id="status" class="status"></p>
 </div>
 
 <!-- STEP 4 -->
 <div id="step4" class="card hidden">
-
 <div class="topbar">
 <span class="icon" onclick="show('step3')">⬅</span>
 <span class="icon" onclick="goHome()">🏠</span>
 </div>
 
-<div class="heading">ACCESS KEY</div>
-
 <div id="resultBox" style="text-align:center;"></div>
-
 </div>
 
 </div>
@@ -177,6 +192,7 @@ width="200">
 
 let selectedPlan="";
 let interval;
+let usedUTR = JSON.parse(localStorage.getItem("usedUTR")||"[]");
 
 // NAV
 function show(id){
@@ -186,7 +202,6 @@ function show(id){
   document.getElementById(id).classList.remove("hidden");
 }
 
-// FLOW
 function goStep2(){
   selectedPlan=document.getElementById("plan").value;
   if(!selectedPlan){
@@ -196,24 +211,28 @@ function goStep2(){
   show("step2");
 }
 
-function goStep3(){
-  show("step3");
-}
+function goStep3(){ show("step3"); }
+function goHome(){ show("step1"); }
 
-function goHome(){
-  show("step1");
-}
-
-// COPY
 function copyUPI(){
   navigator.clipboard.writeText("godxcobra@axl");
 }
 
-// METHOD
 function changeMethod(){
   let m=document.getElementById("method").value;
   document.getElementById("utr").style.display=(m==="utr")?"block":"none";
   document.getElementById("file").style.display=(m==="qr")?"block":"none";
+}
+
+// 🔥 ANTI-FAKE CHECK
+function checkFraud(utr,file){
+  let risk = "low";
+
+  if(utr && utr.length < 8) risk = "high";
+  if(utr && usedUTR.includes(utr)) risk = "high";
+  if(file && file.size < 5000) risk = "medium";
+
+  return risk;
 }
 
 // SUBMIT
@@ -227,18 +246,25 @@ async function submitPayment(){
     return;
   }
 
-  let finalUTR = utr || Date.now();
+  let finalUTR = utr || Date.now().toString();
+
+  let risk = checkFraud(finalUTR,file);
+
+  usedUTR.push(finalUTR);
+  localStorage.setItem("usedUTR",JSON.stringify(usedUTR));
 
   let form=new FormData();
   form.append("plan",selectedPlan);
   form.append("utr",finalUTR);
+  form.append("risk",risk); // 🔥 admin ke liye
   form.append("time",new Date().toLocaleString());
 
   if(file) form.append("file",file);
 
   await fetch("/buy",{method:"POST",body:form});
 
-  document.getElementById("status").innerText="⏳ PLEASE WAIT VERIFY ADMIN";
+  document.getElementById("submitBtn").disabled=true;
+  document.getElementById("loaderBox").classList.remove("hidden");
 
   check(finalUTR);
 }
@@ -258,31 +284,27 @@ function check(utr){
       show("step4");
 
       document.getElementById("resultBox").innerHTML=`
-      <h2 style="color:#00f2ff;">${d.key}</h2>
-
-      <p>⏳ Expiry: ${d.expiry}</p>
-
-      <button onclick="navigator.clipboard.writeText('${d.key}')">
-      COPY KEY
-      </button>
-
-      <button onclick="window.open('${d.channel}')">
-      📢 Join Paid Channel
-      </button>
-
-      <button onclick="window.open('https://t.me/GODx_COBRA')">
-      🆘 Help Telegram
-      </button>
+      <div class="successAnim">
+        <h2>🎉 PAYMENT SUCCESS</h2>
+      </div>
       `;
+
+      setTimeout(()=>{
+        document.getElementById("resultBox").innerHTML=`
+        <h2 style="color:#00f2ff;">${d.key}</h2>
+        <p>⏳ Expiry: ${d.expiry}</p>
+        <button onclick="navigator.clipboard.writeText('${d.key}')">COPY KEY</button>
+        <button onclick="window.open('${d.channel}')">📢 Join Channel</button>
+        <button onclick="window.open('https://t.me/GODx_COBRA')">🆘 Help</button>
+        `;
+      },1500);
     }
 
     if(d.status==="rejected"){
       clearInterval(interval);
       show("step4");
-
       document.getElementById("resultBox").innerHTML=`
       <h3 style="color:red;">❌ PAYMENT REJECTED</h3>
-      <p>Please try again</p>
       `;
     }
 
