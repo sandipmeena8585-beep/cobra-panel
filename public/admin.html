@@ -4,6 +4,13 @@
   <title>Admin Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- 🔒 LOGIN PROTECTION -->
+  <script>
+    if(localStorage.getItem("adminLogin") !== "true"){
+      window.location.href = "/admin";
+    }
+  </script>
+
   <style>
     body {
       margin: 0;
@@ -17,7 +24,6 @@
       padding: 10px;
     }
 
-    /* 🔹 TOP BAR */
     .topbar {
       display: flex;
       justify-content: space-between;
@@ -31,7 +37,6 @@
       cursor: pointer;
     }
 
-    /* 🔹 SIDEBAR */
     .sidebar {
       position: fixed;
       top: 0;
@@ -206,8 +211,9 @@ function toggleSystem(){
   });
 }
 
-// 🔹 Logout
+// 🔹 Logout (FIXED)
 function logout(){
+  localStorage.removeItem("adminLogin");
   window.location.href = "/admin";
 }
 
