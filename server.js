@@ -25,7 +25,7 @@ if (!fs.existsSync(DB_FILE)) {
   }, null, 2));  
 }  
 
-// ================= 🔥 FIXED LOAD DB =================  
+// ================= LOAD DB =================  
 function loadDB() {  
   let data = JSON.parse(fs.readFileSync(DB_FILE));  
 
@@ -81,11 +81,12 @@ app.get("/status", (req, res) => {
   res.json({ on: db.systemOn, refresh: db.refresh });  
 });  
 
-// 🔥 REFRESH SIGNAL  
+// 🔥 REFRESH SIGNAL (FIXED)
 app.post("/refresh", (req,res)=>{  
   let db = loadDB();  
 
-  db.refresh = Date.now();  
+  // 🔥 FORCE CHANGE EVERY TIME
+  db.refresh = Date.now() + Math.floor(Math.random()*1000);  
 
   saveDB(db);  
 
