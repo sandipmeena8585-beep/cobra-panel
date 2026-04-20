@@ -88,14 +88,6 @@ input,select{
   
 <script>  
 
-// ================= LOCK SYSTEM =================
-function lockState(state){
- localStorage.setItem("lockState",state);
-}
-function getLock(){
- return localStorage.getItem("lockState");
-}
-
 // ================= CHECK SYSTEM =================  
 fetch("/status")  
 .then(r=>r.json())  
@@ -103,7 +95,7 @@ fetch("/status")
  if(!d.on){  
    document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN PANEL UPDATE</h2>";  
  }else{  
-   if(localStorage.getItem("pending")){
+   if(localStorage.getItem("pendingUTR")){
      waitScreen();
    }else{
      showMain();  
@@ -195,15 +187,13 @@ function sendReq(plan,utrVal){
     utr:utrVal
   })
  }).then(()=>{
-  localStorage.setItem("pending",plan);
-  lockState("waiting");
+  localStorage.setItem("pendingUTR",utrVal); // 🔥 FIX
   location.reload();
  });
 }
 
 // ================= WAIT =================
 function waitScreen(){
- lockState("waiting");
 
  main.innerHTML=`
  <div class="card">
@@ -226,13 +216,14 @@ function checkStatus(){
  fetch("/history")
  .then(r=>r.json())
  .then(h=>{
-   let p = localStorage.getItem("pending");
-   let found = h.find(x=>x.plan===p);
+   let utr = localStorage.getItem("pendingUTR");
+
+   let found = h.find(x=>x.utr===utr); // 🔥 FIX MAIN
 
    if(found){
-     if(found.status==="APPROVED"){
+     if(found.status==="approved" || found.status==="APPROVED"){
        showKey(found.key);
-     }else{
+     }else if(found.status==="rejected"){
        showWarning();
      }
    }
@@ -242,8 +233,7 @@ function checkStatus(){
 
 // ================= KEY =================
 function showKey(key){
- localStorage.removeItem("pending");
- lockState("done");
+ localStorage.removeItem("pendingUTR");
 
  let expire = new Date();
  expire.setHours(expire.getHours()+12);
@@ -259,17 +249,14 @@ function showKey(key){
 
 // ================= WARNING =================
 function showWarning(){
- localStorage.removeItem("pending");
- lockState("done");
+ localStorage.removeItem("pendingUTR");
 
  main.innerHTML=`
  <div class="card">
  ⚠️ FAKE PAYMENT / REJECTED
  </div>`;
 
- setTimeout(()=>{
-  showMain();
- },3000);
+ setTimeout(showMain,3000);
 }
 
 // ================= COPY =================
@@ -283,8 +270,8 @@ function tg(){
  window.open("https://t.me/GODx_COBRA");
 }
 
-// ================= AUTO LOCK =================
-if(getLock()==="waiting"){
+// ================= AUTO LOAD =================
+if(localStorage.getItem("pendingUTR")){
  waitScreen();
 }
 
