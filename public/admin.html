@@ -19,19 +19,51 @@ body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
 
 /* TOP */
 .top{
- display:flex;justify-content:space-between;padding:12px;
- background:#020617;position:fixed;width:100%;top:0;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ padding:12px;
+ background:#020617;
+ position:fixed;
+ width:100%;
+ top:0;
+}
+
+/* RIGHT SIDE GROUP */
+.rightBox{
+ display:flex;
+ align-items:center;
+ gap:10px;
 }
 
 /* SIDEBAR */
 .sidebar{
- position:fixed;left:-250px;width:250px;height:100%;
- background:#1e293b;transition:.3s;padding-top:60px;
+ position:fixed;
+ left:-250px;
+ width:250px;
+ height:100%;
+ background:#1e293b;
+ transition:.3s;
+ padding-top:60px;
+ z-index:20;
 }
 .sidebar.active{left:0}
 .sidebar div{
  padding:12px;margin:8px;background:#334155;border-radius:8px;
 }
+
+/* OVERLAY */
+.overlay{
+ position:fixed;
+ top:0;
+ left:0;
+ width:100%;
+ height:100%;
+ background:rgba(0,0,0,0.5);
+ display:none;
+ z-index:10;
+}
+.overlay.active{display:block}
 
 /* CONTENT */
 .content{margin-top:60px;padding:10px}
@@ -57,9 +89,20 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <div id="panel" style="display:none">
 
 <div class="top">
-<div onclick="toggleMenu()">☰</div>
+
+<!-- LEFT EMPTY -->
+<div></div>
+
+<!-- 🔥 RIGHT SIDE (TEXT + MENU) -->
+<div class="rightBox">
 <div>COBRA ADMIN</div>
+<div onclick="toggleMenu()" style="cursor:pointer;font-size:20px">☰</div>
 </div>
+
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay" class="overlay" onclick="closeMenu()"></div>
 
 <div id="sidebar" class="sidebar">
 <div onclick="home()">HOME</div>
@@ -98,13 +141,21 @@ function logout(){
  location.reload();
 }
 
+// 🔥 MENU CONTROL
 function toggleMenu(){
  sidebar.classList.toggle("active");
+ overlay.classList.toggle("active");
+}
+
+function closeMenu(){
+ sidebar.classList.remove("active");
+ overlay.classList.remove("active");
 }
 
 // ================= HOME =================
 function home(){
  main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
+ closeMenu();
 }
 
 // ================= PLANS =================
@@ -131,10 +182,10 @@ function plansUI(){
   });
 
   main.innerHTML=html;
+  closeMenu();
  });
 }
 
-let plans=[];
 function savePlan(){
  fetch("/plans").then(r=>r.json()).then(data=>{
   if(data.length>=8) return alert("Max 8");
@@ -184,6 +235,7 @@ function stockUI(){
  });
 
  main.innerHTML=html;
+ closeMenu();
 
  });
  });
@@ -209,6 +261,7 @@ function settingsUI(){
   <input id="qr" placeholder="QR Image Path">
   <button onclick="saveSettings()">UPDATE</button>
   </div>`;
+  closeMenu();
  });
 }
 
@@ -241,6 +294,7 @@ function reqUI(){
   });
 
   main.innerHTML=html||"No Requests";
+  closeMenu();
  });
 }
 
