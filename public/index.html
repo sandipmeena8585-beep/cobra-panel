@@ -284,6 +284,10 @@ setInterval(()=>{
  .then(d=>{
    if(d.refresh !== last){
      last = d.refresh;
+
+     // 🔥 MAIN FIX
+     localStorage.removeItem("pendingUTR");
+
      location.reload();
    }
  });
