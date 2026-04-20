@@ -1,272 +1,274 @@
-const express = require("express");
-const path = require("path");
-const fs = require("fs");
-
-const app = express();
-app.use(express.json());
-app.use(express.static("public"));
-
-const PORT = process.env.PORT || 3000;
-
-// ================= DATABASE FILE =================
-const DB_FILE = "./data.json";
-
-// CREATE DB IF NOT EXIST
-if (!fs.existsSync(DB_FILE)) {
-  fs.writeFileSync(DB_FILE, JSON.stringify({
-    systemOn: true,
-    upi: "godxcobra@axl",
-    qr: "/upi_qr.png",
-    plans: [],
-    stock: {},
-    requests: [],
-    history: [],
-    refresh: 0   // 🔥 ADDED
-  }, null, 2));
-}
-
-// LOAD DB
-function loadDB() {
-  return JSON.parse(fs.readFileSync(DB_FILE));
-}
-
-// SAVE DB
-function saveDB(data) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-}
-
-// ================= ROUTES =================
-
-// CUSTOMER PANEL
-app.get("/", (req, res) => {
-  const db = loadDB();
-
-  if (!db.systemOn) {
-    return res.send(`
-      <h2 style="text-align:center;margin-top:50px">
-      ⚠️ PLEASE WAIT ADMIN PANEL UPDATE
-      </h2>
-    `);
-  }
-
-  res.sendFile(path.join(__dirname, "public/index.html"));
-});
-
-// ADMIN PANEL
-app.get("/admin", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/admin.html"));
-});
-
-// ================= SYSTEM =================
-
-// ON / OFF PANEL
-app.post("/toggle", (req, res) => {
-  let db = loadDB();
-  db.systemOn = !db.systemOn;
-  saveDB(db);
-  res.json({ on: db.systemOn });
-});
-
-// STATUS
-app.get("/status", (req, res) => {
-  const db = loadDB();
-  res.json({ on: db.systemOn, refresh: db.refresh }); // 🔥 UPDATED
-});
+const express = require("express");  
+const path = require("path");  
+const fs = require("fs");  
+
+const app = express();  
+app.use(express.json());  
+app.use(express.static("public"));  
+
+const PORT = process.env.PORT || 3000;  
+
+// ================= DATABASE FILE =================  
+const DB_FILE = "./data.json";  
+
+// CREATE DB IF NOT EXIST  
+if (!fs.existsSync(DB_FILE)) {  
+  fs.writeFileSync(DB_FILE, JSON.stringify({  
+    systemOn: true,  
+    upi: "godxcobra@axl",  
+    qr: "/upi_qr.png",  
+    plans: [],  
+    stock: {},  
+    requests: [],  
+    history: [],  
+    refresh: 0  
+  }, null, 2));  
+}  
+
+// ================= 🔥 FIXED LOAD DB =================  
+function loadDB() {  
+  let data = JSON.parse(fs.readFileSync(DB_FILE));  
+
+  // 🔥 AUTO FIX (IMPORTANT)
+  if (data.refresh === undefined) {  
+    data.refresh = 0;  
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));  
+  }  
+
+  return data;  
+}  
+
+// SAVE DB  
+function saveDB(data) {  
+  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));  
+}  
+
+// ================= ROUTES =================  
+
+// CUSTOMER PANEL  
+app.get("/", (req, res) => {  
+  const db = loadDB();  
+
+  if (!db.systemOn) {  
+    return res.send(`  
+      <h2 style="text-align:center;margin-top:50px">  
+      ⚠️ PLEASE WAIT ADMIN PANEL UPDATE  
+      </h2>  
+    `);  
+  }  
 
-// 🔥 ====== ONLY NEW CHANGE (SYNC SYSTEM) ======
-app.post("/refresh", (req,res)=>{
-  let db = loadDB();
+  res.sendFile(path.join(__dirname, "public/index.html"));  
+});  
 
-  db.refresh = Date.now(); // trigger signal
+// ADMIN PANEL  
+app.get("/admin", (req, res) => {  
+  res.sendFile(path.join(__dirname, "public/admin.html"));  
+});  
 
-  saveDB(db);
-
-  res.json({ ok:true });
-});
-// ============================================
-
-// ================= SETTINGS =================
+// ================= SYSTEM =================  
 
-// GET UPI + QR
-app.get("/settings", (req, res) => {
-  const db = loadDB();
-  res.json({
-    upi: db.upi,
-    qr: db.qr
-  });
-});
-
-// UPDATE UPI + QR
-app.post("/settings", (req, res) => {
-  let db = loadDB();
+// ON / OFF PANEL  
+app.post("/toggle", (req, res) => {  
+  let db = loadDB();  
+  db.systemOn = !db.systemOn;  
+  saveDB(db);  
+  res.json({ on: db.systemOn });  
+});  
 
-  db.upi = req.body.upi;
-  db.qr = req.body.qr;
+// STATUS  
+app.get("/status", (req, res) => {  
+  const db = loadDB();  
+  res.json({ on: db.systemOn, refresh: db.refresh });  
+});  
 
-  saveDB(db);
+// 🔥 REFRESH SIGNAL  
+app.post("/refresh", (req,res)=>{  
+  let db = loadDB();  
 
-  res.json({ success: true });
-});
+  db.refresh = Date.now();  
 
-// ================= PLANS =================
+  saveDB(db);  
 
-// GET PLANS
-app.get("/plans", (req, res) => {
-  const db = loadDB();
-  res.json(db.plans);
-});
+  res.json({ ok:true });  
+});  
 
-// SAVE PLANS (MAX 8)
-app.post("/savePlans", (req, res) => {
-  let db = loadDB();
+// ================= SETTINGS =================  
 
-  if (req.body.length > 8) {
-    return res.json({ error: "Max 8 plans allowed" });
-  }
+app.get("/settings", (req, res) => {  
+  const db = loadDB();  
+  res.json({  
+    upi: db.upi,  
+    qr: db.qr  
+  });  
+});  
 
-  db.plans = req.body;
-  saveDB(db);
+app.post("/settings", (req, res) => {  
+  let db = loadDB();  
 
-  res.json({ success: true });
-});
+  db.upi = req.body.upi;  
+  db.qr = req.body.qr;  
 
-// ================= STOCK =================
+  saveDB(db);  
 
-// GET STOCK
-app.get("/stock", (req, res) => {
-  const db = loadDB();
-  res.json(db.stock);
-});
+  res.json({ success: true });  
+});  
 
-// ADD STOCK
-app.post("/addStock", (req, res) => {
-  let db = loadDB();
+// ================= PLANS =================  
 
-  const { plan, key } = req.body;
+app.get("/plans", (req, res) => {  
+  const db = loadDB();  
+  res.json(db.plans);  
+});  
 
-  if (!db.stock[plan]) {
-    db.stock[plan] = [];
-  }
+app.post("/savePlans", (req, res) => {  
+  let db = loadDB();  
 
-  db.stock[plan].push(key);
+  if (req.body.length > 8) {  
+    return res.json({ error: "Max 8 plans allowed" });  
+  }  
 
-  saveDB(db);
+  db.plans = req.body;  
+  saveDB(db);  
 
-  res.json({ success: true });
-});
+  res.json({ success: true });  
+});  
 
-// REMOVE STOCK (AUTO)
-app.post("/removeStock", (req, res) => {
-  let db = loadDB();
+// ================= STOCK =================  
 
-  const { plan } = req.body;
+app.get("/stock", (req, res) => {  
+  const db = loadDB();  
+  res.json(db.stock);  
+});  
 
-  if (db.stock[plan] && db.stock[plan].length > 0) {
-    const key = db.stock[plan].shift();
-    saveDB(db);
-    return res.json({ key });
-  }
+app.post("/addStock", (req, res) => {  
+  let db = loadDB();  
 
-  res.json({ error: "No stock available" });
-});
+  const { plan, key } = req.body;  
 
-// ================= REQUEST =================
+  if (!db.stock[plan]) {  
+    db.stock[plan] = [];  
+  }  
 
-// BUY REQUEST
-app.post("/buy", (req, res) => {
-  let db = loadDB();
+  db.stock[plan].push(key);  
 
-  db.requests.push({
-    user: req.body.user,
-    plan: req.body.plan,
-    utr: req.body.utr,
-    time: new Date().toLocaleString()
-  });
+  saveDB(db);  
 
-  saveDB(db);
+  res.json({ success: true });  
+});  
 
-  res.json({ success: true });
-});
+app.post("/removeStock", (req, res) => {  
+  let db = loadDB();  
 
-// GET REQUESTS
-app.get("/requests", (req, res) => {
-  const db = loadDB();
-  res.json(db.requests);
-});
+  const { plan } = req.body;  
 
-// ================= APPROVE REQUEST =================
-app.post("/approve", (req, res) => {
-  let db = loadDB();
+  if (db.stock[plan] && db.stock[plan].length > 0) {  
+    const key = db.stock[plan].shift();  
+    saveDB(db);  
+    return res.json({ key });  
+  }  
 
-  const user = req.body.user;
+  res.json({ error: "No stock available" });  
+});  
 
-  const request = db.requests.find(r => r.user === user);
+// ================= REQUEST =================  
 
-  if (!request) {
-    return res.json({ error: "Request not found" });
-  }
+app.post("/buy", (req, res) => {  
+  let db = loadDB();  
 
-  const plan = request.plan;
+  db.requests.push({  
+    user: req.body.user,  
+    plan: req.body.plan,  
+    utr: req.body.utr,  
+    time: new Date().toLocaleString()  
+  });  
 
-  if (!db.stock[plan] || db.stock[plan].length === 0) {
-    return res.json({ error: "No stock for this plan" });
-  }
+  saveDB(db);  
 
-  const key = db.stock[plan].shift();
+  res.json({ success: true });  
+});  
 
-  db.history.unshift({
-    user: user,
-    plan: plan,
-    utr: request.utr,
-    key: key,
-    status: "approved",
-    time: new Date().toLocaleString()
-  });
+app.get("/requests", (req, res) => {  
+  const db = loadDB();  
+  res.json(db.requests);  
+});  
 
-  if (db.history.length > 5) {
-    db.history.pop();
-  }
+// ================= APPROVE =================  
 
-  db.requests = db.requests.filter(r => r.user !== user);
+app.post("/approve", (req, res) => {  
+  let db = loadDB();  
 
-  saveDB(db);
+  const user = req.body.user;  
 
-  res.json({ key });
-});
+  const request = db.requests.find(r => r.user === user);  
 
-// ================= REJECT REQUEST =================
-app.post("/reject", (req, res) => {
-  let db = loadDB();
+  if (!request) {  
+    return res.json({ error: "Request not found" });  
+  }  
 
-  const user = req.body.user;
+  const plan = request.plan;  
 
-  const request = db.requests.find(r => r.user === user);
+  if (!db.stock[plan] || db.stock[plan].length === 0) {  
+    return res.json({ error: "No stock for this plan" });  
+  }  
 
-  db.history.unshift({
-    user: user,
-    utr: request?.utr,
-    status: "rejected",
-    time: new Date().toLocaleString()
-  });
+  const key = db.stock[plan].shift();  
 
-  if (db.history.length > 5) {
-    db.history.pop();
-  }
+  db.history.unshift({  
+    user: user,  
+    plan: plan,  
+    utr: request.utr,  
+    key: key,  
+    status: "approved",  
+    time: new Date().toLocaleString()  
+  });  
 
-  db.requests = db.requests.filter(r => r.user !== user);
+  if (db.history.length > 5) {  
+    db.history.pop();  
+  }  
 
-  saveDB(db);
+  db.requests = db.requests.filter(r => r.user !== user);  
 
-  res.json({ success: true });
-});
+  saveDB(db);  
 
-// ================= HISTORY =================
-app.get("/history", (req, res) => {
-  const db = loadDB();
-  res.json(db.history);
-});
+  res.json({ key });  
+});  
 
-// ================= START =================
-app.listen(PORT, () => {
-  console.log("🔥 Server Running on " + PORT);
+// ================= REJECT =================  
+
+app.post("/reject", (req, res) => {  
+  let db = loadDB();  
+
+  const user = req.body.user;  
+
+  const request = db.requests.find(r => r.user === user);  
+
+  db.history.unshift({  
+    user: user,  
+    utr: request?.utr,  
+    status: "rejected",  
+    time: new Date().toLocaleString()  
+  });  
+
+  if (db.history.length > 5) {  
+    db.history.pop();  
+  }  
+
+  db.requests = db.requests.filter(r => r.user !== user);  
+
+  saveDB(db);  
+
+  res.json({ success: true });  
+});  
+
+// ================= HISTORY =================  
+
+app.get("/history", (req, res) => {  
+  const db = loadDB();  
+  res.json(db.history);  
+});  
+
+// ================= START =================  
+
+app.listen(PORT, () => {  
+  console.log("🔥 Server Running on " + PORT);  
 });
