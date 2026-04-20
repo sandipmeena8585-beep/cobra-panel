@@ -31,7 +31,7 @@ body{
 }
 .login button{background:#000;color:#fff}
 
-/* TOPBAR NEW */
+/* TOPBAR */
 .topbar{
  display:flex;
  justify-content:space-between;
@@ -42,20 +42,6 @@ body{
  width:100%;
  top:0;
  z-index:1000;
- box-shadow:0 2px 10px rgba(0,0,0,0.5);
-}
-
-/* MENU ICON */
-.menu-btn{
- font-size:22px;
- cursor:pointer;
-}
-
-/* RIGHT ICON */
-.logo{
- font-weight:bold;
- font-size:16px;
- color:#22c55e;
 }
 
 /* SIDEBAR */
@@ -92,6 +78,25 @@ body{
  margin:10px 0;
 }
 
+/* QUICK ACTION UI */
+.quick-title{
+ background:linear-gradient(135deg,#0f766e,#22c55e);
+ padding:15px;
+ border-radius:10px;
+ margin-bottom:10px;
+}
+
+.quick-btn{
+ background:#e5e7eb;
+ color:black;
+ padding:15px;
+ margin:10px 0;
+ border-radius:10px;
+ text-align:center;
+ font-weight:bold;
+ cursor:pointer;
+}
+
 /* BUTTON */
 button{
  padding:10px;
@@ -118,8 +123,8 @@ button{
 <div id="panel" style="display:none">
 
 <div class="topbar">
-<div class="menu-btn" onclick="toggleMenu()">☰</div>
-<div class="logo">COBRA 🐍</div>
+<div onclick="toggleMenu()">☰</div>
+<div>COBRA 🐍</div>
 </div>
 
 <div id="sidebar" class="sidebar">
@@ -136,7 +141,7 @@ button{
 
 <script>
 
-// 🔐 LOGIN
+// LOGIN
 function login(){
  let u=document.getElementById("u").value;
  let p=document.getElementById("p").value;
@@ -147,7 +152,6 @@ function login(){
  }else alert("Wrong");
 }
 
-// 🔐 START
 function start(){
  document.getElementById("loginBox").style.display="none";
  document.getElementById("panel").style.display="block";
@@ -155,18 +159,16 @@ function start(){
 }
 if(localStorage.getItem("admin")=="1") start();
 
-// 🔐 LOGOUT
 function logout(){
  localStorage.removeItem("admin");
  location.reload();
 }
 
-// MENU
 function toggleMenu(){
  document.getElementById("sidebar").classList.toggle("active");
 }
 
-// 🔥 TAB SWITCH
+// 🔥 DASHBOARD UPDATED
 function showTab(tab){
 
 document.getElementById("sidebar").classList.remove("active");
@@ -174,9 +176,15 @@ document.getElementById("sidebar").classList.remove("active");
 let html="";
 
 if(tab==="home"){
- html=`<h2>Dashboard</h2>
- <button onclick="toggleSystem()" id="toggleBtn">SYSTEM ON</button>`;
- loadToggle();
+ html=`
+ <div class="quick-title">⚡ Quick Actions</div>
+
+ <div class="quick-btn" onclick="changeLicense()">🔑 CHANGE LICENSE</div>
+ <div class="quick-btn" onclick="changeDuration()">⏱ CHANGE DURATION</div>
+ <div class="quick-btn" onclick="changePanel()">✏️ CHANGE PANEL NAME</div>
+ <div class="quick-btn" onclick="changePassword()">🔒 CHANGE PASSWORD</div>
+ <div class="quick-btn" onclick="changeMod()">🛠 CHANGE MOD NAME</div>
+ `;
 }
 
 if(tab==="requests"){
@@ -186,11 +194,7 @@ if(tab==="requests"){
 
 if(tab==="customer"){
  html=`<h2>Customer Control</h2>
- <button onclick="toggleSystem()">ON/OFF PANEL</button>
- <div class="card">
- <input id="price" placeholder="Change Price">
- <button onclick="updatePrice()">Update</button>
- </div>`;
+ <button onclick="toggleSystem()">ON/OFF PANEL</button>`;
 }
 
 if(tab==="stock"){
@@ -206,6 +210,32 @@ if(tab==="stock"){
 document.getElementById("main").innerHTML=html;
 }
 
+// 🔥 ACTION FUNCTIONS
+function changeLicense(){
+ let v=prompt("Enter New License");
+ if(v) alert("License Changed: "+v);
+}
+
+function changeDuration(){
+ let v=prompt("Enter Duration");
+ if(v) alert("Duration Updated: "+v);
+}
+
+function changePanel(){
+ let v=prompt("Enter Panel Name");
+ if(v) alert("Panel Name: "+v);
+}
+
+function changePassword(){
+ let v=prompt("Enter New Password");
+ if(v) alert("Password Updated");
+}
+
+function changeMod(){
+ let v=prompt("Enter Mod Name");
+ if(v) alert("Mod Name: "+v);
+}
+
 // REQUESTS
 function loadRequests(){
  fetch("/requests")
@@ -213,42 +243,9 @@ function loadRequests(){
  .then(data=>{
    let h="";
    data.forEach(x=>{
-     h+=`<div class="card">
-     ${x.user} - ${x.plan}
-     <br>
-     <button class="green" onclick="approve('${x.user}')">Approve</button>
-     <button class="red" onclick="reject('${x.user}')">Reject</button>
-     </div>`;
+     h+=`<div class="card">${x.user} - ${x.plan}</div>`;
    });
    document.getElementById("req").innerHTML=h||"No Requests";
- });
-}
-
-function approve(u){
- fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
- .then(loadRequests);
-}
-
-function reject(u){
- fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
- .then(loadRequests);
-}
-
-// TOGGLE
-function toggleSystem(){
- fetch("/toggle",{method:"POST"})
- .then(r=>r.json())
- .then(d=>{
-   alert(d.on?"ON":"OFF");
- });
-}
-
-function loadToggle(){
- fetch("/status")
- .then(r=>r.json())
- .then(d=>{
-   let b=document.getElementById("toggleBtn");
-   if(b) b.innerText=d.on?"SYSTEM ON":"SYSTEM OFF";
  });
 }
 
@@ -265,11 +262,6 @@ function loadStock(){
    h+=`<div class="card">${k}</div>`;
  });
  document.getElementById("stockList").innerHTML=h;
-}
-
-// PRICE
-function updatePrice(){
- alert("Price Updated (connect backend later)");
 }
 
 </script>
