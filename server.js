@@ -181,7 +181,7 @@ app.get("/requests", (req, res) => {
   res.json(db.requests);
 });
 
-// APPROVE REQUEST
+// ================= APPROVE REQUEST =================
 app.post("/approve", (req, res) => {
   let db = loadDB();
 
@@ -201,21 +201,20 @@ app.post("/approve", (req, res) => {
 
   const key = db.stock[plan].shift();
 
-  // ADD HISTORY
+  // ✅ CHANGE 1 (UTR + lowercase status)
   db.history.unshift({
     user: user,
     plan: plan,
+    utr: request.utr,
     key: key,
-    status: "APPROVED",
+    status: "approved",
     time: new Date().toLocaleString()
   });
 
-  // KEEP ONLY LAST 5
   if (db.history.length > 5) {
     db.history.pop();
   }
 
-  // REMOVE REQUEST
   db.requests = db.requests.filter(r => r.user !== user);
 
   saveDB(db);
@@ -223,15 +222,19 @@ app.post("/approve", (req, res) => {
   res.json({ key });
 });
 
-// REJECT REQUEST
+// ================= REJECT REQUEST =================
 app.post("/reject", (req, res) => {
   let db = loadDB();
 
   const user = req.body.user;
 
+  const request = db.requests.find(r => r.user === user);
+
+  // ✅ CHANGE 2 (UTR + lowercase status)
   db.history.unshift({
     user: user,
-    status: "REJECTED",
+    utr: request?.utr,
+    status: "rejected",
     time: new Date().toLocaleString()
   });
 
