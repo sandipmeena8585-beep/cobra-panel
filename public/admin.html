@@ -165,8 +165,7 @@ function panelControlUI(){
 
 // 🔥 NEW FUNCTION
 function refreshPanel(){
- fetch("/status")
- .then(r=>r.json())
+ fetch("/refresh",{method:"POST"})
  .then(()=>alert("Customer Panel Refreshed"));
 }
 
