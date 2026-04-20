@@ -4,18 +4,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COBRA ADMIN</title>
 
-.top{
- display:flex;
- justify-content:space-between;
- align-items:center;
- padding:12px;
- background:#020617;
- position:fixed;
- width:100%;
- top:0;
-
- box-sizing:border-box; /* 🔥 YE ADD KARNA HAI */
-}
+<style>
+body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
 
 /* LOGIN */
 .login{
@@ -33,10 +23,12 @@
  justify-content:space-between;
  align-items:center;
  padding:12px;
+ padding-right:18px; /* 🔥 FIX */
  background:#020617;
  position:fixed;
  width:100%;
  top:0;
+ box-sizing:border-box; /* 🔥 FIX */
 }
 
 /* LEFT TITLE */
@@ -96,16 +88,8 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <div id="panel" style="display:none">
 
 <div class="top">
-
-  <!-- LEFT EMPTY -->
-  <div></div>
-
-  <!-- RIGHT SIDE (TEXT + MENU) -->
-  <div style="display:flex;align-items:center;gap:10px;">
-    <div style="font-weight:bold;">COBRA ADMIN</div>
-    <div onclick="toggleMenu()" style="font-size:22px;cursor:pointer;">☰</div>
-  </div>
-
+  <div class="title">COBRA ADMIN</div>
+  <div class="menuIcon" onclick="toggleMenu()">☰</div>
 </div>
 
 <!-- OVERLAY -->
