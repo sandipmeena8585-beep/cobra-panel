@@ -2,313 +2,233 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COBRA PANEL</title>
+<title>COBRA SERVER PANEL</title>
 
 <style>
-*{box-sizing:border-box;}
+body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center}
 
-body{
-  margin:0;
-  font-family:system-ui;
-  background:#030a14;
-  color:white;
+.top{
+ padding:15px;
+ font-size:20px;
+ font-weight:bold;
+ color:#22c55e;
+ animation:glow 1.5s infinite alternate;
 }
-
-.container{
-  max-width:420px;
-  margin:auto;
-  padding:12px;
+@keyframes glow{
+ from{opacity:0.5}
+ to{opacity:1}
 }
 
 .card{
-  border-radius:18px;
-  padding:18px;
-  margin-top:16px;
-  background:#081426;
-  box-shadow:0 0 18px rgba(0,255,255,0.12);
-}
-
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  margin-bottom:10px;
-}
-
-.icon{
-  font-size:18px;
-  cursor:pointer;
-}
-
-.heading{
-  text-align:center;
-  font-size:18px;
-  font-weight:bold;
-  margin-bottom:16px;
-  color:#00f2ff;
-}
-
-select,input{
-  width:100%;
-  padding:12px;
-  margin:8px 0;
-  border-radius:10px;
-  border:none;
-  background:#0c1d33;
-  color:white;
+ background:#1e293b;
+ margin:10px;
+ padding:15px;
+ border-radius:10px;
 }
 
 button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  background:linear-gradient(90deg,#00f2ff,#007bff);
-  color:white;
-  margin-top:10px;
+ padding:12px;
+ border:none;
+ border-radius:6px;
+ background:#22c55e;
+ color:white;
+ margin-top:10px;
 }
 
-.mono{
-  background:#000;
-  padding:12px;
-  border-radius:10px;
-  text-align:center;
-  border:1px solid #00f2ff;
+input{
+ padding:10px;
+ width:80%;
+ margin:10px;
+ border-radius:6px;
+ border:none;
 }
 
-.qr{
-  display:block;
-  margin:15px auto;
-}
-
-.status{
-  text-align:center;
-  color:#00f2ff;
-  margin-top:10px;
-}
-
-.hidden{display:none;}
-
-/* SPINNER */
-.spinner{
-  width:40px;
-  height:40px;
-  border:4px solid rgba(0,255,255,0.2);
-  border-top:4px solid #00f2ff;
-  border-radius:50%;
-  margin:12px auto;
-  animation:spin 1s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg);}}
-
-/* SUCCESS */
-.successAnim{
-  animation:pop 0.5s ease;
-}
-@keyframes pop{
-  0%{transform:scale(0.6);opacity:0;}
-  100%{transform:scale(1);opacity:1;}
-}
+.mono{font-family:monospace}
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="top">COBRA SERVER PANEL</div>
 
-<!-- STEP 1 -->
-<div id="step1" class="card">
-<div class="heading">COBRA SERVER PANNEL</div>
-
-<select id="plan">
-<option value="">Select Plan</option>
-<option value="1hour">1 Hour - ₹30</option>
-<option value="3hour">3 Hour - ₹50</option>
-<option value="1day">1 Day - ₹110</option>
-<option value="3day">3 Day - ₹200</option>
-<option value="7day">7 Day - ₹400</option>
-</select>
-
-<button onclick="goStep2()">BUY KEY</button>
-</div>
-
-<!-- STEP 2 -->
-<div id="step2" class="card hidden">
-<div class="topbar">
-<span class="icon" onclick="show('step1')">⬅</span>
-<span class="icon" onclick="goHome()">🏠</span>
-</div>
-
-<div class="heading">PAYMENT</div>
-
-<div class="mono" onclick="copyUPI()">UPI: godxcobra@axl</div>
-
-<img class="qr"
-src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa=godxcobra@axl"
-width="200">
-
-<button onclick="goStep3()">NEXT</button>
-</div>
-
-<!-- STEP 3 -->
-<div id="step3" class="card hidden">
-<div class="topbar">
-<span class="icon" onclick="show('step2')">⬅</span>
-<span class="icon" onclick="goHome()">🏠</span>
-</div>
-
-<div class="heading">VERIFY PAYMENT PROOF</div>
-
-<select id="method" onchange="changeMethod()">
-<option value="utr">Enter UTR</option>
-<option value="qr">Upload Screenshot</option>
-</select>
-
-<input id="utr" placeholder="Enter UTR">
-<input type="file" id="file" class="hidden">
-
-<button id="submitBtn" onclick="submitPayment()">SUBMIT</button>
-
-<div id="loaderBox" class="hidden">
-  <div class="spinner"></div>
-  <p class="status">⏳ PLEASE WAIT VERIFY ADMIN</p>
-</div>
-
-<p id="status" class="status"></p>
-</div>
-
-<!-- STEP 4 -->
-<div id="step4" class="card hidden">
-<div class="topbar">
-<span class="icon" onclick="show('step3')">⬅</span>
-<span class="icon" onclick="goHome()">🏠</span>
-</div>
-
-<div id="resultBox" style="text-align:center;"></div>
-</div>
-
-</div>
+<div id="main"></div>
 
 <script>
 
-let selectedPlan="";
-let interval;
-let usedUTR = JSON.parse(localStorage.getItem("usedUTR")||"[]");
+// ================= CHECK SYSTEM =================
+fetch("/status")
+.then(r=>r.json())
+.then(d=>{
+ if(!d.on){
+   document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN PANEL UPDATE</h2>";
+ }else{
+   loadPlans();
+ }
+});
 
-// NAV
-function show(id){
-  ["step1","step2","step3","step4"].forEach(x=>{
-    document.getElementById(x).classList.add("hidden");
+// ================= LOAD PLANS =================
+function loadPlans(){
+ fetch("/plans")
+ .then(r=>r.json())
+ .then(data=>{
+
+  let html="<div class='card'>BGMI</div>";
+
+  data.forEach(p=>{
+    let name = p.type==="H" ? p.time+" HOUR" : p.time+" DAY";
+
+    html+=`
+    <div class="card">
+      ${name} - ₹${p.price}
+      <br>
+      <button onclick="buy('${p.type}${p.time}','${p.price}')">BUY KEY</button>
+    </div>
+    `;
   });
-  document.getElementById(id).classList.remove("hidden");
+
+  main.innerHTML=html;
+ });
 }
 
-function goStep2(){
-  selectedPlan=document.getElementById("plan").value;
-  if(!selectedPlan){
-    alert("Select Plan First");
-    return;
-  }
-  show("step2");
+// ================= BUY =================
+function buy(plan,price){
+
+ fetch("/settings")
+ .then(r=>r.json())
+ .then(s=>{
+
+  main.innerHTML=`
+  <div class="card">
+    <h3>PAYMENT</h3>
+    <p>Pay ₹${price}</p>
+
+    <div class="mono" onclick="copy('${s.upi}')">
+    ${s.upi}
+    </div>
+
+    <br>
+    <img src="${s.qr}" width="200">
+
+    <br>
+    <input id="utr" placeholder="ENTER UTR (8 digit)">
+    <button onclick="verify('${plan}')">VERIFY</button>
+  </div>
+  `;
+ });
 }
 
-function goStep3(){ show("step3"); }
-function goHome(){ show("step1"); }
-
-function copyUPI(){
-  navigator.clipboard.writeText("godxcobra@axl");
+// ================= COPY =================
+function copy(t){
+ navigator.clipboard.writeText(t);
+ alert("UPI COPIED");
 }
 
-function changeMethod(){
-  let m=document.getElementById("method").value;
-  document.getElementById("utr").style.display=(m==="utr")?"block":"none";
-  document.getElementById("file").style.display=(m==="qr")?"block":"none";
+// ================= VERIFY =================
+function verify(plan){
+
+ let u = prompt("Enter Name");
+ let utrVal = utr.value;
+
+ if(!utrVal || utrVal.length<6){
+   return alert("Invalid UTR");
+ }
+
+ fetch("/buy",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+    user:u,
+    plan:plan,
+    utr:utrVal
+  })
+ }).then(()=>{
+
+  localStorage.setItem("pending",plan);
+  waitScreen();
+ });
 }
 
-// 🔥 ANTI-FAKE CHECK
-function checkFraud(utr,file){
-  let risk = "low";
+// ================= WAIT =================
+function waitScreen(){
 
-  if(utr && utr.length < 8) risk = "high";
-  if(utr && usedUTR.includes(utr)) risk = "high";
-  if(file && file.size < 5000) risk = "medium";
+ main.innerHTML=`
+ <div class="card">
+ <h3>PLEASE WAIT VERIFY ADMIN</h3>
+ <p>Processing...</p>
+ </div>
+ `;
 
-  return risk;
+ checkStatus();
 }
 
-// SUBMIT
-async function submitPayment(){
+// ================= CHECK APPROVAL =================
+function checkStatus(){
+ setInterval(()=>{
+ fetch("/history")
+ .then(r=>r.json())
+ .then(h=>{
 
-  let utr=document.getElementById("utr").value.trim();
-  let file=document.getElementById("file").files[0];
+   let p = localStorage.getItem("pending");
 
-  if(!utr && !file){
-    alert("Enter UTR or Upload Screenshot");
-    return;
-  }
+   let found = h.find(x=>x.plan===p);
 
-  let finalUTR = utr || Date.now().toString();
+   if(found){
 
-  let risk = checkFraud(finalUTR,file);
+     if(found.status==="APPROVED"){
+       showKey(found.key,p);
+     }else{
+       showWarning();
+     }
 
-  usedUTR.push(finalUTR);
-  localStorage.setItem("usedUTR",JSON.stringify(usedUTR));
+   }
 
-  let form=new FormData();
-  form.append("plan",selectedPlan);
-  form.append("utr",finalUTR);
-  form.append("risk",risk); // 🔥 admin ke liye
-  form.append("time",new Date().toLocaleString());
-
-  if(file) form.append("file",file);
-
-  await fetch("/buy",{method:"POST",body:form});
-
-  document.getElementById("submitBtn").disabled=true;
-  document.getElementById("loaderBox").classList.remove("hidden");
-
-  check(finalUTR);
+ });
+ },3000);
 }
 
-// CHECK
-function check(utr){
+// ================= KEY SHOW =================
+function showKey(key,plan){
 
-  clearInterval(interval);
+ localStorage.removeItem("pending");
 
-  interval=setInterval(async()=>{
+ let expire = new Date();
+ expire.setHours(expire.getHours()+12);
 
-    let res=await fetch("/status/"+utr);
-    let d=await res.json();
+ main.innerHTML=`
+ <div class="card">
+ <h3>KEY</h3>
+ <div class="mono" onclick="copy('${key}')">${key}</div>
 
-    if(d.status==="approved"){
-      clearInterval(interval);
-      show("step4");
+ <p>EXPIRE: ${expire.toLocaleString()}</p>
 
-      document.getElementById("resultBox").innerHTML=`
-      <div class="successAnim">
-        <h2>🎉 PAYMENT SUCCESS</h2>
-      </div>
-      `;
+ <button onclick="tg()">TELEGRAM</button>
 
-      setTimeout(()=>{
-        document.getElementById("resultBox").innerHTML=`
-        <h2 style="color:#00f2ff;">${d.key}</h2>
-        <p>⏳ Expiry: ${d.expiry}</p>
-        <button onclick="navigator.clipboard.writeText('${d.key}')">COPY KEY</button>
-        <button onclick="window.open('${d.channel}')">📢 Join Channel</button>
-        <button onclick="window.open('https://t.me/GODx_COBRA')">🆘 Help</button>
-        `;
-      },1500);
-    }
+ <p>KILL LIMIT: 10-12 PLAY SAFE</p>
+ </div>
+ `;
+}
 
-    if(d.status==="rejected"){
-      clearInterval(interval);
-      show("step4");
-      document.getElementById("resultBox").innerHTML=`
-      <h3 style="color:red;">❌ PAYMENT REJECTED</h3>
-      `;
-    }
+// ================= WARNING =================
+function showWarning(){
+ localStorage.removeItem("pending");
 
-  },2000);
+ main.innerHTML=`
+ <div class="card">
+ ⚠️ PAYMENT FAILED / REJECTED
+ </div>
+ `;
+
+ setTimeout(loadPlans,3000);
+}
+
+// ================= TELEGRAM =================
+function tg(){
+ window.open("https://t.me/GODx_COBRA");
+}
+
+// ================= LOAD PENDING =================
+if(localStorage.getItem("pending")){
+ waitScreen();
 }
 
 </script>
