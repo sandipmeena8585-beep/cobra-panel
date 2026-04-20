@@ -1,5 +1,6 @@
 const express = require("express");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 app.use(express.json());
@@ -7,25 +8,42 @@ app.use(express.static("public"));
 
 const PORT = process.env.PORT || 3000;
 
-// 🔥 MAIN DATA STORE
-let systemOn = true;
+// ================= DATABASE FILE =================
+const DB = "./data.json";
 
-let settings = {
-  upi: "upi@id",
-  qr: "/upi_qr.png"
-};
+function loadDB(){
+  if(!fs.existsSync(DB)){
+    fs.writeFileSync(DB, JSON.stringify({
+      systemOn:true,
+      upi:"godxcobra@axl",
+      qr:"/upi_qr.png",
+      plans:[],
+      stock:{},
+      requests:[],
+      history:[]
+    }));
+  }
+  return JSON.parse(fs.readFileSync(DB));
+}
 
-let plans = []; // max 8
-let stock = [];
-let requests = [];
+function saveDB(data){
+  fs.writeFileSync(DB, JSON.stringify(data,null,2));
+}
 
 // ================= ROUTES =================
 
-// HOME
+// HOME (CUSTOMER PANEL CONTROL)
 app.get("/", (req,res)=>{
-  if(!systemOn){
-    return res.send("<h2 style='text-align:center'>⚠️ PLEASE WAIT ADMIN UPDATE</h2>");
+  let db = loadDB();
+
+  if(!db.systemOn){
+    return res.send(`
+      <h2 style="text-align:center;margin-top:50px">
+      ⚠️ PLEASE WAIT ADMIN PANEL UPDATE
+      </h2>
+    `);
   }
+
   res.sendFile(path.join(__dirname,"public/index.html"));
 });
 
@@ -34,84 +52,165 @@ app.get("/admin",(req,res)=>{
   res.sendFile(path.join(__dirname,"public/admin.html"));
 });
 
-// ================= CONTROL =================
+// ================= SYSTEM =================
 
-// SYSTEM ON/OFF
 app.post("/toggle",(req,res)=>{
-  systemOn=!systemOn;
-  res.json({on:systemOn});
+  let db = loadDB();
+  db.systemOn = !db.systemOn;
+  saveDB(db);
+  res.json({on:db.systemOn});
 });
 
-// STATUS
 app.get("/status",(req,res)=>{
-  res.json({on:systemOn});
+  let db = loadDB();
+  res.json({on:db.systemOn});
 });
 
 // ================= SETTINGS =================
 
-// UPDATE UPI + QR
-app.post("/settings",(req,res)=>{
-  settings=req.body;
-  res.json({ok:true});
+app.get("/settings",(req,res)=>{
+  let db = loadDB();
+  res.json({upi:db.upi, qr:db.qr});
 });
 
-app.get("/settings",(req,res)=>{
-  res.json(settings);
+app.post("/settings",(req,res)=>{
+  let db = loadDB();
+  db.upi = req.body.upi;
+  db.qr = req.body.qr;
+  saveDB(db);
+  res.json({ok:true});
 });
 
 // ================= PLANS =================
 
-// ADD PLAN (MAX 8)
-app.post("/addPlan",(req,res)=>{
-  if(plans.length>=8) return res.json({error:"MAX 8 PLAN"});
-  plans.push(req.body);
-  res.json(plans);
-});
-
 app.get("/plans",(req,res)=>{
-  res.json(plans);
+  let db = loadDB();
+  res.json(db.plans);
 });
 
-app.post("/deletePlan",(req,res)=>{
-  plans.splice(req.body.i,1);
-  res.json(plans);
+app.post("/savePlans",(req,res)=>{
+  let db = loadDB();
+
+  if(req.body.length > 8){
+    return res.json({error:"Max 8 plans"});
+  }
+
+  db.plans = req.body;
+  saveDB(db);
+
+  res.json({ok:true});
 });
 
 // ================= STOCK =================
 
-app.post("/addStock",(req,res)=>{
-  stock.push(req.body.key);
-  res.json(stock);
-});
-
 app.get("/stock",(req,res)=>{
-  res.json(stock);
+  let db = loadDB();
+  res.json(db.stock);
 });
 
-app.post("/deleteStock",(req,res)=>{
-  stock.splice(req.body.i,1);
-  res.json(stock);
+app.post("/addStock",(req,res)=>{
+  let db = loadDB();
+
+  let {plan, key} = req.body;
+
+  if(!db.stock[plan]) db.stock[plan]=[];
+
+  db.stock[plan].push(key);
+
+  saveDB(db);
+
+  res.json({ok:true});
+});
+
+app.post("/removeStock",(req,res)=>{
+  let db = loadDB();
+
+  let {plan} = req.body;
+
+  if(db.stock[plan] && db.stock[plan].length > 0){
+    let key = db.stock[plan].shift();
+    saveDB(db);
+    res.json({key});
+  }else{
+    res.json({error:"No stock"});
+  }
 });
 
 // ================= REQUEST =================
 
 app.post("/buy",(req,res)=>{
-  requests.push(req.body);
+  let db = loadDB();
+
+  db.requests.push({
+    user:req.body.user,
+    plan:req.body.plan,
+    utr:req.body.utr,
+    time:new Date().toLocaleString()
+  });
+
+  saveDB(db);
+
   res.json({ok:true});
 });
 
 app.get("/requests",(req,res)=>{
-  res.json(requests);
+  let db = loadDB();
+  res.json(db.requests);
 });
 
+// APPROVE
 app.post("/approve",(req,res)=>{
-  requests = requests.filter(x=>x.user!==req.body.user);
+  let db = loadDB();
+
+  let r = db.requests.find(x=>x.user===req.body.user);
+  if(!r) return res.json({error:"not found"});
+
+  let stock = db.stock[r.plan] || [];
+
+  if(stock.length === 0){
+    return res.json({error:"No Stock"});
+  }
+
+  let key = stock.shift();
+
+  db.history.unshift({
+    user:r.user,
+    plan:r.plan,
+    key:key,
+    status:"APPROVED"
+  });
+
+  if(db.history.length>5) db.history.pop();
+
+  db.requests = db.requests.filter(x=>x.user!==r.user);
+
+  saveDB(db);
+
+  res.json({key});
+});
+
+// REJECT
+app.post("/reject",(req,res)=>{
+  let db = loadDB();
+
+  db.history.unshift({
+    user:req.body.user,
+    status:"REJECTED"
+  });
+
+  if(db.history.length>5) db.history.pop();
+
+  db.requests = db.requests.filter(x=>x.user!==req.body.user);
+
+  saveDB(db);
+
   res.json({ok:true});
 });
 
-app.post("/reject",(req,res)=>{
-  requests = requests.filter(x=>x.user!==req.body.user);
-  res.json({ok:true});
+// HISTORY
+app.get("/history",(req,res)=>{
+  let db = loadDB();
+  res.json(db.history);
 });
 
 // ================= START =================
