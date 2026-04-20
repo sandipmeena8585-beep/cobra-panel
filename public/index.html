@@ -133,27 +133,23 @@ function goBuy(){
   
 // ================= BUY =================  
 function buy(plan,price){  
-  
  fetch("/settings")  
  .then(r=>r.json())  
  .then(s=>{  
-  
   main.innerHTML=`  
   <div class="card">  
     <h3>PAYMENT</h3>  
     <p>Pay ₹${price}</p>  
-  
     <div class="mono" onclick="copy('${s.upi}')">${s.upi}</div>  
     <br>  
     <img src="${s.qr}" width="200">  
-  
     <input id="utr" placeholder="ENTER UTR (8 digit)">  
     <button onclick="confirmBox('${plan}')">VERIFY</button>  
   </div>`;  
  });  
 }  
   
-// ================= CONFIRM BOX =================
+// ================= CONFIRM =================
 function confirmBox(plan){
  let utrVal = utr.value;
 
@@ -170,22 +166,16 @@ function confirmBox(plan){
  </div>`;
 }
 
-function closePop(){
- location.reload();
-}
+function closePop(){ location.reload(); }
 
-// ================= SEND REQUEST =================
+// ================= SEND =================
 function sendReq(plan,utrVal){
  let u = prompt("Enter Name");
 
  fetch("/buy",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-    user:u,
-    plan:plan,
-    utr:utrVal
-  })
+  body:JSON.stringify({ user:u, plan:plan, utr:utrVal })
  }).then(()=>{
   localStorage.setItem("pendingUTR",utrVal);
   location.reload();
@@ -194,7 +184,6 @@ function sendReq(plan,utrVal){
 
 // ================= WAIT =================
 function waitScreen(){
-
  main.innerHTML=`
  <div class="card">
  <h3>PLEASE WAIT ADMIN VERIFY</h3>
@@ -217,11 +206,10 @@ function checkStatus(){
  .then(r=>r.json())
  .then(h=>{
    let utr = localStorage.getItem("pendingUTR");
-
    let found = h.find(x=>x.utr===utr);
 
    if(found){
-     if(found.status==="approved" || found.status==="APPROVED"){
+     if(found.status==="approved"){
        showKey(found.key);
      }else if(found.status==="rejected"){
        showWarning();
@@ -274,7 +262,8 @@ function tg(){
 if(localStorage.getItem("pendingUTR")){
  waitScreen();
 }
-// ================= 🔥 AUTO REFRESH FIX =================
+
+// ================= 🔥 FINAL REFRESH FIX =================
 let last = localStorage.getItem("lastRefresh") || 0;
 
 setInterval(()=>{
@@ -285,24 +274,6 @@ setInterval(()=>{
 
      localStorage.setItem("lastRefresh", d.refresh);
 
-     // reset pending state
-     localStorage.removeItem("pendingUTR");
-
-     location.reload();
-   }
- });
-},3000);
-// ================= 🔥 AUTO REFRESH (ADDED) =================
-let last = 0;
-
-setInterval(()=>{
- fetch("/status")
- .then(r=>r.json())
- .then(d=>{
-   if(d.refresh !== last){
-     last = d.refresh;
-
-     // 🔥 MAIN FIX
      localStorage.removeItem("pendingUTR");
 
      location.reload();
