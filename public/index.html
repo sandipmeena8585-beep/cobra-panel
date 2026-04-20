@@ -187,7 +187,7 @@ function sendReq(plan,utrVal){
     utr:utrVal
   })
  }).then(()=>{
-  localStorage.setItem("pendingUTR",utrVal); // 🔥 FIX
+  localStorage.setItem("pendingUTR",utrVal);
   location.reload();
  });
 }
@@ -218,7 +218,7 @@ function checkStatus(){
  .then(h=>{
    let utr = localStorage.getItem("pendingUTR");
 
-   let found = h.find(x=>x.utr===utr); // 🔥 FIX MAIN
+   let found = h.find(x=>x.utr===utr);
 
    if(found){
      if(found.status==="approved" || found.status==="APPROVED"){
@@ -274,6 +274,20 @@ function tg(){
 if(localStorage.getItem("pendingUTR")){
  waitScreen();
 }
+
+// ================= 🔥 AUTO REFRESH (ADDED) =================
+let last = 0;
+
+setInterval(()=>{
+ fetch("/status")
+ .then(r=>r.json())
+ .then(d=>{
+   if(d.refresh !== last){
+     last = d.refresh;
+     location.reload();
+   }
+ });
+},3000);
 
 </script>  
   
