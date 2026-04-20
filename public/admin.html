@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COBRA PANEL</title>
+<title>COBRA ADMIN</title>
 
 <style>
 body{
@@ -10,7 +10,30 @@ margin:0;
 font-family:Arial;
 background:linear-gradient(180deg,#1da1c9,#0e7fa3);
 color:#fff;
-text-align:center;
+overflow-x:hidden;
+}
+
+/* LOGIN */
+.login{
+height:100vh;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+}
+
+.login input,.login button{
+width:80%;
+max-width:320px;
+padding:14px;
+margin:8px;
+border:none;
+border-radius:6px;
+}
+
+.login button{
+background:#000;
+color:#fff;
 }
 
 /* TOP BAR */
@@ -19,33 +42,41 @@ display:flex;
 justify-content:space-between;
 align-items:center;
 padding:12px 16px;
-background:rgba(0,0,0,0.3);
+background:rgba(0,0,0,0.25);
 position:fixed;
 top:0;
+left:0;
 width:100%;
 box-sizing:border-box;
 z-index:1000;
+backdrop-filter:blur(10px);
 }
 
+/* TITLE */
 .title{
 font-weight:bold;
+font-size:16px;
 animation:glow 1.5s infinite alternate;
 }
 
 @keyframes glow{
-from{opacity:0.6}
-to{opacity:1}
+from{ text-shadow:0 0 5px #fff;}
+to{ text-shadow:0 0 15px #00f0ff,0 0 25px #00f0ff;}
 }
 
+/* MENU */
 .menuIcon{
 font-size:22px;
 cursor:pointer;
+padding:6px 10px;
+border-radius:8px;
+background:rgba(255,255,255,0.1);
 }
 
 /* SIDEBAR */
 .sidebar{
 position:fixed;
-left:-250px;
+left:-260px;
 top:0;
 width:240px;
 height:100%;
@@ -66,7 +97,8 @@ border-radius:8px;
 /* OVERLAY */
 .overlay{
 position:fixed;
-top:0;left:0;
+top:0;
+left:0;
 width:100%;
 height:100%;
 background:rgba(0,0,0,0.5);
@@ -75,11 +107,16 @@ z-index:998;
 }
 .overlay.active{display:block}
 
-/* CARD */
+/* CONTENT */
+.content{
+margin-top:65px;
+padding:12px;
+}
+
 .card{
 background:rgba(255,255,255,0.15);
-margin:10px;
 padding:15px;
+margin:10px 0;
 border-radius:12px;
 backdrop-filter:blur(10px);
 }
@@ -88,84 +125,97 @@ button{
 padding:10px;
 border:none;
 border-radius:6px;
-background:#22c55e;
-color:white;
-margin-top:10px;
+margin:5px;
 }
 
-input{
-padding:10px;
-width:80%;
-margin:10px;
-border-radius:6px;
-border:none;
-}
-
-.content{
-margin-top:65px;
-}
-
-.mono{font-family:monospace}
+.green{background:#22c55e}
+.red{background:#ef4444}
 </style>
 </head>
 
 <body>
 
-<!-- TOP -->
+<!-- LOGIN -->
+<div id="loginBox" class="login">
+<h2>ADMIN LOGIN</h2>
+<input id="u" placeholder="Username">
+<input id="p" type="password" placeholder="Password">
+<button onclick="login()">LOGIN</button>
+</div>
+
+<!-- PANEL -->
+<div id="panel" style="display:none">
+
 <div class="top">
-  <div class="title">COBRA PANEL</div>
+  <div class="title">COBRA ADMIN</div>
   <div class="menuIcon" onclick="toggleMenu()">☰</div>
 </div>
 
 <div id="overlay" class="overlay" onclick="closeMenu()"></div>
 
 <div id="sidebar" class="sidebar">
-<div onclick="loadPlans()">HOME</div>
-<div onclick="adminUI()">ADMIN</div>
+<div onclick="home()">HOME</div>
+<div onclick="plansUI()">PLANS</div>
+<div onclick="stockUI()">STOCK</div>
+<div onclick="settingsUI()">UPI / QR</div>
+<div onclick="reqUI()">REQUEST</div>
+<div onclick="toggleSystem()">ON/OFF PANEL</div>
 <div onclick="logout()">LOGOUT</div>
 </div>
 
 <div class="content" id="main"></div>
 
+</div>
+
 <script>
+
+// LOGIN
+function login(){
+ if(u.value==="COBRA SERVER" && p.value==="SAMI9166"){
+  localStorage.setItem("admin","1");
+  start();
+ }else alert("Wrong");
+}
+
+function start(){
+ loginBox.style.display="none";
+ panel.style.display="block";
+ home();
+}
+
+if(localStorage.getItem("admin")=="1") start();
+
+function logout(){
+ localStorage.removeItem("admin");
+ location.reload();
+}
 
 // MENU
 function toggleMenu(){
  sidebar.classList.toggle("active");
  overlay.classList.toggle("active");
 }
+
 function closeMenu(){
  sidebar.classList.remove("active");
  overlay.classList.remove("active");
 }
 
-// ================= SYSTEM CHECK =================
-fetch("/status")
-.then(r=>r.json())
-.then(d=>{
- if(!d.on){
-   document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN PANEL UPDATE</h2>";
- }else{
-   loadPlans();
- }
-});
+// HOME
+function home(){
+ main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
+ closeMenu();
+}
 
-// ================= CUSTOMER PANEL =================
-function loadPlans(){
- fetch("/plans")
- .then(r=>r.json())
- .then(data=>{
+// ================= PLANS =================
+function plansUI(){
+ fetch("/plans").then(r=>r.json()).then(data=>{
+  let html="<div class='card'><h3>Plans</h3></div>";
 
-  let html="<div class='card'>BGMI</div>";
-
-  data.forEach(p=>{
-    let name = p.type==="H" ? p.time+" HOUR" : p.time+" DAY";
-
+  data.forEach((x,i)=>{
     html+=`
     <div class="card">
-      ${name} - ₹${p.price}
-      <br>
-      <button onclick="buy('${p.type}${p.time}','${p.price}')">BUY KEY</button>
+    ${x.type}${x.time} - ₹${x.price}
     </div>`;
   });
 
@@ -174,138 +224,79 @@ function loadPlans(){
  });
 }
 
-// ================= BUY =================
-function buy(plan,price){
+// ================= STOCK =================
+function stockUI(){
+ fetch("/stock").then(r=>r.json()).then(data=>{
+  let html="<div class='card'><h3>Stock</h3></div>";
 
- fetch("/settings")
- .then(r=>r.json())
- .then(s=>{
+  for(let p in data){
+    html+=`<div class="card">${p} → ${data[p].length} KEYS</div>`;
+  }
 
-  main.innerHTML=`
-  <div class="card">
-    <h3>PAYMENT</h3>
-    <p>Pay ₹${price}</p>
-
-    <div class="mono" onclick="copy('${s.upi}')">${s.upi}</div>
-
-    <br>
-    <img src="${s.qr}" width="200">
-
-    <br>
-    <input id="utr" placeholder="ENTER UTR">
-    <button onclick="verify('${plan}')">VERIFY</button>
-  </div>`;
+  main.innerHTML=html;
+  closeMenu();
  });
 }
 
-// COPY
-function copy(t){
- navigator.clipboard.writeText(t);
- alert("UPI COPIED");
+// ================= SETTINGS =================
+function settingsUI(){
+ fetch("/settings").then(r=>r.json()).then(d=>{
+  main.innerHTML=`
+  <div class="card">
+  <input id="upi" value="${d.upi}">
+  <input id="qr" value="${d.qr}">
+  <button onclick="saveSettings()">SAVE</button>
+  </div>`;
+  closeMenu();
+ });
 }
 
-// VERIFY
-function verify(plan){
-
- let u = prompt("Enter Name");
- let utrVal = utr.value;
-
- if(!utrVal || utrVal.length<6){
-   return alert("Invalid UTR");
- }
-
- fetch("/buy",{
+function saveSettings(){
+ fetch("/settings",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify({
-    user:u,
-    plan:plan,
-    utr:utrVal
+    upi:upi.value,
+    qr:qr.value
   })
- }).then(()=>{
-  localStorage.setItem("pending",plan);
-  waitScreen();
+ }).then(()=>alert("Saved"));
+}
+
+// ================= REQUEST =================
+function reqUI(){
+ fetch("/admin/data").then(r=>r.json()).then(data=>{
+  let html="";
+
+  data.forEach(x=>{
+    if(x.status==="pending"){
+      html+=`
+      <div class="card">
+      ${x.plan}<br>
+      ${x.utr}<br>
+      <button class="green" onclick="verify(${x.id})">YES</button>
+      <button class="red" onclick="reject(${x.id})">NO</button>
+      </div>`;
+    }
+  });
+
+  main.innerHTML=html || "No Requests";
+  closeMenu();
  });
 }
 
-// WAIT
-function waitScreen(){
- main.innerHTML=`
- <div class="card">
- <h3>PLEASE WAIT VERIFY ADMIN</h3>
- </div>`;
- checkStatus();
+function verify(id){
+ fetch("/admin/verify/"+id).then(()=>reqUI());
 }
 
-// CHECK STATUS
-function checkStatus(){
- setInterval(()=>{
- fetch("/history")
- .then(r=>r.json())
- .then(h=>{
-   let p = localStorage.getItem("pending");
-   let found = h.find(x=>x.plan===p);
-
-   if(found){
-     if(found.status==="APPROVED"){
-       showKey(found.key,p);
-     }else{
-       showWarning();
-     }
-   }
- });
- },3000);
+function reject(id){
+ fetch("/admin/reject/"+id).then(()=>reqUI());
 }
 
-// SHOW KEY
-function showKey(key,plan){
- localStorage.removeItem("pending");
-
- main.innerHTML=`
- <div class="card">
- <h3>KEY</h3>
- <div class="mono">${key}</div>
- <button onclick="tg()">TELEGRAM</button>
- </div>`;
-}
-
-// WARNING
-function showWarning(){
- localStorage.removeItem("pending");
- main.innerHTML=`<div class="card">⚠️ PAYMENT FAILED</div>`;
- setTimeout(loadPlans,3000);
-}
-
-// TELEGRAM
-function tg(){
- window.open("https://t.me/GODx_COBRA");
-}
-
-// ================= ADMIN PANEL =================
-function adminUI(){
- main.innerHTML=`
- <div class="card">
- <h3>ADMIN PANEL</h3>
- <button onclick="toggleSystem()">ON/OFF SYSTEM</button>
- </div>`;
- closeMenu();
-}
-
-// TOGGLE SYSTEM
+// ================= TOGGLE =================
 function toggleSystem(){
  fetch("/toggle",{method:"POST"})
  .then(r=>r.json())
  .then(d=>alert(d.on?"ON":"OFF"));
-}
-
-// LOGOUT
-function logout(){
- location.reload();
-}
-
-// LOAD PENDING
-if(localStorage.getItem("pending")){
- waitScreen();
 }
 
 </script>
