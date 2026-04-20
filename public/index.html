@@ -1,11 +1,14 @@
 <!DOCTYPE html>  
 <html>  
 <head>  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+
+<!-- 🔥 MOBILE ZOOM LOCK -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+
 <title>COBRA SERVER PANEL</title>  
   
 <style>  
-body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center}  
+body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center;-webkit-tap-highlight-color:transparent}  
   
 .top{  
  padding:15px;  
@@ -59,32 +62,38 @@ input,select{
 }
 
 .mono{font-family:monospace}
-.popup{
+
+/* 🔥 TELEGRAM FLOAT */
+.tgFloat{
  position:fixed;
- top:50%;
- left:50%;
- transform:translate(-50%,-50%);
- background:#1e293b;
- padding:20px;
- border-radius:12px;
- z-index:999;
+ bottom:20px;
+ right:15px;
+ background:#0088cc;
+ color:#fff;
+ padding:10px 14px;
+ border-radius:20px;
+ font-size:12px;
+ cursor:pointer;
+ box-shadow:0 0 10px #0088cc;
 }
-.overlay{
- position:fixed;
- top:0;left:0;
- width:100%;
- height:100%;
- background:rgba(0,0,0,0.6);
- z-index:998;
+
+/* DESIGN TEXT */
+.info{
+ margin-top:15px;
+ font-size:14px;
+ color:#38bdf8;
 }
 </style>  
 </head>  
   
 <body>  
   
-<div class="top">COBRA SERVER PANEL</div>  
+<div class="top">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>  
   
 <div id="main"></div>  
+
+<!-- 🔥 TELEGRAM BUTTON -->
+<div class="tgFloat" onclick="tg()">HELP</div>
   
 <script>  
 
@@ -123,6 +132,15 @@ function showMain(){
    </select>  
 
    <button class="buyBtn" onclick="goBuy()">𝗕𝗨𝗬 𝗞𝗘𝗬</button>  
+
+   <!-- 🔥 NEW TEXT -->
+   <div class="info">
+   ━━━━━━━━━━━━━━━━━━ <br>
+   ⚡ 𝐅𝐀𝐒𝐓 𝐃𝐄𝐋𝐈𝐕𝐄𝐑𝐘 <br>
+   🔐 𝐒𝐄𝐂𝐔𝐑𝐄 𝐀𝐂𝐂𝐄𝐒𝐒 <br>
+   ━━━━━━━━━━━━━━━━━━
+   </div>
+
  </div>`;  
 }  
   
@@ -149,6 +167,7 @@ function buy(plan,price){
  });  
 }  
   
+// बाकी सब same नीचे...
 // ================= CONFIRM =================
 function confirmBox(plan){
  let utrVal = utr.value;
@@ -168,7 +187,6 @@ function confirmBox(plan){
 
 function closePop(){ location.reload(); }
 
-// ================= SEND =================
 function sendReq(plan,utrVal){
  let u = prompt("Enter Name");
 
@@ -182,7 +200,6 @@ function sendReq(plan,utrVal){
  });
 }
 
-// ================= WAIT =================
 function waitScreen(){
  main.innerHTML=`
  <div class="card">
@@ -191,15 +208,11 @@ function waitScreen(){
  </div>`;
 
  let t=0;
- setInterval(()=>{
-  t++;
-  timer.innerText=t+" sec";
- },1000);
+ setInterval(()=>{ t++; timer.innerText=t+" sec"; },1000);
 
  checkStatus();
 }
 
-// ================= CHECK =================
 function checkStatus(){
  setInterval(()=>{
  fetch("/history")
@@ -219,7 +232,6 @@ function checkStatus(){
  },3000);
 }
 
-// ================= KEY =================
 function showKey(key){
  localStorage.removeItem("pendingUTR");
 
@@ -235,35 +247,26 @@ function showKey(key){
  </div>`;
 }
 
-// ================= WARNING =================
 function showWarning(){
  localStorage.removeItem("pendingUTR");
 
- main.innerHTML=`
- <div class="card">
- ⚠️ FAKE PAYMENT / REJECTED
- </div>`;
-
+ main.innerHTML=`<div class="card">⚠️ FAKE PAYMENT / REJECTED</div>`;
  setTimeout(showMain,3000);
 }
 
-// ================= COPY =================
 function copy(t){
  navigator.clipboard.writeText(t);
  alert("COPIED");
 }
 
-// ================= TG =================
 function tg(){
  window.open("https://t.me/GODx_COBRA");
 }
 
-// ================= AUTO LOAD =================
-if(localStorage.getItem("pendingUTR")){
- waitScreen();
-}
+// AUTO LOAD
+if(localStorage.getItem("pendingUTR")) waitScreen();
 
-// ================= 🔥 FINAL REFRESH FIX =================
+// 🔥 FINAL REFRESH FIX
 let last = localStorage.getItem("lastRefresh") || 0;
 
 setInterval(()=>{
@@ -271,11 +274,8 @@ setInterval(()=>{
  .then(r=>r.json())
  .then(d=>{
    if(d.refresh != last){
-
      localStorage.setItem("lastRefresh", d.refresh);
-
      localStorage.removeItem("pendingUTR");
-
      location.reload();
    }
  });
