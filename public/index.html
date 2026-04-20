@@ -9,13 +9,7 @@
 <style>  
 body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center;-webkit-tap-highlight-color:transparent}  
   
-.top{  
- padding:15px;  
- font-size:20px;  
- font-weight:bold;  
- color:#22c55e;  
- animation:glow 1.5s infinite alternate;  
-}  
+.top{padding:15px;font-size:20px;font-weight:bold;color:#22c55e;animation:glow 1.5s infinite alternate;}  
 @keyframes glow{from{opacity:0.6}to{opacity:1}}  
   
 .card{background:#1e293b;margin:10px;padding:15px;border-radius:12px}  
@@ -37,18 +31,6 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 }
 
 .info{margin-top:15px;font-size:14px;color:#38bdf8}
-
-/* 🔥 POPUP FIX */
-.popup{
- position:fixed;top:50%;left:50%;
- transform:translate(-50%,-50%);
- background:#1e293b;padding:20px;border-radius:12px;
- z-index:999;text-align:center;
-}
-.overlay{
- position:fixed;top:0;left:0;width:100%;height:100%;
- background:rgba(0,0,0,0.6);z-index:998;
-}
 </style>  
 </head>  
   
@@ -124,7 +106,7 @@ function buy(plan,price){
  });
 }
 
-/* 🔥 MAIN CHANGE HERE */
+/* 🔥 ONLY CHANGE */
 function confirmBox(plan){
  let utrVal = utr.value;
 
@@ -132,31 +114,25 @@ function confirmBox(plan){
    return alert("Enter Valid 12 Digit UTR");
  }
 
- document.body.innerHTML+=`
- <div class="overlay"></div>
- <div class="popup">
-   <h3>CONFIRM PAYMENT</h3>
-   <br>
-   <button onclick="sendReq('${plan}','${utrVal}')">YES</button>
-   <button onclick="goBack()">NO</button>
- </div>`;
-}
+ let confirmPay = confirm("PAYMENT CONFIRM ?");
 
-function goBack(){
- location.reload();
-}
+ if(confirmPay){
+   let u = prompt("Enter Name");
 
-function sendReq(plan,utrVal){
- let u = prompt("Enter Name");
+   if(!u) return;
 
- fetch("/buy",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({user:u,plan:plan,utr:utrVal})
- }).then(()=>{
-  localStorage.setItem("pendingUTR",utrVal);
-  location.reload();
- });
+   fetch("/buy",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({user:u,plan:plan,utr:utrVal})
+   }).then(()=>{
+    localStorage.setItem("pendingUTR",utrVal);
+    location.reload();
+   });
+
+ }else{
+   location.reload(); // NO = back to floor 1
+ }
 }
 
 function waitScreen(){
@@ -220,7 +196,6 @@ function tg(){
 
 if(localStorage.getItem("pendingUTR")) waitScreen();
 
-// 🔥 REFRESH FIX
 let last = localStorage.getItem("lastRefresh") || 0;
 
 setInterval(()=>{
