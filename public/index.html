@@ -2,7 +2,6 @@
 <html>  
 <head>  
 
-<!-- 🔥 MOBILE ZOOM LOCK -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 
 <title>COBRA SERVER PANEL</title>  
@@ -17,71 +16,38 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center
  color:#22c55e;  
  animation:glow 1.5s infinite alternate;  
 }  
-@keyframes glow{  
- from{opacity:0.6}  
- to{opacity:1}  
-}  
+@keyframes glow{from{opacity:0.6}to{opacity:1}}  
   
-.card{  
- background:#1e293b;  
- margin:10px;  
- padding:15px;  
- border-radius:12px;  
-}  
+.card{background:#1e293b;margin:10px;padding:15px;border-radius:12px}  
   
 .buyBtn{
- padding:14px;
- border:none;
- border-radius:8px;
- background:#22c55e;
- color:white;
- margin-top:10px;
- font-size:16px;
- animation:btnGlow 1.2s infinite alternate;
+ padding:14px;border:none;border-radius:8px;background:#22c55e;color:white;
+ margin-top:10px;font-size:16px;animation:btnGlow 1.2s infinite alternate;
 }
-@keyframes btnGlow{
- from{box-shadow:0 0 5px #22c55e;}
- to{box-shadow:0 0 20px #22c55e;}
-}
+@keyframes btnGlow{from{box-shadow:0 0 5px #22c55e;}to{box-shadow:0 0 20px #22c55e;}}
 
-button{
- padding:12px;
- border:none;
- border-radius:6px;
- background:#22c55e;
- color:white;
- margin-top:10px;
-}
-
-input,select{
- padding:10px;
- width:80%;
- margin:10px;
- border-radius:6px;
- border:none;
-}
-
+button{padding:12px;border:none;border-radius:6px;background:#22c55e;color:white;margin-top:10px}
+input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 .mono{font-family:monospace}
 
-/* 🔥 TELEGRAM FLOAT */
 .tgFloat{
- position:fixed;
- bottom:20px;
- right:15px;
- background:#0088cc;
- color:#fff;
- padding:10px 14px;
- border-radius:20px;
- font-size:12px;
- cursor:pointer;
+ position:fixed;bottom:20px;right:15px;background:#0088cc;color:#fff;
+ padding:10px 14px;border-radius:20px;font-size:12px;cursor:pointer;
  box-shadow:0 0 10px #0088cc;
 }
 
-/* DESIGN TEXT */
-.info{
- margin-top:15px;
- font-size:14px;
- color:#38bdf8;
+.info{margin-top:15px;font-size:14px;color:#38bdf8}
+
+/* 🔥 POPUP FIX */
+.popup{
+ position:fixed;top:50%;left:50%;
+ transform:translate(-50%,-50%);
+ background:#1e293b;padding:20px;border-radius:12px;
+ z-index:999;text-align:center;
+}
+.overlay{
+ position:fixed;top:0;left:0;width:100%;height:100%;
+ background:rgba(0,0,0,0.6);z-index:998;
 }
 </style>  
 </head>  
@@ -92,100 +58,93 @@ input,select{
   
 <div id="main"></div>  
 
-<!-- 🔥 TELEGRAM BUTTON -->
 <div class="tgFloat" onclick="tg()">HELP</div>
   
 <script>  
 
-// ================= CHECK SYSTEM =================  
-fetch("/status")  
-.then(r=>r.json())  
-.then(d=>{  
- if(!d.on){  
-   document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN PANEL UPDATE</h2>";  
- }else{  
-   if(localStorage.getItem("pendingUTR")){
-     waitScreen();
-   }else{
-     showMain();  
-   }
- }  
-});  
-  
-// ================= MAIN =================
-function showMain(){  
- main.innerHTML=`  
- <div class="card">  
-   <h3>Select Game</h3>  
-   <select><option>BGMI</option></select>  
+fetch("/status")
+.then(r=>r.json())
+.then(d=>{
+ if(!d.on){
+   document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN PANEL UPDATE</h2>";
+ }else{
+   if(localStorage.getItem("pendingUTR")) waitScreen();
+   else showMain();
+ }
+});
 
-   <h3>Select Plan</h3>  
-   <select id="planSel">  
-     <option value="5H|80">5H - ₹80</option>  
-     <option value="1D|100">1 DAY - ₹100</option>  
-     <option value="3D|200">3 DAY - ₹200</option>  
-     <option value="7D|400">7 DAY - ₹400</option>  
-     <option value="15D|800">15 DAY - ₹800</option>  
-     <option value="30D|1000">30 DAY - ₹1000</option>  
-     <option value="60D|1200">60 DAY - ₹1200</option>  
-     <option value="FULL|1400">FULL SESSION - ₹1400</option>  
-   </select>  
+function showMain(){
+ main.innerHTML=`
+ <div class="card">
+   <h3>Select Game</h3>
+   <select><option>BGMI</option></select>
 
-   <button class="buyBtn" onclick="goBuy()">𝗕𝗨𝗬 𝗞𝗘𝗬</button>  
+   <h3>Select Plan</h3>
+   <select id="planSel">
+     <option value="5H|80">5H - ₹80</option>
+     <option value="1D|100">1 DAY - ₹100</option>
+     <option value="3D|200">3 DAY - ₹200</option>
+     <option value="7D|400">7 DAY - ₹400</option>
+     <option value="15D|800">15 DAY - ₹800</option>
+     <option value="30D|1000">30 DAY - ₹1000</option>
+     <option value="60D|1200">60 DAY - ₹1200</option>
+     <option value="FULL|1400">FULL SESSION - ₹1400</option>
+   </select>
 
-   <!-- 🔥 NEW TEXT -->
+   <button class="buyBtn" onclick="goBuy()">𝗕𝗨𝗬 𝗞𝗘𝗬</button>
+
    <div class="info">
    ━━━━━━━━━━━━━━━━━━ <br>
    ⚡ 𝐅𝐀𝐒𝐓 𝐃𝐄𝐋𝐈𝐕𝐄𝐑𝐘 <br>
    🔐 𝐒𝐄𝐂𝐔𝐑𝐄 𝐀𝐂𝐂𝐄𝐒𝐒 <br>
    ━━━━━━━━━━━━━━━━━━
    </div>
+ </div>`;
+}
 
- </div>`;  
-}  
-  
-function goBuy(){  
- let val = planSel.value.split("|");  
- buy(val[0],val[1]);  
-}  
-  
-// ================= BUY =================  
-function buy(plan,price){  
- fetch("/settings")  
- .then(r=>r.json())  
- .then(s=>{  
-  main.innerHTML=`  
-  <div class="card">  
-    <h3>PAYMENT</h3>  
-    <p>Pay ₹${price}</p>  
-    <div class="mono" onclick="copy('${s.upi}')">${s.upi}</div>  
-    <br>  
-    <img src="${s.qr}" width="200">  
-    <input id="utr" placeholder="ENTER UTR (8 digit)">  
-    <button onclick="confirmBox('${plan}')">VERIFY</button>  
-  </div>`;  
- });  
-}  
-  
-// बाकी सब same नीचे...
-// ================= CONFIRM =================
+function goBuy(){
+ let val = planSel.value.split("|");
+ buy(val[0],val[1]);
+}
+
+function buy(plan,price){
+ fetch("/settings")
+ .then(r=>r.json())
+ .then(s=>{
+  main.innerHTML=`
+  <div class="card">
+    <h3>PAYMENT</h3>
+    <p>Pay ₹${price}</p>
+    <div class="mono" onclick="copy('${s.upi}')">${s.upi}</div>
+    <br>
+    <img src="${s.qr}" width="200">
+    <input id="utr" placeholder="ENTER UTR (12 digit)">
+    <button onclick="confirmBox('${plan}')">VERIFY</button>
+  </div>`;
+ });
+}
+
+/* 🔥 MAIN CHANGE HERE */
 function confirmBox(plan){
  let utrVal = utr.value;
 
- if(!utrVal || utrVal.length<6){
-   return alert("Invalid UTR");
+ if(!utrVal || utrVal.length != 12){
+   return alert("Enter Valid 12 Digit UTR");
  }
 
  document.body.innerHTML+=`
  <div class="overlay"></div>
  <div class="popup">
-   <h3>Confirm Payment?</h3>
+   <h3>CONFIRM PAYMENT</h3>
+   <br>
    <button onclick="sendReq('${plan}','${utrVal}')">YES</button>
-   <button onclick="closePop()">NO</button>
+   <button onclick="goBack()">NO</button>
  </div>`;
 }
 
-function closePop(){ location.reload(); }
+function goBack(){
+ location.reload();
+}
 
 function sendReq(plan,utrVal){
  let u = prompt("Enter Name");
@@ -193,7 +152,7 @@ function sendReq(plan,utrVal){
  fetch("/buy",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({ user:u, plan:plan, utr:utrVal })
+  body:JSON.stringify({user:u,plan:plan,utr:utrVal})
  }).then(()=>{
   localStorage.setItem("pendingUTR",utrVal);
   location.reload();
@@ -208,7 +167,7 @@ function waitScreen(){
  </div>`;
 
  let t=0;
- setInterval(()=>{ t++; timer.innerText=t+" sec"; },1000);
+ setInterval(()=>{t++;timer.innerText=t+" sec"},1000);
 
  checkStatus();
 }
@@ -222,11 +181,8 @@ function checkStatus(){
    let found = h.find(x=>x.utr===utr);
 
    if(found){
-     if(found.status==="approved"){
-       showKey(found.key);
-     }else if(found.status==="rejected"){
-       showWarning();
-     }
+     if(found.status==="approved") showKey(found.key);
+     else if(found.status==="rejected") showWarning();
    }
  });
  },3000);
@@ -249,7 +205,6 @@ function showKey(key){
 
 function showWarning(){
  localStorage.removeItem("pendingUTR");
-
  main.innerHTML=`<div class="card">⚠️ FAKE PAYMENT / REJECTED</div>`;
  setTimeout(showMain,3000);
 }
@@ -263,10 +218,9 @@ function tg(){
  window.open("https://t.me/GODx_COBRA");
 }
 
-// AUTO LOAD
 if(localStorage.getItem("pendingUTR")) waitScreen();
 
-// 🔥 FINAL REFRESH FIX
+// 🔥 REFRESH FIX
 let last = localStorage.getItem("lastRefresh") || 0;
 
 setInterval(()=>{
