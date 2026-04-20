@@ -5,131 +5,114 @@
 <title>COBRA ADMIN</title>
 
 <style>
+
+/* BODY */
 body{
 margin:0;
 font-family:Arial;
-background:linear-gradient(180deg,#1da1c9,#0e7fa3);
+background:#0f172a;
 color:#fff;
-overflow-x:hidden;
 }
 
-/* LOGIN */
+/* 🔥 LOGIN BLUE UI */
 .login{
-height:100vh;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
+ height:100vh;
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:center;
+ background:linear-gradient(180deg,#1da1c9,#0e7fa3);
 }
 
-.login input,.login button{
-width:80%;
-max-width:320px;
-padding:14px;
-margin:8px;
-border:none;
-border-radius:6px;
+.login input{
+ width:80%;
+ max-width:320px;
+ padding:14px;
+ margin:8px;
+ border:none;
+ border-radius:6px;
+ background:#eee;
+ color:#000;
 }
 
 .login button{
-background:#000;
-color:#fff;
+ width:80%;
+ max-width:320px;
+ padding:14px;
+ margin-top:15px;
+ border-radius:30px;
+ border:2px solid #fff;
+ background:transparent;
+ color:#fff;
+ font-size:16px;
 }
 
-/* TOP BAR */
+/* 🔥 TOP FIX */
 .top{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:12px 16px;
-background:rgba(0,0,0,0.25);
-position:fixed;
-top:0;
-left:0;
-width:100%;
-box-sizing:border-box;
-z-index:1000;
-backdrop-filter:blur(10px);
+ display:flex;
+ justify-content:flex-end; /* RIGHT SIDE */
+ align-items:center;
+ gap:10px;
+ padding:12px;
+ background:#020617;
+ position:fixed;
+ width:100%;
+ top:0;
 }
 
 /* TITLE */
 .title{
-font-weight:bold;
-font-size:16px;
-animation:glow 1.5s infinite alternate;
-}
-
-@keyframes glow{
-from{ text-shadow:0 0 5px #fff;}
-to{ text-shadow:0 0 15px #00f0ff,0 0 25px #00f0ff;}
+ font-weight:bold;
 }
 
 /* MENU */
 .menuIcon{
-font-size:22px;
-cursor:pointer;
-padding:6px 10px;
-border-radius:8px;
-background:rgba(255,255,255,0.1);
+ font-size:22px;
+ cursor:pointer;
 }
 
 /* SIDEBAR */
 .sidebar{
-position:fixed;
-left:-260px;
-top:0;
-width:240px;
-height:100%;
-background:#0f172a;
-transition:.3s;
-padding-top:60px;
-z-index:999;
+ position:fixed;
+ left:-250px;
+ width:250px;
+ height:100%;
+ background:#1e293b;
+ transition:.3s;
+ padding-top:60px;
 }
 .sidebar.active{left:0}
 
 .sidebar div{
-padding:12px;
-margin:8px;
-background:#1e293b;
-border-radius:8px;
+ padding:12px;
+ margin:8px;
+ background:#334155;
+ border-radius:8px;
 }
-
-/* OVERLAY */
-.overlay{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.5);
-display:none;
-z-index:998;
-}
-.overlay.active{display:block}
 
 /* CONTENT */
 .content{
-margin-top:65px;
-padding:12px;
+ margin-top:60px;
+ padding:10px;
 }
 
 .card{
-background:rgba(255,255,255,0.15);
-padding:15px;
-margin:10px 0;
-border-radius:12px;
-backdrop-filter:blur(10px);
+ background:#1e293b;
+ padding:15px;
+ margin:10px 0;
+ border-radius:10px;
 }
 
 button{
-padding:10px;
-border:none;
-border-radius:6px;
-margin:5px;
+ padding:10px;
+ border:none;
+ border-radius:6px;
+ margin:5px;
 }
 
 .green{background:#22c55e}
 .red{background:#ef4444}
+
 </style>
 </head>
 
@@ -138,7 +121,7 @@ margin:5px;
 <!-- LOGIN -->
 <div id="loginBox" class="login">
 <h2>ADMIN LOGIN</h2>
-<input id="u" placeholder="Username">
+<input id="u" placeholder="User name">
 <input id="p" type="password" placeholder="Password">
 <button onclick="login()">LOGIN</button>
 </div>
@@ -150,8 +133,6 @@ margin:5px;
   <div class="title">COBRA ADMIN</div>
   <div class="menuIcon" onclick="toggleMenu()">☰</div>
 </div>
-
-<div id="overlay" class="overlay" onclick="closeMenu()"></div>
 
 <div id="sidebar" class="sidebar">
 <div onclick="home()">HOME</div>
@@ -190,52 +171,105 @@ function logout(){
  location.reload();
 }
 
-// MENU
 function toggleMenu(){
  sidebar.classList.toggle("active");
- overlay.classList.toggle("active");
-}
-
-function closeMenu(){
- sidebar.classList.remove("active");
- overlay.classList.remove("active");
 }
 
 // HOME
 function home(){
  main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
- closeMenu();
 }
 
 // ================= PLANS =================
 function plansUI(){
  fetch("/plans").then(r=>r.json()).then(data=>{
-  let html="<div class='card'><h3>Plans</h3></div>";
+  let html=`
+  <div class="card">
+  <select id="type">
+    <option value="H">HOURS</option>
+    <option value="D">DAYS</option>
+  </select>
+  <input id="time" placeholder="Enter Time">
+  <input id="price" placeholder="Price">
+  <button onclick="savePlan()">UPDATE</button>
+  </div>`;
 
   data.forEach((x,i)=>{
     html+=`
     <div class="card">
     ${x.type}${x.time} - ₹${x.price}
+    <button onclick="edit(${i})">Edit</button>
+    <button class="red" onclick="del(${i})">Delete</button>
     </div>`;
   });
 
   main.innerHTML=html;
-  closeMenu();
+ });
+}
+
+function savePlan(){
+ fetch("/plans").then(r=>r.json()).then(data=>{
+  if(data.length>=8) return alert("Max 8");
+
+  data.push({
+    type:type.value,
+    time:time.value,
+    price:price.value
+  });
+
+  fetch("/savePlans",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(data)
+  }).then(plansUI);
+ });
+}
+
+function del(i){
+ fetch("/plans").then(r=>r.json()).then(data=>{
+  data.splice(i,1);
+
+  fetch("/savePlans",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(data)
+  }).then(plansUI);
  });
 }
 
 // ================= STOCK =================
 function stockUI(){
- fetch("/stock").then(r=>r.json()).then(data=>{
-  let html="<div class='card'><h3>Stock</h3></div>";
+ fetch("/plans").then(r=>r.json()).then(p=>{
+ fetch("/stock").then(r=>r.json()).then(s=>{
 
-  for(let p in data){
-    html+=`<div class="card">${p} → ${data[p].length} KEYS</div>`;
-  }
+ let html=`<div class="card">
+ <select id="planSel">
+ ${p.map(x=>`<option>${x.type}${x.time}</option>`)}
+ </select>
+ <input id="key" placeholder="ENTER KEY">
+ <button onclick="addStock()">UPDATE</button>
+ </div>`;
 
-  main.innerHTML=html;
-  closeMenu();
+ p.forEach(x=>{
+   let count = (s[x.type+x.time]||[]).length;
+   html+=`<div class="card">${x.type}${x.time} → ${count} KEYS</div>`;
  });
+
+ main.innerHTML=html;
+
+ });
+ });
+}
+
+function addStock(){
+ fetch("/addStock",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+    plan:planSel.value,
+    key:key.value
+  })
+ }).then(()=>alert("Stock Added"));
 }
 
 // ================= SETTINGS =================
@@ -244,10 +278,9 @@ function settingsUI(){
   main.innerHTML=`
   <div class="card">
   <input id="upi" value="${d.upi}">
-  <input id="qr" value="${d.qr}">
-  <button onclick="saveSettings()">SAVE</button>
+  <input id="qr" placeholder="QR Image Path">
+  <button onclick="saveSettings()">UPDATE</button>
   </div>`;
-  closeMenu();
  });
 }
 
@@ -259,40 +292,50 @@ function saveSettings(){
     upi:upi.value,
     qr:qr.value
   })
- }).then(()=>alert("Saved"));
+ }).then(()=>alert("Updated"));
 }
 
 // ================= REQUEST =================
 function reqUI(){
- fetch("/admin/data").then(r=>r.json()).then(data=>{
+ fetch("/requests").then(r=>r.json()).then(data=>{
   let html="";
 
   data.forEach(x=>{
-    if(x.status==="pending"){
-      html+=`
-      <div class="card">
-      ${x.plan}<br>
-      ${x.utr}<br>
-      <button class="green" onclick="verify(${x.id})">YES</button>
-      <button class="red" onclick="reject(${x.id})">NO</button>
-      </div>`;
-    }
+    html+=`
+    <div class="card">
+    ${x.plan} <br>
+    ${x.utr} <br>
+    ${x.time}
+    <br>
+    <button class="green" onclick="approve('${x.user}')">YES</button>
+    <button class="red" onclick="reject('${x.user}')">NO</button>
+    </div>`;
   });
 
-  main.innerHTML=html || "No Requests";
-  closeMenu();
+  main.innerHTML=html||"No Requests";
  });
 }
 
-function verify(id){
- fetch("/admin/verify/"+id).then(()=>reqUI());
+function approve(u){
+ fetch("/approve",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({user:u})
+ }).then(r=>r.json()).then(d=>{
+  alert("KEY: "+d.key);
+  reqUI();
+ });
 }
 
-function reject(id){
- fetch("/admin/reject/"+id).then(()=>reqUI());
+function reject(u){
+ fetch("/reject",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({user:u})
+ }).then(reqUI);
 }
 
-// ================= TOGGLE =================
+// ================= SYSTEM =================
 function toggleSystem(){
  fetch("/toggle",{method:"POST"})
  .then(r=>r.json())
