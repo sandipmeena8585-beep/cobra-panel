@@ -2,16 +2,41 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADMIN PANEL</title>
+<title>COBRA ADMIN</title>
 
 <style>
 body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
-.top{display:flex;justify-content:space-between;padding:12px;background:#020617}
-.sidebar{position:fixed;left:-250px;width:250px;height:100%;background:#1e293b;transition:.3s;padding-top:60px}
+
+/* LOGIN */
+.login{
+ display:flex;flex-direction:column;justify-content:center;align-items:center;
+ height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);
+}
+.login input,.login button{
+ width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;
+}
+.login button{background:#000;color:#fff}
+
+/* TOP */
+.top{
+ display:flex;justify-content:space-between;padding:12px;
+ background:#020617;position:fixed;width:100%;top:0;
+}
+
+/* SIDEBAR */
+.sidebar{
+ position:fixed;left:-250px;width:250px;height:100%;
+ background:#1e293b;transition:.3s;padding-top:60px;
+}
 .sidebar.active{left:0}
-.sidebar div{padding:12px;margin:8px;background:#334155;border-radius:8px}
+.sidebar div{
+ padding:12px;margin:8px;background:#334155;border-radius:8px;
+}
+
+/* CONTENT */
 .content{margin-top:60px;padding:10px}
 .card{background:#1e293b;padding:15px;margin:10px 0;border-radius:10px}
+
 button{padding:10px;border:none;border-radius:6px;margin:5px}
 .green{background:#22c55e}
 .red{background:#ef4444}
@@ -20,49 +45,88 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 
 <body>
 
+<!-- LOGIN -->
+<div id="loginBox" class="login">
+<h2>ADMIN LOGIN</h2>
+<input id="u" placeholder="Username">
+<input id="p" type="password" placeholder="Password">
+<button onclick="login()">LOGIN</button>
+</div>
+
+<!-- PANEL -->
+<div id="panel" style="display:none">
+
 <div class="top">
 <div onclick="toggleMenu()">☰</div>
 <div>COBRA ADMIN</div>
 </div>
 
 <div id="sidebar" class="sidebar">
-<div onclick="home()">Dashboard</div>
-<div onclick="plansUI()">Plans</div>
-<div onclick="stockUI()">Stock</div>
+<div onclick="home()">HOME</div>
+<div onclick="plansUI()">PLANS</div>
+<div onclick="stockUI()">STOCK</div>
 <div onclick="settingsUI()">UPI / QR</div>
-<div onclick="reqUI()">Requests</div>
+<div onclick="reqUI()">REQUEST</div>
 <div onclick="toggleSystem()">ON/OFF PANEL</div>
+<div onclick="logout()">LOGOUT</div>
 </div>
 
 <div class="content" id="main"></div>
 
+</div>
+
 <script>
+
+// LOGIN
+function login(){
+ if(u.value==="COBRA SERVER" && p.value==="SAMI9166"){
+  localStorage.setItem("admin","1");
+  start();
+ }else alert("Wrong");
+}
+
+function start(){
+ loginBox.style.display="none";
+ panel.style.display="block";
+ home();
+}
+
+if(localStorage.getItem("admin")=="1") start();
+
+function logout(){
+ localStorage.removeItem("admin");
+ location.reload();
+}
 
 function toggleMenu(){
  sidebar.classList.toggle("active");
 }
 
-// 🔥 DASHBOARD
+// ================= HOME =================
 function home(){
- main.innerHTML="<h2>Admin Dashboard Ready 🔥</h2>";
+ main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
 }
 
 // ================= PLANS =================
-
 function plansUI(){
  fetch("/plans").then(r=>r.json()).then(data=>{
   let html=`
   <div class="card">
-  <input id="h" placeholder="Hours">
-  <input id="p" placeholder="Price">
-  <button onclick="addPlan()">Add</button>
+  <select id="type">
+    <option value="H">HOURS</option>
+    <option value="D">DAYS</option>
+  </select>
+  <input id="time" placeholder="Enter Time">
+  <input id="price" placeholder="Price">
+  <button onclick="savePlan()">UPDATE</button>
   </div>`;
 
   data.forEach((x,i)=>{
     html+=`
     <div class="card">
-    ${x.hours}h - ₹${x.price}
-    <button class="red" onclick="delPlan(${i})">Delete</button>
+    ${x.type}${x.time} - ₹${x.price}
+    <button onclick="edit(${i})">Edit</button>
+    <button class="red" onclick="del(${i})">Delete</button>
     </div>`;
   });
 
@@ -70,41 +134,58 @@ function plansUI(){
  });
 }
 
-function addPlan(){
- fetch("/addPlan",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({hours:h.value,price:p.value})
- }).then(plansUI);
+let plans=[];
+function savePlan(){
+ fetch("/plans").then(r=>r.json()).then(data=>{
+  if(data.length>=8) return alert("Max 8");
+
+  data.push({
+    type:type.value,
+    time:time.value,
+    price:price.value
+  });
+
+  fetch("/savePlans",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(data)
+  }).then(plansUI);
+ });
 }
 
-function delPlan(i){
- fetch("/deletePlan",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({i})
- }).then(plansUI);
+function del(i){
+ fetch("/plans").then(r=>r.json()).then(data=>{
+  data.splice(i,1);
+
+  fetch("/savePlans",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(data)
+  }).then(plansUI);
+ });
 }
 
 // ================= STOCK =================
-
 function stockUI(){
- fetch("/stock").then(r=>r.json()).then(data=>{
-  let html=`
-  <div class="card">
-  <input id="k" placeholder="Enter Key">
-  <button onclick="addStock()">Add</button>
-  </div>`;
+ fetch("/plans").then(r=>r.json()).then(p=>{
+ fetch("/stock").then(r=>r.json()).then(s=>{
 
-  data.forEach((x,i)=>{
-    html+=`
-    <div class="card">
-    ${x}
-    <button class="red" onclick="delStock(${i})">Delete</button>
-    </div>`;
-  });
+ let html=`<div class="card">
+ <select id="planSel">
+ ${p.map(x=>`<option>${x.type}${x.time}</option>`)}
+ </select>
+ <input id="key" placeholder="ENTER KEY">
+ <button onclick="addStock()">UPDATE</button>
+ </div>`;
 
-  main.innerHTML=html;
+ p.forEach(x=>{
+   let count = (s[x.type+x.time]||[]).length;
+   html+=`<div class="card">${x.type}${x.time} → ${count} KEYS</div>`;
+ });
+
+ main.innerHTML=html;
+
+ });
  });
 }
 
@@ -112,27 +193,21 @@ function addStock(){
  fetch("/addStock",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({key:k.value})
- }).then(stockUI);
-}
-
-function delStock(i){
- fetch("/deleteStock",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({i})
- }).then(stockUI);
+  body:JSON.stringify({
+    plan:planSel.value,
+    key:key.value
+  })
+ }).then(()=>alert("Stock Added"));
 }
 
 // ================= SETTINGS =================
-
 function settingsUI(){
  fetch("/settings").then(r=>r.json()).then(d=>{
   main.innerHTML=`
   <div class="card">
   <input id="upi" value="${d.upi}">
-  <input id="qr" value="${d.qr}">
-  <button onclick="saveSettings()">Save</button>
+  <input id="qr" placeholder="QR Image Path">
+  <button onclick="saveSettings()">UPDATE</button>
   </div>`;
  });
 }
@@ -141,45 +216,59 @@ function saveSettings(){
  fetch("/settings",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({upi:upi.value,qr:qr.value})
- }).then(()=>alert("Saved"));
+  body:JSON.stringify({
+    upi:upi.value,
+    qr:qr.value
+  })
+ }).then(()=>alert("Updated"));
 }
 
 // ================= REQUEST =================
-
 function reqUI(){
  fetch("/requests").then(r=>r.json()).then(data=>{
   let html="";
+
   data.forEach(x=>{
     html+=`
     <div class="card">
-    ${x.user} - ${x.plan}
-    <button class="green" onclick="approve('${x.user}')">Approve</button>
-    <button class="red" onclick="reject('${x.user}')">Reject</button>
+    ${x.plan} <br>
+    ${x.utr} <br>
+    ${x.time}
+    <br>
+    <button class="green" onclick="approve('${x.user}')">YES</button>
+    <button class="red" onclick="reject('${x.user}')">NO</button>
     </div>`;
   });
+
   main.innerHTML=html||"No Requests";
  });
 }
 
 function approve(u){
- fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})}).then(reqUI);
+ fetch("/approve",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({user:u})
+ }).then(r=>r.json()).then(d=>{
+  alert("KEY: "+d.key);
+  reqUI();
+ });
 }
 
 function reject(u){
- fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})}).then(reqUI);
+ fetch("/reject",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({user:u})
+ }).then(reqUI);
 }
 
 // ================= SYSTEM =================
-
 function toggleSystem(){
  fetch("/toggle",{method:"POST"})
  .then(r=>r.json())
  .then(d=>alert(d.on?"ON":"OFF"));
 }
-
-// START
-home();
 
 </script>
 
