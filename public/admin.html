@@ -5,114 +5,74 @@
 <title>COBRA ADMIN</title>
 
 <style>
+body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
 
-/* BODY */
-body{
-margin:0;
-font-family:Arial;
-background:#0f172a;
-color:#fff;
-}
-
-/* 🔥 LOGIN BLUE UI */
+/* LOGIN */
 .login{
- height:100vh;
- display:flex;
- flex-direction:column;
- justify-content:center;
- align-items:center;
+ display:flex;flex-direction:column;justify-content:center;align-items:center;
+ height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);
+}
+.login input,.login button{
+ width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;
+}
+.login button{background:#000;color:#fff}
+
+/* 🔥 CHANGE 2: BLUE PANEL */
+#panel{
  background:linear-gradient(180deg,#1da1c9,#0e7fa3);
+ min-height:100vh;
 }
 
-.login input{
- width:80%;
- max-width:320px;
- padding:14px;
- margin:8px;
- border:none;
- border-radius:6px;
- background:#eee;
- color:#000;
-}
-
-.login button{
- width:80%;
- max-width:320px;
- padding:14px;
- margin-top:15px;
- border-radius:30px;
- border:2px solid #fff;
- background:transparent;
- color:#fff;
- font-size:16px;
-}
-
-/* 🔥 TOP FIX */
+/* TOP */
 .top{
  display:flex;
- justify-content:flex-end; /* RIGHT SIDE */
+ justify-content:space-between;
  align-items:center;
- gap:10px;
  padding:12px;
  background:#020617;
  position:fixed;
  width:100%;
  top:0;
+ z-index:1000;
 }
 
-/* TITLE */
+/* 🔥 CHANGE 3: GLOW TEXT */
 .title{
  font-weight:bold;
+ animation:glow 1.2s infinite alternate;
 }
 
-/* MENU */
+@keyframes glow{
+ from{ text-shadow:0 0 5px #fff;}
+ to{ text-shadow:0 0 15px #00f0ff,0 0 30px #00f0ff;}
+}
+
+/* 🔥 CHANGE 1: MENU FIX */
 .menuIcon{
- font-size:22px;
+ font-size:26px;
+ padding:8px 12px;
  cursor:pointer;
+ z-index:2000;
 }
 
 /* SIDEBAR */
 .sidebar{
- position:fixed;
- left:-250px;
- width:250px;
- height:100%;
- background:#1e293b;
- transition:.3s;
- padding-top:60px;
+ position:fixed;left:-250px;width:250px;height:100%;
+ background:#1e293b;transition:.3s;padding-top:60px;
+ z-index:1500;
 }
 .sidebar.active{left:0}
-
 .sidebar div{
- padding:12px;
- margin:8px;
- background:#334155;
- border-radius:8px;
+ padding:12px;margin:8px;background:#334155;border-radius:8px;
 }
 
 /* CONTENT */
-.content{
- margin-top:60px;
- padding:10px;
-}
+.content{margin-top:60px;padding:10px}
+.card{background:#1e293b;padding:15px;margin:10px 0;border-radius:10px}
 
-.card{
- background:#1e293b;
- padding:15px;
- margin:10px 0;
- border-radius:10px;
-}
-
-button{
- padding:10px;
- border:none;
- border-radius:6px;
- margin:5px;
-}
-
+button{padding:10px;border:none;border-radius:6px;margin:5px}
 .green{background:#22c55e}
 .red{background:#ef4444}
-
 </style>
 </head>
 
@@ -121,7 +81,7 @@ button{
 <!-- LOGIN -->
 <div id="loginBox" class="login">
 <h2>ADMIN LOGIN</h2>
-<input id="u" placeholder="User name">
+<input id="u" placeholder="Username">
 <input id="p" type="password" placeholder="Password">
 <button onclick="login()">LOGIN</button>
 </div>
@@ -130,8 +90,8 @@ button{
 <div id="panel" style="display:none">
 
 <div class="top">
-  <div class="title">COBRA ADMIN</div>
-  <div class="menuIcon" onclick="toggleMenu()">☰</div>
+<div class="menuIcon" onclick="toggleMenu()">☰</div>
+<div class="title">COBRA ADMIN</div>
 </div>
 
 <div id="sidebar" class="sidebar">
