@@ -2,7 +2,7 @@
 <html>
 <head>
 
-<!-- 🔥 MOBILE LOCK -->
+<!-- MOBILE LOCK -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 
 <title>COBRA ADMIN</title>
@@ -20,19 +20,20 @@ body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
 }
 .login button{background:#000;color:#fff}
 
-/* TOP */
+/* 🔥 TOP (ONLY CHANGE) */
 .top{
  display:flex;
- justify-content:space-between;
+ justify-content:flex-end; /* right align */
  align-items:center;
+ gap:10px;
  padding:12px;
- background:#020617;
+ background:linear-gradient(135deg,#1da1c9,#0e7fa3); /* BLUE UI */
  position:fixed;
  width:100%;
  top:0;
 }
 
-/* 🔥 TEXT STYLE CHANGE */
+/* TITLE */
 .title{
  font-weight:900;
  letter-spacing:1px;
@@ -72,8 +73,8 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <div id="panel" style="display:none">
 
 <div class="top">
-<div onclick="toggleMenu()">☰</div>
 <div class="title">𝗖𝗢𝗕𝗥𝗔 𝗔𝗗𝗠𝗜𝗡</div>
+<div onclick="toggleMenu()">☰</div>
 </div>
 
 <div id="sidebar" class="sidebar">
