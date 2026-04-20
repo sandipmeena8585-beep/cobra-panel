@@ -2,7 +2,6 @@
 <html>
 <head>
 
-<!-- 🔥 MOBILE ZOOM LOCK -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 
 <title>COBRA ADMIN</title>
@@ -16,7 +15,6 @@ font-family:Arial;
 -webkit-tap-highlight-color: transparent;
 }
 
-/* LOGIN */
 .login{
  display:flex;flex-direction:column;justify-content:center;align-items:center;
  height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);
@@ -26,7 +24,6 @@ font-family:Arial;
 }
 .login button{background:#000;color:#fff}
 
-/* TOP */
 .top{
  display:flex;align-items:center;gap:10px;padding:12px;
  background:#020617;position:fixed;width:100%;top:0;
@@ -34,13 +31,11 @@ font-family:Arial;
 
 .title{font-weight:bold;}
 
-/* MENU */
 .menuIcon{
  font-size:22px;
  cursor:pointer;
 }
 
-/* SIDEBAR */
 .sidebar{
  position:fixed;left:-250px;width:250px;height:100%;
  background:#1e293b;transition:.3s;padding-top:60px;
@@ -50,7 +45,6 @@ font-family:Arial;
  padding:12px;margin:8px;background:#334155;border-radius:8px;
 }
 
-/* OVERLAY */
 .overlay{
  position:fixed;
  top:0;left:0;width:100%;height:100%;
@@ -59,7 +53,6 @@ font-family:Arial;
 }
 .overlay.active{display:block}
 
-/* CONTENT */
 .content{margin-top:60px;padding:10px}
 .card{background:#1e293b;padding:15px;margin:10px 0;border-radius:10px}
 
@@ -70,12 +63,12 @@ font-family:Arial;
 button{padding:10px;border:none;border-radius:6px;margin:5px}
 .green{background:#22c55e}
 .red{background:#ef4444}
+.blue{background:#2563eb}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
 <div id="loginBox" class="login">
 <h2>ADMIN LOGIN</h2>
 <input id="u" placeholder="Username">
@@ -83,7 +76,6 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <button onclick="login()">LOGIN</button>
 </div>
 
-<!-- PANEL -->
 <div id="panel" style="display:none">
 
 <div class="top">
@@ -100,7 +92,7 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <div onclick="settingsUI()">UPI / QR</div>
 <div onclick="reqUI()">REQUEST</div>
 
-<!-- 🔥 CHANGE -->
+<!-- SAME + 1 CHANGE PAGE -->
 <div onclick="panelControlUI()">PANEL CONTROL</div>
 
 <div onclick="logout()">LOGOUT</div>
@@ -157,13 +149,25 @@ function panelControlUI(){
   main.innerHTML=`
   <div class="card">
     <h3>Panel Control</h3>
-    <button id="toggleBtn" onclick="toggleSystem()">
+
+    <button onclick="toggleSystem()">
       ${d.on ? "TURN OFF PANEL" : "TURN ON PANEL"}
     </button>
+
+    <!-- 🔥 NEW CHANGE -->
+    <button class="blue" onclick="refreshPanel()">REFRESH PANEL</button>
+
   </div>`;
 
   closeMenu();
  });
+}
+
+// 🔥 NEW FUNCTION
+function refreshPanel(){
+ fetch("/status")
+ .then(r=>r.json())
+ .then(()=>alert("Customer Panel Refreshed"));
 }
 
 // ================= PLANS =================
@@ -317,9 +321,7 @@ function reject(u){
 function toggleSystem(){
  fetch("/toggle",{method:"POST"})
  .then(r=>r.json())
- .then(d=>{
-   panelControlUI(); // 🔥 refresh button state
- });
+ .then(()=>panelControlUI());
 }
 
 </script>
