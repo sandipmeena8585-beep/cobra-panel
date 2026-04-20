@@ -1,237 +1,257 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>COBRA SERVER PANEL</title>
-
-<style>
-body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center}
-
-.top{
- padding:15px;
- font-size:20px;
- font-weight:bold;
- color:#22c55e;
- animation:glow 1.5s infinite alternate;
-}
-@keyframes glow{
- from{opacity:0.5}
- to{opacity:1}
-}
-
-.card{
- background:#1e293b;
- margin:10px;
- padding:15px;
- border-radius:10px;
-}
-
-button{
- padding:12px;
- border:none;
- border-radius:6px;
- background:#22c55e;
- color:white;
- margin-top:10px;
-}
-
-input{
- padding:10px;
- width:80%;
- margin:10px;
- border-radius:6px;
- border:none;
-}
-
-.mono{font-family:monospace}
-</style>
-</head>
-
-<body>
-
-<div class="top">COBRA SERVER PANEL</div>
-
-<div id="main"></div>
-
-<script>
-
-// ================= CHECK SYSTEM =================
-fetch("/status")
-.then(r=>r.json())
-.then(d=>{
- if(!d.on){
-   document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN PANEL UPDATE</h2>";
- }else{
-   loadPlans();
- }
-});
-
-// ================= LOAD PLANS =================
-function loadPlans(){
- fetch("/plans")
- .then(r=>r.json())
- .then(data=>{
-
-  let html="<div class='card'>BGMI</div>";
-
-  data.forEach(p=>{
-    let name = p.type==="H" ? p.time+" HOUR" : p.time+" DAY";
-
-    html+=`
-    <div class="card">
-      ${name} - ₹${p.price}
-      <br>
-      <button onclick="buy('${p.type}${p.time}','${p.price}')">BUY KEY</button>
-    </div>
-    `;
-  });
-
-  main.innerHTML=html;
- });
-}
-
-// ================= BUY =================
-function buy(plan,price){
-
- fetch("/settings")
- .then(r=>r.json())
- .then(s=>{
-
-  main.innerHTML=`
-  <div class="card">
-    <h3>PAYMENT</h3>
-    <p>Pay ₹${price}</p>
-
-    <div class="mono" onclick="copy('${s.upi}')">
-    ${s.upi}
-    </div>
-
-    <br>
-    <img src="${s.qr}" width="200">
-
-    <br>
-    <input id="utr" placeholder="ENTER UTR (8 digit)">
-    <button onclick="verify('${plan}')">VERIFY</button>
-  </div>
-  `;
- });
-}
-
-// ================= COPY =================
-function copy(t){
- navigator.clipboard.writeText(t);
- alert("UPI COPIED");
-}
-
-// ================= VERIFY =================
-function verify(plan){
-
- let u = prompt("Enter Name");
- let utrVal = utr.value;
-
- if(!utrVal || utrVal.length<6){
-   return alert("Invalid UTR");
- }
-
- fetch("/buy",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-    user:u,
-    plan:plan,
-    utr:utrVal
-  })
- }).then(()=>{
-
-  localStorage.setItem("pending",plan);
-  waitScreen();
- });
-}
-
-// ================= WAIT =================
-function waitScreen(){
-
- main.innerHTML=`
- <div class="card">
- <h3>PLEASE WAIT VERIFY ADMIN</h3>
- <p>Processing...</p>
- </div>
- `;
-
- checkStatus();
-}
-
-// ================= CHECK APPROVAL =================
-function checkStatus(){
- setInterval(()=>{
- fetch("/history")
- .then(r=>r.json())
- .then(h=>{
-
-   let p = localStorage.getItem("pending");
-
-   let found = h.find(x=>x.plan===p);
-
-   if(found){
-
-     if(found.status==="APPROVED"){
-       showKey(found.key,p);
-     }else{
-       showWarning();
-     }
-
-   }
-
- });
- },3000);
-}
-
-// ================= KEY SHOW =================
-function showKey(key,plan){
-
- localStorage.removeItem("pending");
-
- let expire = new Date();
- expire.setHours(expire.getHours()+12);
-
- main.innerHTML=`
- <div class="card">
- <h3>KEY</h3>
- <div class="mono" onclick="copy('${key}')">${key}</div>
-
- <p>EXPIRE: ${expire.toLocaleString()}</p>
-
- <button onclick="tg()">TELEGRAM</button>
-
- <p>KILL LIMIT: 10-12 PLAY SAFE</p>
- </div>
- `;
-}
-
-// ================= WARNING =================
-function showWarning(){
- localStorage.removeItem("pending");
-
- main.innerHTML=`
- <div class="card">
- ⚠️ PAYMENT FAILED / REJECTED
- </div>
- `;
-
- setTimeout(loadPlans,3000);
-}
-
-// ================= TELEGRAM =================
-function tg(){
- window.open("https://t.me/GODx_COBRA");
-}
-
-// ================= LOAD PENDING =================
-if(localStorage.getItem("pending")){
- waitScreen();
-}
-
-</script>
-
-</body>
+<!DOCTYPE html>  
+<html>  
+<head>  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>COBRA SERVER PANEL</title>  
+  
+<style>  
+body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center}  
+  
+.top{  
+ padding:15px;  
+ font-size:20px;  
+ font-weight:bold;  
+ color:#22c55e;  
+ animation:glow 1.5s infinite alternate;  
+}  
+@keyframes glow{  
+ from{opacity:0.5}  
+ to{opacity:1}  
+}  
+  
+.card{  
+ background:#1e293b;  
+ margin:10px;  
+ padding:15px;  
+ border-radius:10px;  
+}  
+  
+button{  
+ padding:12px;  
+ border:none;  
+ border-radius:6px;  
+ background:#22c55e;  
+ color:white;  
+ margin-top:10px;  
+}  
+  
+input{  
+ padding:10px;  
+ width:80%;  
+ margin:10px;  
+ border-radius:6px;  
+ border:none;  
+}  
+  
+.mono{font-family:monospace}  
+</style>  
+</head>  
+  
+<body>  
+  
+<div class="top">COBRA SERVER PANEL</div>  
+  
+<div id="main"></div>  
+  
+<script>  
+  
+// ================= CHECK SYSTEM =================  
+fetch("/status")  
+.then(r=>r.json())  
+.then(d=>{  
+ if(!d.on){  
+   document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN PANEL UPDATE</h2>";  
+ }else{  
+   showGame();  
+ }  
+});  
+  
+// 🔥 STEP 1 GAME SELECT  
+function showGame(){  
+ main.innerHTML=`  
+ <div class="card">  
+   <h3>Select Game</h3>  
+   <button onclick="loadPlans()">BGMI</button>  
+ </div>`;  
+}  
+  
+// 🔥 STEP 2 SHOW ALL PLANS  
+function loadPlans(){  
+ fetch("/plans")  
+ .then(r=>r.json())  
+ .then(data=>{  
+  
+  let html="<div class='card'><h3>SELECT PLAN</h3></div>";  
+  
+  data.forEach(p=>{  
+    let name = p.type==="H" ? p.time+" HOUR" : p.time+" DAY";  
+  
+    html+=`  
+    <div class="card">  
+      ${name} - ₹${p.price}  
+      <br>  
+      <button onclick="selectPlan('${p.type}${p.time}','${p.price}')">SELECT</button>  
+    </div>  
+    `;  
+  });  
+  
+  main.innerHTML=html;  
+ });  
+}  
+  
+// 🔥 STEP 3 BUY BUTTON SHOW  
+function selectPlan(plan,price){  
+ main.innerHTML=`  
+ <div class="card">  
+   <h3>Selected Plan</h3>  
+   <p>${plan} - ₹${price}</p>  
+   <button onclick="buy('${plan}','${price}')">BUY KEY</button>  
+ </div>  
+ `;  
+}  
+  
+// ================= BUY =================  
+function buy(plan,price){  
+  
+ fetch("/settings")  
+ .then(r=>r.json())  
+ .then(s=>{  
+  
+  main.innerHTML=`  
+  <div class="card">  
+    <h3>PAYMENT</h3>  
+    <p>Pay ₹${price}</p>  
+  
+    <div class="mono" onclick="copy('${s.upi}')">  
+    ${s.upi}  
+    </div>  
+  
+    <br>  
+    <img src="${s.qr}" width="200">  
+  
+    <br>  
+    <input id="utr" placeholder="ENTER UTR (8 digit)">  
+    <button onclick="verify('${plan}')">VERIFY</button>  
+  </div>  
+  `;  
+ });  
+}  
+  
+// ================= COPY =================  
+function copy(t){  
+ navigator.clipboard.writeText(t);  
+ alert("UPI COPIED");  
+}  
+  
+// ================= VERIFY =================  
+function verify(plan){  
+  
+ let u = prompt("Enter Name");  
+ let utrVal = utr.value;  
+  
+ if(!utrVal || utrVal.length<6){  
+   return alert("Invalid UTR");  
+ }  
+  
+ fetch("/buy",{  
+  method:"POST",  
+  headers:{"Content-Type":"application/json"},  
+  body:JSON.stringify({  
+    user:u,  
+    plan:plan,  
+    utr:utrVal  
+  })  
+ }).then(()=>{  
+  
+  localStorage.setItem("pending",plan);  
+  waitScreen();  
+ });  
+}  
+  
+// ================= WAIT =================  
+function waitScreen(){  
+  
+ main.innerHTML=`  
+ <div class="card">  
+ <h3>PLEASE WAIT VERIFY ADMIN</h3>  
+ <p>Processing...</p>  
+ </div>  
+ `;  
+  
+ checkStatus();  
+}  
+  
+// ================= CHECK APPROVAL =================  
+function checkStatus(){  
+ setInterval(()=>{  
+ fetch("/history")  
+ .then(r=>r.json())  
+ .then(h=>{  
+  
+   let p = localStorage.getItem("pending");  
+  
+   let found = h.find(x=>x.plan===p);  
+  
+   if(found){  
+  
+     if(found.status==="APPROVED"){  
+       showKey(found.key,p);  
+     }else{  
+       showWarning();  
+     }  
+  
+   }  
+  
+ });  
+ },3000);  
+}  
+  
+// ================= KEY SHOW =================  
+function showKey(key,plan){  
+  
+ localStorage.removeItem("pending");  
+  
+ let expire = new Date();  
+ expire.setHours(expire.getHours()+12);  
+  
+ main.innerHTML=`  
+ <div class="card">  
+ <h3>KEY</h3>  
+ <div class="mono" onclick="copy('${key}')">${key}</div>  
+  
+ <p>EXPIRE: ${expire.toLocaleString()}</p>  
+  
+ <button onclick="tg()">TELEGRAM</button>  
+  
+ <p>KILL LIMIT: 10-12 PLAY SAFE</p>  
+ </div>  
+ `;  
+}  
+  
+// ================= WARNING =================  
+function showWarning(){  
+ localStorage.removeItem("pending");  
+  
+ main.innerHTML=`  
+ <div class="card">  
+ ⚠️ PAYMENT FAILED / REJECTED  
+ </div>  
+ `;  
+  
+ setTimeout(showGame,3000);  
+}  
+  
+// ================= TELEGRAM =================  
+function tg(){  
+ window.open("https://t.me/GODx_COBRA");  
+}  
+  
+// ================= LOAD PENDING =================  
+if(localStorage.getItem("pending")){  
+ waitScreen();  
+}  
+  
+</script>  
+  
+</body>  
 </html>
