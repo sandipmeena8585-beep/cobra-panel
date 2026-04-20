@@ -274,7 +274,24 @@ function tg(){
 if(localStorage.getItem("pendingUTR")){
  waitScreen();
 }
+// ================= 🔥 AUTO REFRESH FIX =================
+let last = localStorage.getItem("lastRefresh") || 0;
 
+setInterval(()=>{
+ fetch("/status")
+ .then(r=>r.json())
+ .then(d=>{
+   if(d.refresh != last){
+
+     localStorage.setItem("lastRefresh", d.refresh);
+
+     // reset pending state
+     localStorage.removeItem("pendingUTR");
+
+     location.reload();
+   }
+ });
+},3000);
 // ================= 🔥 AUTO REFRESH (ADDED) =================
 let last = 0;
 
