@@ -1,10 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-<!-- MOBILE LOCK -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COBRA ADMIN</title>
 
 <style>
@@ -22,54 +19,37 @@ body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
 
 /* TOP */
 .top{
- display:flex;
- align-items:center;
- gap:10px;
- padding:12px;
- background:#020617;
- position:fixed;
- width:100%;
- top:0;
+ display:flex;align-items:center;gap:10px;padding:12px;
+ background:#020617;position:fixed;width:100%;top:0;
 }
 
-/* TITLE */
-.title{
- font-weight:900;
-}
-
-/* MENU ICON */
-.menuIcon{
- font-size:22px;
- cursor:pointer;
-}
+.title{font-weight:bold}
+.menuIcon{font-size:22px;cursor:pointer}
 
 /* SIDEBAR */
 .sidebar{
  position:fixed;left:-250px;width:250px;height:100%;
  background:#1e293b;transition:.3s;padding-top:60px;
- z-index:999;
 }
 .sidebar.active{left:0}
 .sidebar div{
  padding:12px;margin:8px;background:#334155;border-radius:8px;
 }
 
-/* 🔥 OVERLAY (NEW) */
+/* OVERLAY */
 .overlay{
- position:fixed;
- top:0;
- left:0;
- width:100%;
- height:100%;
- background:rgba(0,0,0,0.5);
- display:none;
- z-index:998;
+ position:fixed;top:0;left:0;width:100%;height:100%;
+ background:rgba(0,0,0,0.5);display:none;
 }
 .overlay.active{display:block}
 
 /* CONTENT */
 .content{margin-top:60px;padding:10px}
 .card{background:#1e293b;padding:15px;margin:10px 0;border-radius:10px}
+
+.msg{padding:10px;border-radius:6px;margin-top:10px}
+.success{background:#2563eb}
+.fail{background:#dc2626}
 
 button{padding:10px;border:none;border-radius:6px;margin:5px}
 .green{background:#22c55e}
@@ -95,7 +75,6 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <div class="title">COBRA ADMIN</div>
 </div>
 
-<!-- 🔥 OVERLAY -->
 <div id="overlay" class="overlay" onclick="closeMenu()"></div>
 
 <div id="sidebar" class="sidebar">
@@ -135,79 +114,71 @@ function logout(){
  location.reload();
 }
 
-// 🔥 MENU FIX
+// MENU
 function toggleMenu(){
  sidebar.classList.toggle("active");
  overlay.classList.toggle("active");
 }
-
 function closeMenu(){
  sidebar.classList.remove("active");
  overlay.classList.remove("active");
 }
 
-// ================= HOME =================
+// HOME
 function home(){
  main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
  closeMenu();
 }
 
-// ================= PLANS =================
+// 🔥 UPDATED PLANS
 function plansUI(){
  fetch("/plans").then(r=>r.json()).then(data=>{
+
+  let options="";
+  data.forEach((x,i)=>{
+    options+=`<option value="${i}">${x.type}${x.time} - ₹${x.price}</option>`;
+  });
+
   let html=`
   <div class="card">
-  <select id="type">
-    <option value="H">HOURS</option>
-    <option value="D">DAYS</option>
-  </select>
-  <input id="time" placeholder="Enter Time">
-  <input id="price" placeholder="Price">
-  <button onclick="savePlan()">UPDATE</button>
+  <select id="planSelect">${options}</select>
+  <input id="newTime" placeholder="Time">
+  <input id="newPrice" placeholder="Price">
+  <button onclick="updatePlan()">UPDATE</button>
+  <div id="msg"></div>
   </div>`;
-
-  data.forEach((x,i)=>{
-    html+=`
-    <div class="card">
-    ${x.type}${x.time} - ₹${x.price}
-    <button onclick="edit(${i})">Edit</button>
-    <button class="red" onclick="del(${i})">Delete</button>
-    </div>`;
-  });
 
   main.innerHTML=html;
   closeMenu();
  });
 }
 
-function savePlan(){
+function updatePlan(){
  fetch("/plans").then(r=>r.json()).then(data=>{
-  if(data.length>=8) return alert("Max 8");
+  let i = planSelect.value;
 
-  data.push({
-    type:type.value,
-    time:time.value,
-    price:price.value
-  });
+  if(!data[i]) return;
+
+  data[i].time = newTime.value || data[i].time;
+  data[i].price = newPrice.value || data[i].price;
 
   fetch("/savePlans",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify(data)
-  }).then(plansUI);
+  })
+  .then(r=>r.ok ? showSuccess() : showFail())
+  .catch(()=>showFail());
+
  });
 }
 
-function del(i){
- fetch("/plans").then(r=>r.json()).then(data=>{
-  data.splice(i,1);
+function showSuccess(){
+ msg.innerHTML="<div class='msg success'>SUCCESS UPDATED</div>";
+}
 
-  fetch("/savePlans",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(data)
-  }).then(plansUI);
- });
+function showFail(){
+ msg.innerHTML="<div class='msg fail'>FAILED UPDATE</div>";
 }
 
 // ================= STOCK =================
