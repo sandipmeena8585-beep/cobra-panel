@@ -1,11 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- 🔥 MOBILE ZOOM LOCK -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+
 <title>COBRA ADMIN</title>
 
 <style>
-body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
+body{
+margin:0;
+background:#0f172a;
+color:#fff;
+font-family:Arial;
+-webkit-tap-highlight-color: transparent; /* smooth mobile */
+}
 
 /* LOGIN */
 .login{
@@ -23,8 +32,15 @@ body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
  background:#020617;position:fixed;width:100%;top:0;
 }
 
-.title{font-weight:bold}
-.menuIcon{font-size:22px;cursor:pointer}
+.title{
+ font-weight:bold;
+}
+
+/* MENU */
+.menuIcon{
+ font-size:22px;
+ cursor:pointer;
+}
 
 /* SIDEBAR */
 .sidebar{
@@ -38,8 +54,10 @@ body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
 
 /* OVERLAY */
 .overlay{
- position:fixed;top:0;left:0;width:100%;height:100%;
- background:rgba(0,0,0,0.5);display:none;
+ position:fixed;
+ top:0;left:0;width:100%;height:100%;
+ background:rgba(0,0,0,0.5);
+ display:none;
 }
 .overlay.active{display:block}
 
@@ -72,7 +90,7 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 
 <div class="top">
 <div class="menuIcon" onclick="toggleMenu()">☰</div>
-<div class="title">COBRA ADMIN</div>
+<div class="title">𝗖𝗢𝗕𝗥𝗔 𝗔𝗗𝗠𝗜𝗡</div>
 </div>
 
 <div id="overlay" class="overlay" onclick="closeMenu()"></div>
@@ -119,6 +137,7 @@ function toggleMenu(){
  sidebar.classList.toggle("active");
  overlay.classList.toggle("active");
 }
+
 function closeMenu(){
  sidebar.classList.remove("active");
  overlay.classList.remove("active");
@@ -130,10 +149,9 @@ function home(){
  closeMenu();
 }
 
-// 🔥 UPDATED PLANS
+// ================= PLANS =================
 function plansUI(){
  fetch("/plans").then(r=>r.json()).then(data=>{
-
   let options="";
   data.forEach((x,i)=>{
     options+=`<option value="${i}">${x.type}${x.time} - ₹${x.price}</option>`;
@@ -169,7 +187,6 @@ function updatePlan(){
   })
   .then(r=>r.ok ? showSuccess() : showFail())
   .catch(()=>showFail());
-
  });
 }
 
