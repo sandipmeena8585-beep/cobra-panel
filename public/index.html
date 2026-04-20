@@ -5,51 +5,73 @@
 <title>COBRA SERVER PANEL</title>  
   
 <style>  
-body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center}  
-  
-.top{  
- padding:15px;  
- font-size:20px;  
- font-weight:bold;  
- color:#22c55e;  
- animation:glow 1.5s infinite alternate;  
-}  
-@keyframes glow{  
- from{opacity:0.5}  
- to{opacity:1}  
-}  
-  
-.card{  
- background:#1e293b;  
- margin:10px;  
- padding:15px;  
- border-radius:10px;  
-}  
-  
-button{  
- padding:12px;  
- border:none;  
- border-radius:6px;  
- background:#22c55e;  
- color:white;  
- margin-top:10px;  
-}  
-  
-input{  
- padding:10px;  
- width:80%;  
- margin:10px;  
- border-radius:6px;  
- border:none;  
-}  
-  
-.mono{font-family:monospace}  
+body{
+margin:0;
+font-family:Arial;
+background:linear-gradient(180deg,#0ea5e9,#022c43);
+color:#fff;
+text-align:center;
+}
+
+/* HEADER */
+.top{
+padding:15px;
+font-size:20px;
+font-weight:bold;
+background:rgba(255,255,255,0.1);
+backdrop-filter:blur(10px);
+}
+
+/* GLASS CARD */
+.card{
+background:rgba(255,255,255,0.15);
+margin:15px;
+padding:20px;
+border-radius:20px;
+backdrop-filter:blur(15px);
+box-shadow:0 0 25px rgba(0,0,0,0.3);
+}
+
+/* SELECT BOX */
+select{
+width:90%;
+padding:12px;
+margin:10px;
+border-radius:12px;
+border:none;
+font-size:16px;
+}
+
+/* BUTTON */
+button{
+width:90%;
+padding:14px;
+border:none;
+border-radius:12px;
+background:linear-gradient(90deg,#4f46e5,#7c3aed);
+color:white;
+font-size:16px;
+margin-top:10px;
+}
+
+/* INPUT */
+input{
+width:90%;
+padding:12px;
+margin:10px;
+border-radius:12px;
+border:none;
+}
+
+/* SMALL */
+.mono{font-family:monospace}
+
 </style>  
 </head>  
   
 <body>  
   
-<div class="top">COBRA SERVER PANEL</div>  
+<div class="top">🔑 MULTI SERVER PANEL</div>  
   
 <div id="main"></div>  
   
@@ -70,44 +92,44 @@ fetch("/status")
 function showGame(){  
  main.innerHTML=`  
  <div class="card">  
-   <h3>Select Game</h3>  
-   <button onclick="loadPlans()">BGMI</button>  
+   <h2>Purchase Your Key</h2>  
+   <select onchange="loadPlans()">  
+     <option>Select Game</option>  
+     <option value="bgmi">BGMI</option>  
+   </select>  
  </div>`;  
 }  
   
-// 🔥 STEP 2 SHOW ALL PLANS  
+// 🔥 STEP 2 SHOW PLANS  
 function loadPlans(){  
  fetch("/plans")  
  .then(r=>r.json())  
  .then(data=>{  
   
-  let html="<div class='card'><h3>SELECT PLAN</h3></div>";  
+  let options="";  
   
   data.forEach(p=>{  
-    let name = p.type==="H" ? p.time+" HOUR" : p.time+" DAY";  
-  
-    html+=`  
-    <div class="card">  
-      ${name} - ₹${p.price}  
-      <br>  
-      <button onclick="selectPlan('${p.type}${p.time}','${p.price}')">SELECT</button>  
-    </div>  
-    `;  
+    let name = p.type==="H" ? p.time+" Hour - ₹"+p.price : p.time+" Day - ₹"+p.price;  
+    options+=`<option value="${p.type}${p.time}|${p.price}">${name}</option>`;  
   });  
   
-  main.innerHTML=html;  
+  main.innerHTML=`  
+  <div class="card">  
+    <h2>Purchase Your Key</h2>  
+  
+    <select id="planSel">  
+      ${options}  
+    </select>  
+  
+    <button onclick="goBuy()">🔑 Purchase Key</button>  
+  </div>`;  
  });  
 }  
   
-// 🔥 STEP 3 BUY BUTTON SHOW  
-function selectPlan(plan,price){  
- main.innerHTML=`  
- <div class="card">  
-   <h3>Selected Plan</h3>  
-   <p>${plan} - ₹${price}</p>  
-   <button onclick="buy('${plan}','${price}')">BUY KEY</button>  
- </div>  
- `;  
+// 🔥 STEP 3 GO BUY  
+function goBuy(){  
+ let val = planSel.value.split("|");  
+ buy(val[0],val[1]);  
 }  
   
 // ================= BUY =================  
@@ -129,8 +151,7 @@ function buy(plan,price){
     <br>  
     <img src="${s.qr}" width="200">  
   
-    <br>  
-    <input id="utr" placeholder="ENTER UTR (8 digit)">  
+    <input id="utr" placeholder="ENTER UTR">  
     <button onclick="verify('${plan}')">VERIFY</button>  
   </div>  
   `;  
@@ -175,13 +196,12 @@ function waitScreen(){
  <div class="card">  
  <h3>PLEASE WAIT VERIFY ADMIN</h3>  
  <p>Processing...</p>  
- </div>  
- `;  
+ </div>`;  
   
  checkStatus();  
 }  
   
-// ================= CHECK APPROVAL =================  
+// ================= CHECK =================  
 function checkStatus(){  
  setInterval(()=>{  
  fetch("/history")  
@@ -189,7 +209,6 @@ function checkStatus(){
  .then(h=>{  
   
    let p = localStorage.getItem("pending");  
-  
    let found = h.find(x=>x.plan===p);  
   
    if(found){  
@@ -206,7 +225,7 @@ function checkStatus(){
  },3000);  
 }  
   
-// ================= KEY SHOW =================  
+// ================= KEY =================  
 function showKey(key,plan){  
   
  localStorage.removeItem("pending");  
@@ -218,14 +237,9 @@ function showKey(key,plan){
  <div class="card">  
  <h3>KEY</h3>  
  <div class="mono" onclick="copy('${key}')">${key}</div>  
-  
  <p>EXPIRE: ${expire.toLocaleString()}</p>  
-  
  <button onclick="tg()">TELEGRAM</button>  
-  
- <p>KILL LIMIT: 10-12 PLAY SAFE</p>  
- </div>  
- `;  
+ </div>`;  
 }  
   
 // ================= WARNING =================  
@@ -235,18 +249,16 @@ function showWarning(){
  main.innerHTML=`  
  <div class="card">  
  ⚠️ PAYMENT FAILED / REJECTED  
- </div>  
- `;  
+ </div>`;  
   
  setTimeout(showGame,3000);  
 }  
   
-// ================= TELEGRAM =================  
+// ================= TG =================  
 function tg(){  
  window.open("https://t.me/GODx_COBRA");  
 }  
   
-// ================= LOAD PENDING =================  
 if(localStorage.getItem("pending")){  
  waitScreen();  
 }  
