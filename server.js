@@ -20,7 +20,8 @@ if (!fs.existsSync(DB_FILE)) {
     plans: [],
     stock: {},
     requests: [],
-    history: []
+    history: [],
+    refresh: 0   // 🔥 ADDED
   }, null, 2));
 }
 
@@ -69,8 +70,20 @@ app.post("/toggle", (req, res) => {
 // STATUS
 app.get("/status", (req, res) => {
   const db = loadDB();
-  res.json({ on: db.systemOn });
+  res.json({ on: db.systemOn, refresh: db.refresh }); // 🔥 UPDATED
 });
+
+// 🔥 ====== ONLY NEW CHANGE (SYNC SYSTEM) ======
+app.post("/refresh", (req,res)=>{
+  let db = loadDB();
+
+  db.refresh = Date.now(); // trigger signal
+
+  saveDB(db);
+
+  res.json({ ok:true });
+});
+// ============================================
 
 // ================= SETTINGS =================
 
@@ -201,7 +214,6 @@ app.post("/approve", (req, res) => {
 
   const key = db.stock[plan].shift();
 
-  // ✅ CHANGE 1 (UTR + lowercase status)
   db.history.unshift({
     user: user,
     plan: plan,
@@ -230,7 +242,6 @@ app.post("/reject", (req, res) => {
 
   const request = db.requests.find(r => r.user === user);
 
-  // ✅ CHANGE 2 (UTR + lowercase status)
   db.history.unshift({
     user: user,
     utr: request?.utr,
@@ -250,8 +261,6 @@ app.post("/reject", (req, res) => {
 });
 
 // ================= HISTORY =================
-
-// GET HISTORY
 app.get("/history", (req, res) => {
   const db = loadDB();
   res.json(db.history);
