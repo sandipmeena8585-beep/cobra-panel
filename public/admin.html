@@ -13,7 +13,7 @@ margin:0;
 background:#0f172a;
 color:#fff;
 font-family:Arial;
--webkit-tap-highlight-color: transparent; /* smooth mobile */
+-webkit-tap-highlight-color: transparent;
 }
 
 /* LOGIN */
@@ -32,9 +32,7 @@ font-family:Arial;
  background:#020617;position:fixed;width:100%;top:0;
 }
 
-.title{
- font-weight:bold;
-}
+.title{font-weight:bold;}
 
 /* MENU */
 .menuIcon{
@@ -101,7 +99,10 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <div onclick="stockUI()">STOCK</div>
 <div onclick="settingsUI()">UPI / QR</div>
 <div onclick="reqUI()">REQUEST</div>
-<div onclick="toggleSystem()">ON/OFF PANEL</div>
+
+<!-- 🔥 CHANGE -->
+<div onclick="panelControlUI()">PANEL CONTROL</div>
+
 <div onclick="logout()">LOGOUT</div>
 </div>
 
@@ -147,6 +148,22 @@ function closeMenu(){
 function home(){
  main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
  closeMenu();
+}
+
+// ================= 🔥 PANEL CONTROL =================
+function panelControlUI(){
+ fetch("/status").then(r=>r.json()).then(d=>{
+
+  main.innerHTML=`
+  <div class="card">
+    <h3>Panel Control</h3>
+    <button id="toggleBtn" onclick="toggleSystem()">
+      ${d.on ? "TURN OFF PANEL" : "TURN ON PANEL"}
+    </button>
+  </div>`;
+
+  closeMenu();
+ });
 }
 
 // ================= PLANS =================
@@ -300,7 +317,9 @@ function reject(u){
 function toggleSystem(){
  fetch("/toggle",{method:"POST"})
  .then(r=>r.json())
- .then(d=>alert(d.on?"ON":"OFF"));
+ .then(d=>{
+   panelControlUI(); // 🔥 refresh button state
+ });
 }
 
 </script>
