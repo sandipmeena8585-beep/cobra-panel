@@ -7,16 +7,16 @@ app.use(express.json({limit:"10mb"}));
 app.use(express.static("public"));
 
 const DB="./data.json";
-const CONFIG="./config.json";
 
-// ================= CREATE FILES =================
-
-// DATA
+// CREATE DB
 if(!fs.existsSync(DB)){
  fs.writeFileSync(DB,JSON.stringify({
   systemOn:true,
   upi:"godxcobra@axl",
   qr:"",
+  color:"#22c55e",
+  textColor:"#ffffff",
+  title:"COBRA SERVER PANEL",
   plans:[
    {type:"",time:"5H",price:"50"},
    {type:"",time:"1D",price:"100"},
@@ -34,17 +34,11 @@ if(!fs.existsSync(DB)){
  },null,2));
 }
 
-// CONFIG
-if(!fs.existsSync(CONFIG)){
- fs.writeFileSync(CONFIG,JSON.stringify({
-  note:"cobra config"
- },null,2));
-}
-
-// ================= HELPERS =================
+// LOAD
 function db(){
  let data=JSON.parse(fs.readFileSync(DB));
 
+ if(!data.textColor) data.textColor="#ffffff";
  if(!data.stock) data.stock={};
  if(data.refresh===undefined) data.refresh=0;
 
@@ -56,17 +50,7 @@ function save(d){
  fs.writeFileSync(DB,JSON.stringify(d,null,2));
 }
 
-function loadConfig(){
- return JSON.parse(fs.readFileSync(CONFIG));
-}
-
-function saveConfig(data){
- fs.writeFileSync(CONFIG,JSON.stringify(data,null,2));
-}
-
-// ================= ROUTES =================
-
-// CUSTOMER
+// ROUTES
 app.get("/",(req,res)=>{
  const d=db();
  if(!d.systemOn){
@@ -75,18 +59,15 @@ app.get("/",(req,res)=>{
  res.sendFile(path.join(__dirname,"public/index.html"));
 });
 
-// ADMIN
 app.get("/admin",(req,res)=>{
  res.sendFile(path.join(__dirname,"public/admin.html"));
 });
 
-// STATUS
 app.get("/status",(req,res)=>{
  const d=db();
  res.json({on:d.systemOn,refresh:d.refresh});
 });
 
-// TOGGLE
 app.post("/toggle",(req,res)=>{
  let d=db();
  d.systemOn=!d.systemOn;
@@ -94,7 +75,6 @@ app.post("/toggle",(req,res)=>{
  res.json({on:d.systemOn});
 });
 
-// REFRESH
 app.post("/refresh",(req,res)=>{
  let d=db();
  d.refresh=Date.now();
@@ -102,14 +82,15 @@ app.post("/refresh",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= SETTINGS =================
+// SETTINGS
 app.post("/settings",(req,res)=>{
  let d=db();
 
- if(req.body.upi!==undefined) d.upi=req.body.upi;
-
- // 🔥 FIX 1 (QR empty bhi save hoga)
- if(req.body.qr!==undefined) d.qr=req.body.qr;
+ if(req.body.upi !== undefined) d.upi=req.body.upi;
+ if(req.body.qr !== undefined) d.qr=req.body.qr;
+ if(req.body.color !== undefined) d.color=req.body.color;
+ if(req.body.title !== undefined) d.title=req.body.title;
+ if(req.body.textColor !== undefined) d.textColor=req.body.textColor;
 
  save(d);
  res.json({ok:true});
@@ -117,23 +98,17 @@ app.post("/settings",(req,res)=>{
 
 app.get("/settings",(req,res)=>{
  let d=db();
- res.json({upi:d.upi,qr:d.qr});
+ res.json({
+  upi:d.upi,
+  qr:d.qr,
+  color:d.color,
+  title:d.title,
+  textColor:d.textColor
+ });
 });
 
-// ================= CONFIG =================
-app.get("/api/config",(req,res)=>{
- res.json(loadConfig());
-});
-
-app.post("/api/config",(req,res)=>{
- saveConfig(req.body);
- res.json({ok:true});
-});
-
-// ================= PLANS =================
-app.get("/plans",(req,res)=>{
- res.json(db().plans);
-});
+// PLANS
+app.get("/plans",(req,res)=>res.json(db().plans));
 
 app.post("/savePlans",(req,res)=>{
  let d=db();
@@ -142,19 +117,18 @@ app.post("/savePlans",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= BUY =================
+// BUY
 app.post("/buy",(req,res)=>{
  let d=db();
 
- // 🔥 FIX 2 (duplicate UTR block)
+ // duplicate UTR block
  if(d.requests.find(x=>x.utr===req.body.utr)){
   return res.json({ok:true});
  }
 
  d.requests.push({
   user:req.body.user,
-  // 🔥 FIX 3 (safe trim)
-  plan:(req.body.plan || "").trim(),
+  plan:(req.body.plan||"").trim(),
   price:req.body.price,
   utr:req.body.utr,
   time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
@@ -165,28 +139,24 @@ app.post("/buy",(req,res)=>{
 });
 
 // REQUEST
-app.get("/requests",(req,res)=>{
- res.json(db().requests);
-});
+app.get("/requests",(req,res)=>res.json(db().requests));
 
 // APPROVE
 app.post("/approve",(req,res)=>{
  let d=db();
  let r=d.requests.find(x=>x.user===req.body.user);
- if(!r)return res.json({});
 
- let plan=r.plan.trim();
+ if(!r) return res.json({});
+
+ let plan=(r.plan||"").trim();
  let key="NO STOCK";
 
- if(d.stock[plan] && d.stock[plan].length>0){
+ if(d.stock[plan]?.length>0){
   key=d.stock[plan].shift();
  }
 
  d.history.unshift({
-  user:r.user,
-  plan:r.plan,
-  price:r.price,
-  utr:r.utr,
+  ...r,
   key:key,
   status:"approved",
   time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
@@ -217,20 +187,16 @@ app.post("/reject",(req,res)=>{
 });
 
 // HISTORY
-app.get("/history",(req,res)=>{
- res.json(db().history);
-});
+app.get("/history",(req,res)=>res.json(db().history));
 
-// ================= STOCK =================
-app.get("/stock",(req,res)=>{
- res.json(db().stock);
-});
+// STOCK
+app.get("/stock",(req,res)=>res.json(db().stock));
 
 app.post("/addStock",(req,res)=>{
  let d=db();
 
- let plan=(req.body.plan || "").trim();
- let key=(req.body.key || "").trim();
+ let plan=(req.body.plan||"").trim();
+ let key=(req.body.key||"").trim();
 
  if(!plan || !key) return res.json({ok:false});
 
@@ -245,11 +211,8 @@ app.post("/addStock",(req,res)=>{
 app.post("/deleteStock",(req,res)=>{
  let d=db();
 
- let plan=req.body.plan;
- let index=req.body.index;
-
- if(d.stock[plan] && d.stock[plan][index]){
-  d.stock[plan].splice(index,1);
+ if(d.stock[req.body.plan] && d.stock[req.body.plan][req.body.index]){
+  d.stock[req.body.plan].splice(req.body.index,1);
  }
 
  save(d);
