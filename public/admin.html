@@ -167,15 +167,13 @@ function settingsUI(){
  });
 }
 
-// 🔥 SELECT FILE
 function selectQR(e){
  selectedFile = e.target.files[0];
 }
 
-// 🔥 SAVE SETTINGS
+// ✅ FIXED SAVE (ONLY CHANGE)
 function saveSettings(){
 
- // TEXT SETTINGS
  fetch("/settings",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
@@ -185,20 +183,24 @@ function saveSettings(){
     title:title.value,
     textColor:textColor.value
   })
+ })
+ .then(()=>{
+
+  if(selectedFile){
+    let fd=new FormData();
+    fd.append("qr",selectedFile);
+
+    return fetch("/uploadQR",{
+      method:"POST",
+      body:fd
+    });
+  }
+
+ })
+ .then(()=>{
+  alert("UPDATED LIVE ✔");
  });
 
- // 🔥 QR UPLOAD (REAL FILE)
- if(selectedFile){
-  let fd=new FormData();
-  fd.append("qr",selectedFile);
-
-  fetch("/uploadQR",{
-   method:"POST",
-   body:fd
-  });
- }
-
- alert("UPDATED LIVE ✔");
 }
 
 // ================= PANEL CONTROL =================
