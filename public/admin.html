@@ -7,63 +7,25 @@
 <title>COBRA ADMIN</title>
 
 <style>
-body{
-margin:0;
-background:#0f172a;
-color:#fff;
-font-family:Arial;
--webkit-tap-highlight-color: transparent;
-}
-
-.login{
- display:flex;flex-direction:column;justify-content:center;align-items:center;
- height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);
-}
-.login input,.login button{
- width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;
-}
+body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
+.login{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);}
+.login input,.login button{width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;}
 .login button{background:#000;color:#fff}
 
-.top{
- display:flex;align-items:center;gap:10px;padding:12px;
- background:#020617;position:fixed;width:100%;top:0;
-}
-
-.title{font-weight:bold;}
-
-.menuIcon{
- font-size:22px;
- cursor:pointer;
-}
-
-.sidebar{
- position:fixed;left:-250px;width:250px;height:100%;
- background:#1e293b;transition:.3s;padding-top:60px;
-}
+.top{display:flex;align-items:center;gap:10px;padding:12px;background:#020617;position:fixed;width:100%;top:0;}
+.sidebar{position:fixed;left:-250px;width:250px;height:100%;background:#1e293b;transition:.3s;padding-top:60px;}
 .sidebar.active{left:0}
-.sidebar div{
- padding:12px;margin:8px;background:#334155;border-radius:8px;
-}
+.sidebar div{padding:12px;margin:8px;background:#334155;border-radius:8px}
 
-.overlay{
- position:fixed;
- top:0;left:0;width:100%;height:100%;
- background:rgba(0,0,0,0.5);
- display:none;
-}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;}
 .overlay.active{display:block}
 
 .content{margin-top:60px;padding:10px}
 .card{background:#1e293b;padding:15px;margin:10px 0;border-radius:10px}
 
-.msg{padding:10px;border-radius:6px;margin-top:10px}
-.success{background:#2563eb}
-.fail{background:#dc2626}
-
 button{padding:10px;border:none;border-radius:6px;margin:5px}
-.green{background:#22c55e}
-.red{background:#ef4444}
 .blue{background:#2563eb}
+.green{background:#22c55e}
 </style>
 </head>
 
@@ -79,21 +41,15 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <div id="panel" style="display:none">
 
 <div class="top">
-<div class="menuIcon" onclick="toggleMenu()">☰</div>
-<div class="title">𝗖𝗢𝗕𝗥𝗔 𝗔𝗗𝗠𝗜𝗡</div>
+<div onclick="toggleMenu()">☰</div>
+<div>COBRA ADMIN</div>
 </div>
 
 <div id="overlay" class="overlay" onclick="closeMenu()"></div>
 
 <div id="sidebar" class="sidebar">
 <div onclick="home()">HOME</div>
-<div onclick="plansUI()">PLANS</div>
-<div onclick="stockUI()">STOCK</div>
 <div onclick="settingsUI()">UPI / QR</div>
-<div onclick="reqUI()">REQUEST</div>
-
-<div onclick="panelControlUI()">PANEL CONTROL</div>
-
 <div onclick="logout()">LOGOUT</div>
 </div>
 
@@ -135,178 +91,40 @@ function closeMenu(){
  overlay.classList.remove("active");
 }
 
-// HOME
 function home(){
  main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
  closeMenu();
 }
 
-// ================= PANEL CONTROL =================
-function panelControlUI(){
- fetch("/status").then(r=>r.json()).then(d=>{
-
+// ================= ✅ UPI + QR FIX =================
+function settingsUI(){
+ fetch("/settings").then(r=>r.json()).then(d=>{
   main.innerHTML=`
   <div class="card">
-    <h3>Panel Control</h3>
 
-    <button onclick="toggleSystem()">
-      ${d.on ? "TURN OFF PANEL" : "TURN ON PANEL"}
-    </button>
+  <h3>UPI ID</h3>
+  <input id="upi" value="${d.upi || ""}" placeholder="Enter UPI ID">
 
-    <button class="blue" onclick="refreshPanel()">REFRESH PANEL</button>
+  <h3>QR CODE</h3>
+  <input id="qr" placeholder="Paste QR Image URL" value="${d.qr || ""}">
+
+  <button class="green" onclick="saveSettings()">UPDATE</button>
 
   </div>`;
-
   closeMenu();
  });
 }
 
-function refreshPanel(){
- fetch("/refresh",{method:"POST"})
- .then(()=>alert("Customer Panel Refreshed ✔"));
-}
-
-// ================= PLANS =================
-function plansUI(){
- fetch("/plans").then(r=>r.json()).then(data=>{
-  let options="";
-  data.forEach((x,i)=>{
-    options+=`<option value="${i}">${x.type}${x.time} - ₹${x.price}</option>`;
-  });
-
-  main.innerHTML=`
-  <div class="card">
-  <select id="planSelect">${options}</select>
-  <input id="newTime" placeholder="Time">
-  <input id="newPrice" placeholder="Price">
-  <button onclick="updatePlan()">UPDATE</button>
-  <div id="msg"></div>
-  </div>`;
-
-  closeMenu();
- });
-}
-
-function updatePlan(){
- fetch("/plans").then(r=>r.json()).then(data=>{
-  let i = planSelect.value;
-
-  data[i].time = newTime.value || data[i].time;
-  data[i].price = newPrice.value || data[i].price;
-
-  fetch("/savePlans",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(data)
-  })
-  .then(()=>showSuccess());
- });
-}
-
-function showSuccess(){
- msg.innerHTML="<div class='msg success'>UPDATED ✔</div>";
-}
-
-// ================= STOCK =================
-function stockUI(){
- fetch("/plans").then(r=>r.json()).then(p=>{
- fetch("/stock").then(r=>r.json()).then(s=>{
-
- let html=`<div class="card">
- <select id="planSel">
- ${p.map(x=>`<option>${x.type+x.time}</option>`)}
- </select>
- <input id="key" placeholder="ENTER KEY">
- <button onclick="addStock()">ADD</button>
- </div>`;
-
- p.forEach(x=>{
-   let plan = x.type+x.time;
-   let arr = s[plan]||[];
-
-   html+=`<div class="card"><b>${plan}</b><br>`;
-
-   arr.forEach((k,i)=>{
-     html+=`${k}
-     <button onclick="delStock('${plan}',${i})">❌</button><br>`;
-   });
-
-   html+=`</div>`;
- });
-
- main.innerHTML=html;
- });
- });
-}
-
-// 🔥 ADD STOCK
-function addStock(){
- fetch("/addStock",{
+function saveSettings(){
+ fetch("/settings",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify({
-    plan:planSel.value,
-    key:key.value
+    upi:upi.value,
+    qr:qr.value
   })
- }).then(()=>{
-  key.value="";
-  stockUI();
- });
-}
-
-// 🔥 DELETE STOCK
-function delStock(plan,index){
- fetch("/deleteStock",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({plan,index})
- }).then(stockUI);
-}
-
-// ================= REQUEST =================
-function reqUI(){
- fetch("/requests").then(r=>r.json()).then(data=>{
-  let html="";
-
-  data.forEach(x=>{
-    html+=`
-    <div class="card">
-    <b>${x.plan}</b> - ₹${x.price || "?"} <br>
-    UTR: ${x.utr} <br>
-    Time: ${x.time}
-    <br>
-    <button class="green" onclick="approve('${x.user}')">YES</button>
-    <button class="red" onclick="reject('${x.user}')">NO</button>
-    </div>`;
-  });
-
-  main.innerHTML=html||"No Requests";
- });
-}
-
-function approve(u){
- fetch("/approve",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({user:u})
- }).then(r=>r.json()).then(d=>{
-  alert("KEY: "+d.key);
-  reqUI();
- });
-}
-
-function reject(u){
- fetch("/reject",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({user:u})
- }).then(reqUI);
-}
-
-// ================= SYSTEM =================
-function toggleSystem(){
- fetch("/toggle",{method:"POST"})
- .then(()=>panelControlUI());
+ })
+ .then(()=>alert("UPDATED LIVE ✔"));
 }
 
 </script>
