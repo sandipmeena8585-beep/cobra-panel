@@ -24,14 +24,14 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 
 <script>
 
-// STATUS
+// ================= STATUS =================
 fetch("/status").then(r=>r.json()).then(d=>{
  if(!d.on){
    document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN UPDATE</h2>";
  }else showMain();
 });
 
-// 🔥 PLAN LIVE
+// ================= PLAN LIVE =================
 function showMain(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
  let opt = plans.map(p=>`<option value="${p.type+p.time}|${p.price}">
@@ -51,6 +51,7 @@ function goBuy(){
  buy(val[0],val[1]);
 }
 
+// ================= BUY =================
 function buy(plan,price){
  fetch("/settings").then(r=>r.json()).then(s=>{
  main.innerHTML=`
@@ -63,6 +64,7 @@ function buy(plan,price){
  });
 }
 
+// ================= CONFIRM =================
 function confirmBox(plan,price){
  let utrVal=utr.value;
  if(!utrVal||utrVal.length!=12)return alert("Invalid UTR");
@@ -76,6 +78,7 @@ function confirmBox(plan,price){
  </div></div>`;
 }
 
+// ================= START PROCESS =================
 function start(plan,price,utrVal){
 
  document.getElementById("pop").innerHTML=`
@@ -103,14 +106,14 @@ function start(plan,price,utrVal){
 
  if(f.status==="rejected"){
   pop.innerHTML=`<div class="popup">
-  <h3>❌ REJECTED</h3>
+  <h3>❌ PAYMENT REJECTED</h3>
   <button onclick="location.reload()">OK</button>
   </div>`;
  }
 
  if(f.status==="approved"){
   pop.innerHTML=`<div class="popup">
-  <h3>KEY</h3>
+  <h3>🔑 KEY</h3>
   <div>${f.key}</div>
   <button onclick="location.reload()">OK</button>
   </div>`;
@@ -120,6 +123,23 @@ function start(plan,price,utrVal){
  },2000);
 }
 
+// ================= 🔥 REFRESH FIX =================
+let lastRefresh = 0;
+
+setInterval(()=>{
+ fetch("/status")
+ .then(r=>r.json())
+ .then(d=>{
+   if(d.refresh && d.refresh != lastRefresh){
+     lastRefresh = d.refresh;
+
+     // 🔥 IMPORTANT: always go to HOME
+     location.href = "/";
+   }
+ });
+},3000);
+
 </script>
+
 </body>
 </html>
