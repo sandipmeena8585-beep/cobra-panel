@@ -34,7 +34,7 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 
 .info{margin-top:15px;font-size:14px;color:#38bdf8}
 
-/* 🔥 NEW PRO POPUP */
+/* POPUP */
 .overlay{
  position:fixed;top:0;left:0;width:100%;height:100%;
  background:rgba(0,0,0,0.8);
@@ -50,11 +50,6 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
  max-width:320px;
  text-align:center;
  box-shadow:0 0 25px #22c55e;
- animation:pop 0.3s ease;
-}
-@keyframes pop{
- from{transform:scale(0.8);opacity:0}
- to{transform:scale(1);opacity:1}
 }
 .loader{
  border:4px solid #333;
@@ -93,8 +88,7 @@ fetch("/status")
  if(!d.on){
    document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN PANEL UPDATE</h2>";
  }else{
-   if(localStorage.getItem("pendingUTR")) waitScreen();
-   else showMain();
+   showMain();
  }
 });
 
@@ -149,7 +143,7 @@ function buy(plan,price){
  });
 }
 
-/* 🔥 ONLY CHANGE */
+/* 🔥 ONLY CHANGE (NO FLOOR SYSTEM) */
 function confirmBox(plan){
  let utrVal = utr.value;
 
@@ -160,12 +154,15 @@ function confirmBox(plan){
  document.body.innerHTML+=`
  <div class="overlay" id="pop">
   <div class="popup">
-   <h3>⚡ PAYMENT CONFIRM</h3>
-   <p>Proceed payment verification?</p>
+   <h3>PAYMENT CONFIRM</h3>
    <button onclick="startProcess('${plan}','${utrVal}')">YES</button>
-   <button class="red" onclick="location.reload()">NO</button>
+   <button class="red" onclick="closePop()">NO</button>
   </div>
  </div>`;
+}
+
+function closePop(){
+ document.getElementById("pop").remove();
 }
 
 function startProcess(plan,utrVal){
@@ -174,10 +171,7 @@ function startProcess(plan,utrVal){
  <div class="popup">
  <div class="loader"></div>
  <p>Please wait admin verify your request</p>
- <small>⚠️ Do not tap anywhere</small>
  </div>`;
-
- localStorage.setItem("pendingUTR",utrVal);
 
  fetch("/buy",{
   method:"POST",
@@ -208,10 +202,10 @@ function startProcess(plan,utrVal){
 
        document.getElementById("pop").innerHTML=`
        <div class="popup">
-       <h3>🔑 KEY GENERATED</h3>
+       <h3>🔑 KEY</h3>
        <div class="keyBox">${f.key}</div>
        <p>Expire: ${exp.toLocaleString()}</p>
-       <p>Kill limit 10-12 (Play Safe Legit)</p>
+       <p>Kill limit 10-12</p>
        <button onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">TELEGRAM</button>
        <br>
        <button onclick="location.reload()">OK</button>
@@ -221,30 +215,11 @@ function startProcess(plan,utrVal){
  });
  },2000);
 }
-/* END CHANGE */
-
-function waitScreen(){
- main.innerHTML=`<div class="card"><h3>PLEASE WAIT ADMIN VERIFY</h3></div>`;
-}
+/* END */
 
 function tg(){
  window.open("https://t.me/GODx_COBRA");
 }
-
-let last = localStorage.getItem("lastRefresh") || 0;
-
-setInterval(()=>{
- fetch("/status")
- .then(r=>r.json())
- .then(d=>{
-   if(d.refresh != last){
-     localStorage.setItem("lastRefresh", d.refresh);
-     last = d.refresh;
-     localStorage.removeItem("pendingUTR");
-     showMain();
-   }
- });
-},3000);
 
 </script>  
   
