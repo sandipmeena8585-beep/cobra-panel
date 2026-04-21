@@ -67,7 +67,6 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
   
 <script>  
 
-// ================= START =================
 fetch("/status")
 .then(r=>r.json())
 .then(d=>{
@@ -79,7 +78,6 @@ fetch("/status")
  }
 });
 
-// ================= HOME =================
 function showMain(){
  main.innerHTML=`
  <div class="card">
@@ -109,7 +107,6 @@ function showMain(){
  </div>`;
 }
 
-// ================= BUY FLOW =================
 function goBuy(){
  let val = planSel.value.split("|");
  buy(val[0],val[1]);
@@ -132,7 +129,6 @@ function buy(plan,price){
  });
 }
 
-// ================= CONFIRM =================
 function confirmBox(plan){
  let utrVal = utr.value;
 
@@ -150,7 +146,6 @@ function confirmBox(plan){
  </div>`;
 }
 
-// ================= PROCESS =================
 function startProcess(plan,utrVal){
 
  document.getElementById("pop").innerHTML=`
@@ -206,7 +201,6 @@ function startProcess(plan,utrVal){
  },2000);
 }
 
-// ================= WAIT =================
 function waitScreen(){
  main.innerHTML=`
  <div class="card">
@@ -214,34 +208,32 @@ function waitScreen(){
  </div>`;
 }
 
-// ================= TELEGRAM =================
 function tg(){
  window.open("https://t.me/GODx_COBRA");
 }
 
-// ================= 🔥 ONLY CHANGE =================
+/* ================= 🔥 ONLY CHANGE ================= */
 let last = localStorage.getItem("lastRefresh") || 0;
-let handled = false;
 
 setInterval(()=>{
  fetch("/status")
  .then(r=>r.json())
  .then(d=>{
-   if(d.refresh != last && !handled){
+   if(d.refresh != last){
 
-     handled = true;
-
+     // 🔥 update last BEFORE anything
      localStorage.setItem("lastRefresh", d.refresh);
+     last = d.refresh;
 
-     // MAIN FIX
+     // 🔥 reset state
      localStorage.removeItem("pendingUTR");
 
-     // DIRECT FLOOR 1
+     // 🔥 always go HOME
      showMain();
    }
  });
 },3000);
-// ========================================
+/* ================================================= */
 
 </script>  
   
