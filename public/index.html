@@ -97,14 +97,31 @@ function loadStatus(){
    return;
   }
 
-  // ✅ 🔥 FIX (ONLY CHANGE)
+  // 🔥 CHANGE (LIVE COLOR + REFRESH FIX)
   if(lastRefresh && d.refresh!==lastRefresh){
     lock=false;
-    showMain(); // ❌ reload हटाया, ✅ smooth update
+    lastRefresh=d.refresh;
+
+    document.body.style.background = d.color || "#0f172a";
+    document.body.style.color = d.textColor || "#ffffff";
+
+    if(d.title){
+      document.getElementById("title").innerText = d.title;
+    }
+
+    showMain();
     return;
   }
 
   lastRefresh=d.refresh;
+
+  // 🔥 ADD (FIRST LOAD COLOR FIX)
+  document.body.style.background = d.color || "#0f172a";
+  document.body.style.color = d.textColor || "#ffffff";
+
+  if(d.title){
+    document.getElementById("title").innerText = d.title;
+  }
 
   if(firstLoad){
     showMain();
@@ -171,7 +188,7 @@ function buy(plan,price){
  });
 }
 
-// PROCESS
+// PROCESS (same)
 function startProcess(plan,price){
 
  if(lock) return;
