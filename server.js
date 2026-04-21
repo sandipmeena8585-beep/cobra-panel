@@ -9,19 +9,18 @@ app.use(express.static("public"));
 
 const DB="./data.json";
 
-// 📁 upload folder
+// ================= UPLOAD SETUP =================
 if(!fs.existsSync("public/uploads")){
  fs.mkdirSync("public/uploads",{recursive:true});
 }
 
-// multer setup
 const storage=multer.diskStorage({
  destination:(req,file,cb)=>cb(null,"public/uploads"),
  filename:(req,file,cb)=>cb(null,Date.now()+"_"+file.originalname)
 });
 const upload=multer({storage});
 
-// ================= DB =================
+// ================= CREATE DB =================
 if(!fs.existsSync(DB)){
  fs.writeFileSync(DB,JSON.stringify({
   systemOn:true,
@@ -47,13 +46,18 @@ if(!fs.existsSync(DB)){
  },null,2));
 }
 
+// ================= LOAD =================
 function db(){
- let d=JSON.parse(fs.readFileSync(DB));
+ let data=JSON.parse(fs.readFileSync(DB));
 
- if(!d.stock) d.stock={};
- if(d.refresh===undefined) d.refresh=0;
+ if(!data.stock) data.stock={};
+ if(data.refresh===undefined) data.refresh=0;
+ if(!data.color) data.color="#22c55e";
+ if(!data.textColor) data.textColor="#ffffff";
+ if(!data.title) data.title="COBRA SERVER PANEL";
 
- return d;
+ fs.writeFileSync(DB,JSON.stringify(data,null,2));
+ return data;
 }
 
 function save(d){
@@ -64,7 +68,7 @@ function save(d){
 
 // CUSTOMER
 app.get("/",(req,res)=>{
- let d=db();
+ const d=db();
  if(!d.systemOn){
   return res.send("<h2>⚠️ PLEASE WAIT ADMIN UPDATE</h2>");
  }
@@ -76,9 +80,9 @@ app.get("/admin",(req,res)=>{
  res.sendFile(path.join(__dirname,"public/admin.html"));
 });
 
-// STATUS (🔥 refresh + UI data)
+// STATUS (🔥 ADD UI DATA)
 app.get("/status",(req,res)=>{
- let d=db();
+ const d=db();
  res.json({
   on:d.systemOn,
   refresh:d.refresh,
@@ -93,7 +97,7 @@ app.post("/toggle",(req,res)=>{
  let d=db();
  d.systemOn=!d.systemOn;
  save(d);
- res.json({ok:true});
+ res.json({on:d.systemOn});
 });
 
 // 🔥 REFRESH → CUSTOMER HOME
@@ -105,8 +109,6 @@ app.post("/refresh",(req,res)=>{
 });
 
 // ================= SETTINGS =================
-
-// 🔥 UPI + UI UPDATE LIVE
 app.post("/settings",(req,res)=>{
  let d=db();
 
@@ -119,19 +121,16 @@ app.post("/settings",(req,res)=>{
  res.json({ok:true});
 });
 
-// 🔥 QR UPLOAD (REAL FILE)
+// 🔥 QR UPLOAD (NEW ADD)
 app.post("/uploadQR",upload.single("qr"),(req,res)=>{
  let d=db();
 
  d.qr="/uploads/"+req.file.filename;
 
+ d.refresh=Date.now(); // 🔥 instant refresh
  save(d);
 
- // 🔥 force refresh
- d.refresh=Date.now();
- save(d);
-
- res.json({ok:true,path:d.qr});
+ res.json({ok:true,qr:d.qr});
 });
 
 app.get("/settings",(req,res)=>{
@@ -146,12 +145,14 @@ app.get("/settings",(req,res)=>{
 });
 
 // ================= PLANS =================
-app.get("/plans",(req,res)=>res.json(db().plans));
+app.get("/plans",(req,res)=>{
+ res.json(db().plans);
+});
 
 app.post("/savePlans",(req,res)=>{
  let d=db();
  d.plans=req.body;
- d.refresh=Date.now(); // 🔥 live update
+ d.refresh=Date.now(); // 🔥 LIVE UPDATE
  save(d);
  res.json({ok:true});
 });
@@ -166,7 +167,7 @@ app.post("/buy",(req,res)=>{
 
  d.requests.push({
   user:req.body.user,
-  plan:req.body.plan.trim(),
+  plan:(req.body.plan||"").trim(),
   price:req.body.price,
   utr:req.body.utr,
   time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
@@ -177,24 +178,30 @@ app.post("/buy",(req,res)=>{
 });
 
 // REQUEST
-app.get("/requests",(req,res)=>res.json(db().requests));
+app.get("/requests",(req,res)=>{
+ res.json(db().requests);
+});
 
 // APPROVE
 app.post("/approve",(req,res)=>{
  let d=db();
  let r=d.requests.find(x=>x.user===req.body.user);
 
- if(!r) return res.json({});
+ if(!r)return res.json({});
 
+ let plan=(r.plan||"").trim();
  let key="NO STOCK";
 
- if(d.stock[r.plan]?.length>0){
-  key=d.stock[r.plan].shift();
+ if(d.stock[plan]?.length>0){
+  key=d.stock[plan].shift();
  }
 
  d.history.unshift({
-  ...r,
-  key,
+  user:r.user,
+  plan:r.plan,
+  price:r.price,
+  utr:r.utr,
+  key:key,
   status:"approved",
   time:new Date().toLocaleString()
  });
@@ -224,16 +231,20 @@ app.post("/reject",(req,res)=>{
 });
 
 // HISTORY
-app.get("/history",(req,res)=>res.json(db().history));
+app.get("/history",(req,res)=>{
+ res.json(db().history);
+});
 
 // ================= STOCK =================
-app.get("/stock",(req,res)=>res.json(db().stock));
+app.get("/stock",(req,res)=>{
+ res.json(db().stock);
+});
 
 app.post("/addStock",(req,res)=>{
  let d=db();
 
- let plan=req.body.plan.trim();
- let key=req.body.key.trim();
+ let plan=(req.body.plan||"").trim();
+ let key=(req.body.key||"").trim();
 
  if(!plan || !key) return res.json({ok:false});
 
