@@ -136,7 +136,7 @@ function home(){
 }
 
 // ================= SETTINGS =================
-let qrBase64 = "";
+let selectedFile=null;
 
 function settingsUI(){
  fetch("/settings").then(r=>r.json()).then(d=>{
@@ -152,12 +152,11 @@ function settingsUI(){
   <h3>Theme Color</h3>
   <input id="color" type="color" value="${d.color || "#22c55e"}">
 
-  <!-- 🔥 ADDED (TEXT COLOR) -->
   <h3>Text Color</h3>
   <input id="textColor" type="color" value="${d.textColor || "#ffffff"}">
 
   <h3>UPLOAD QR CODE</h3>
-  <input type="file" accept="image/*" onchange="uploadQR(event)">
+  <input type="file" accept="image/*" onchange="selectQR(event)">
   <br><br>
   ${d.qr ? `<img src="${d.qr}" width="120">` : ""}
 
@@ -168,31 +167,38 @@ function settingsUI(){
  });
 }
 
-function uploadQR(e){
- let file = e.target.files[0];
- let reader = new FileReader();
-
- reader.onload = function(){
-   qrBase64 = reader.result;
- };
-
- reader.readAsDataURL(file);
+// 🔥 SELECT FILE
+function selectQR(e){
+ selectedFile = e.target.files[0];
 }
 
+// 🔥 SAVE SETTINGS
 function saveSettings(){
+
+ // TEXT SETTINGS
  fetch("/settings",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify({
     upi:upi.value,
-    qr: qrBase64 || null,
     color:color.value,
     title:title.value,
-
-    // 🔥 ADDED
     textColor:textColor.value
   })
- }).then(()=>alert("UPDATED LIVE ✔"));
+ });
+
+ // 🔥 QR UPLOAD (REAL FILE)
+ if(selectedFile){
+  let fd=new FormData();
+  fd.append("qr",selectedFile);
+
+  fetch("/uploadQR",{
+   method:"POST",
+   body:fd
+  });
+ }
+
+ alert("UPDATED LIVE ✔");
 }
 
 // ================= PANEL CONTROL =================
