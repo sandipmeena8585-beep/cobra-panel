@@ -21,7 +21,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center
 @keyframes btnGlow{from{box-shadow:0 0 5px #22c55e;}to{box-shadow:0 0 20px #22c55e;}}
 
 button{padding:12px;border:none;border-radius:6px;margin:5px}
-.darkBtn{background:#020617;color:#fff}
+.darkBtn{background:#0088cc;color:#fff} /* 🔥 CHANGE 1 (MATCH COLOR) */
 .tgBtn{background:#0088cc;color:#fff}
 
 .btnRow{
@@ -31,7 +31,7 @@ button{padding:12px;border:none;border-radius:6px;margin:5px}
 }
 
 input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
-.mono{font-family:monospace;display:block;margin:8px 0}
+.mono{font-family:monospace;display:block;margin:8px 0;user-select:all} /* 🔥 CHANGE 2 (COPY FIX) */
 
 .tgFloat{
  position:fixed;bottom:20px;right:15px;background:#0088cc;color:#fff;
@@ -79,7 +79,7 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 
 let lastRefresh=0;
 let firstLoad=true;
-let lock=false; // 🔥 CHANGE 2 LOCK
+let lock=false;
 
 function copyText(t){
  navigator.clipboard.writeText(t);
@@ -97,7 +97,6 @@ function loadStatus(){
    return;
   }
 
-  // 🔥 ADMIN REFRESH = UNLOCK + RELOAD
   if(lastRefresh && d.refresh!==lastRefresh){
     lock=false;
     location.reload();
@@ -150,7 +149,7 @@ function goBuy(){
 // PAYMENT
 function buy(plan,price){
 
- if(lock) return; // 🔥 LOCK
+ if(lock) return;
 
  fetch("/settings")
  .then(r=>r.json())
@@ -175,7 +174,7 @@ function buy(plan,price){
 function startProcess(plan,price){
 
  if(lock) return;
- lock=true; // 🔥 LOCK ENABLE
+ lock=true;
 
  let utrVal = utr.value;
 
@@ -226,11 +225,12 @@ function startProcess(plan,price){
 
        pop.innerHTML=`
        <div class="popup">
-       <h3>KEY</h3>
+
+       <h3>🎉 𝐜𝐨𝐧𝐠𝐫𝐚𝐭𝐮𝐥𝐚𝐭𝐢𝐨𝐧𝐬 𝐜𝐡𝐨𝐢𝐜𝐞 𝐂𝐎𝐁𝐑𝐀 𝐒𝐄𝐑𝐕𝐄𝐑</h3>
 
        <span class="mono" onclick="copyText('${f.key}')">${f.key}</span>
        <span class="mono">Expire: ${exp.toLocaleString()}</span>
-       <span class="mono">Kill limit 10-12 (Play Safe Legit)</span>
+       <span class="mono">Kill limit 10-12 (LEGIT PLAY SAFE)</span>
 
        <div class="btnRow">
          <button class="tgBtn" onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">📩 PAID GROUP JOIN</button>
