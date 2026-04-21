@@ -3,7 +3,7 @@ const fs=require("fs");
 const path=require("path");
 
 const app=express();
-app.use(express.json());
+app.use(express.json({limit:"10mb"})); // 🔥 QR base64 support
 app.use(express.static("public"));
 
 const DB="./data.json";
@@ -53,7 +53,7 @@ function db(){
  }
 
  if(!data.stock){
-  data.stock={}; // 🔥 FIX
+  data.stock={};
  }
 
  fs.writeFileSync(DB,JSON.stringify(data,null,2));
@@ -103,13 +103,30 @@ app.post("/refresh",(req,res)=>{
  res.json({ok:true});
 });
 
-// SETTINGS
+// ================= 🔥 SETTINGS (ADDED FIX) =================
+app.post("/settings",(req,res)=>{
+ let d=db();
+
+ if(req.body.upi !== undefined){
+  d.upi=req.body.upi;
+ }
+
+ // QR base64 save
+ if(req.body.qr){
+  d.qr=req.body.qr;
+ }
+
+ save(d);
+ res.json({ok:true});
+});
+
+// GET SETTINGS
 app.get("/settings",(req,res)=>{
  let d=db();
  res.json({upi:d.upi,qr:d.qr});
 });
 
-// PLANS
+// ================= PLANS =================
 app.get("/plans",(req,res)=>{
  res.json(db().plans);
 });
@@ -121,13 +138,13 @@ app.post("/savePlans",(req,res)=>{
  res.json({ok:true});
 });
 
-// BUY
+// ================= BUY =================
 app.post("/buy",(req,res)=>{
  let d=db();
 
  d.requests.push({
   user:req.body.user,
-  plan:req.body.plan.trim(), // 🔥 FIX
+  plan:req.body.plan.trim(),
   price:req.body.price,
   utr:req.body.utr,
   time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
@@ -148,12 +165,12 @@ app.post("/approve",(req,res)=>{
  let r=d.requests.find(x=>x.user===req.body.user);
  if(!r)return res.json({});
 
- let plan = r.plan.trim(); // 🔥 FIX
+ let plan=r.plan.trim();
 
  let key="NO STOCK";
 
  if(d.stock[plan] && d.stock[plan].length>0){
-  key=d.stock[plan].shift(); // 🔥 1 tap = 1 key remove
+  key=d.stock[plan].shift();
  }
 
  d.history.unshift({
@@ -202,7 +219,7 @@ app.get("/stock",(req,res)=>{
  res.json(db().stock);
 });
 
-// ADD STOCK (🔥 FIXED)
+// ADD STOCK
 app.post("/addStock",(req,res)=>{
  let d=db();
 
@@ -219,7 +236,7 @@ app.post("/addStock",(req,res)=>{
  res.json({ok:true});
 });
 
-// DELETE STOCK (🔥 WORKING)
+// DELETE STOCK
 app.post("/deleteStock",(req,res)=>{
  let d=db();
 
