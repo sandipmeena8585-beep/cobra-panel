@@ -1,190 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+
 <title>COBRA SERVER PANEL</title>
 
 <style>
-body{margin:0;font-family:Arial;background:#020617;color:white;text-align:center}
+body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center}
+.top{padding:15px;font-size:20px;color:#22c55e}
+.card{background:#1e293b;margin:10px;padding:15px;border-radius:12px}
+.buyBtn{padding:14px;background:#22c55e;color:white;border:none;border-radius:8px}
+input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 
-.top{padding:15px;font-size:20px;color:#22c55e;font-weight:bold}
-
-.card{
-background:#0f172a;
-margin:12px;
-padding:18px;
-border-radius:14px;
-box-shadow:0 0 20px rgba(0,0,0,0.5);
-}
-
-.buyBtn{
-padding:14px;
-color:white;
-border:none;
-border-radius:10px;
-font-size:16px;
-width:90%;
-box-shadow:0 0 15px #22c55e;
-}
-
-input,select{
-padding:12px;
-width:90%;
-margin:10px auto;
-border-radius:10px;
-border:none;
-display:block;
-font-size:16px;
-}
-
-.gameSelect,#planSel{
-background:#020617;
-color:#22c55e;
-border:2px solid #22c55e;
-}
-
-/* POPUP */
 .overlay{
-position:fixed;
-top:0;left:0;width:100%;height:100%;
-background:rgba(0,0,0,0.85);
-display:flex;justify-content:center;align-items:center;
+ position:fixed;top:0;left:0;width:100%;height:100%;
+ background:rgba(0,0,0,0.8);
+ display:flex;justify-content:center;align-items:center;
+ z-index:999;
 }
 
 .popup{
-background:#020617;
-padding:22px;
-border-radius:16px;
-width:85%;
-max-width:320px;
-text-align:center;
-box-shadow:0 0 30px #22c55e;
-}
-
-/* 🔥 NEW HEAVY OK BUTTON */
-.okBtn{
-margin-top:18px;
-padding:12px 28px;
-background:linear-gradient(135deg,#22c55e,#16a34a);
-color:#000;
-font-weight:bold;
-border:none;
-border-radius:10px;
-font-size:15px;
-box-shadow:
-0 0 10px #22c55e,
-0 0 20px #22c55e;
-}
-
-.keyBox{
-background:#000;
-padding:10px;
-border-radius:8px;
-margin:10px 0;
-font-family:monospace;
-color:#22c55e;
-cursor:pointer;
-}
-
-.copyMsg{
-font-size:12px;
-color:#22c55e;
-display:none;
-}
-
-.tgBtn{
-margin-top:10px;
-display:inline-block;
-padding:10px;
-background:#0088cc;
-border-radius:8px;
-color:white;
-text-decoration:none;
+ background:#1e293b;
+ padding:20px;
+ border-radius:12px;
 }
 
 .loader{
-border:4px solid #111;
-border-top:4px solid #22c55e;
-border-radius:50%;
-width:45px;height:45px;margin:auto;
-animation:spin 1s linear infinite
+ border:4px solid #333;
+ border-top:4px solid #22c55e;
+ border-radius:50%;
+ width:40px;height:40px;
+ margin:auto;
+ animation:spin 1s linear infinite;
 }
 
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.upi{
-font-family:monospace;
-font-size:16px;
-margin:5px 0 10px;
-color:#22c55e;
-}
+.mono{font-family:monospace}
 </style>
+
 </head>
 
 <body>
 
-<div class="top" id="topTitle">COBRA SERVER PANEL</div>
+<div class="top">COBRA SERVER PANEL</div>
 <div id="main"></div>
 
 <script>
 
-let themeColor="#22c55e";
-let lastRefresh = localStorage.getItem("lastRefresh") || 0;
+// STATUS
+fetch("/status")
+.then(r=>r.json())
+.then(d=>{
+ if(!d.on){
+   document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN UPDATE</h2>";
+ }else showMain();
+});
 
-window.onload = ()=>{
- let savedUTR = localStorage.getItem("pendingUTR");
- if(savedUTR){
-   showWaiting(savedUTR);
- }else{
-   loadHome();
- }
-};
-
-function loadHome(){
- fetch("/status").then(r=>r.json()).then(d=>{
-   if(d.refresh && d.refresh != lastRefresh){
-     localStorage.setItem("lastRefresh", d.refresh);
-     localStorage.removeItem("pendingUTR");
-     location.reload();
-     return;
-   }
-
-   if(!d.on){
-     document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN UPDATE</h2>";
-     return;
-   }
-
-   showMain();
- });
-}
-
+// MAIN
 function showMain(){
-
- fetch("/settings").then(r=>r.json()).then(s=>{
-   themeColor = s.color || "#22c55e";
-   document.getElementById("topTitle").innerText = s.title || "COBRA SERVER PANEL";
-   document.getElementById("topTitle").style.color = themeColor;
- });
-
  fetch("/plans").then(r=>r.json()).then(plans=>{
- let opt = plans.map(p=>`<option value="${p.type+p.time}|${p.price}">
- ${p.type}${p.time} - ₹${p.price}</option>`).join("");
+ let opt = plans.map(p=>`
+ <option value="${p.type+p.time}|${p.price}">
+ ${p.type+p.time} - ₹${p.price}</option>`).join("");
 
  main.innerHTML=`
  <div class="card">
-
- <h3 style="color:#22c55e">Select Game</h3>
-
- <select class="gameSelect">
-   <option>BGMI</option>
- </select>
-
- <h3 style="color:#22c55e">Select Plan</h3>
-
+ <h3>Select Plan</h3>
  <select id="planSel">${opt}</select>
-
- <button class="buyBtn" style="background:${themeColor}" onclick="goBuy()">BUY KEY</button>
-
+ <button class="buyBtn" onclick="goBuy()">BUY KEY</button>
  </div>`;
  });
 }
@@ -194,38 +79,40 @@ function goBuy(){
  buy(val[0],val[1]);
 }
 
+// PAYMENT
 function buy(plan,price){
  fetch("/settings").then(r=>r.json()).then(s=>{
  main.innerHTML=`
  <div class="card">
  <h3>PAY ₹${price}</h3>
-
- <div class="upi">${s.upi}</div>
-
- ${s.qr ? `<img src="${s.qr}" width="160"><br>` : ""}
-
+ <div>${s.upi}</div>
+ <br>
+ <img src="${s.qr}" width="200">
  <input id="utr" placeholder="UTR 12 digit">
- <button class="buyBtn" style="background:${themeColor}" onclick="confirmBox('${plan}','${price}')">VERIFY</button>
+
+ <!-- 🔥 CHANGE: NO CONFIRM POPUP -->
+ <button onclick="startProcess('${plan}','${price}')">VERIFY</button>
+
  </div>`;
  });
 }
 
-function confirmBox(plan,price){
- let utrVal=utr.value;
- if(!utrVal||utrVal.length!=12)return alert("Invalid UTR");
+// 🔥 DIRECT PROCESS
+function startProcess(plan,price){
+
+ let utrVal=document.getElementById("utr").value;
+
+ if(!utrVal || utrVal.length!=12){
+   return alert("Enter Valid 12 Digit UTR");
+ }
 
  document.body.innerHTML+=`
- <div class="overlay">
+ <div class="overlay" id="pop">
  <div class="popup">
-   <h3>Confirm Payment</h3>
-   <button onclick="start('${plan}','${price}','${utrVal}')">YES</button>
- </div>
- </div>`;
-}
-
-function start(plan,price,utrVal){
- localStorage.setItem("pendingUTR", utrVal);
- showWaiting(utrVal);
+ <div class="loader"></div>
+ <p>Please wait admin verify your request</p>
+ <small>⚠️ Do not tap anywhere</small>
+ </div></div>`;
 
  fetch("/buy",{
   method:"POST",
@@ -237,66 +124,42 @@ function start(plan,price,utrVal){
     utr:utrVal
   })
  });
-}
-
-function showWaiting(utrVal){
-
- document.body.innerHTML=`
- <div class="overlay">
- <div class="popup">
- <div class="loader"></div>
- <p>Waiting for admin verify...</p>
- </div>
- </div>`;
 
  let chk=setInterval(()=>{
  fetch("/history").then(r=>r.json()).then(h=>{
  let f=h.find(x=>x.utr===utrVal);
+
  if(f){
  clearInterval(chk);
 
- if(f.status==="approved"){
-  localStorage.removeItem("pendingUTR");
-
-  let expiry = new Date().toDateString();
-
-  document.body.innerHTML=`
-  <div class="overlay">
+ // ❌ REJECT
+ if(f.status==="rejected"){
+  document.getElementById("pop").innerHTML=`
   <div class="popup">
-
-  <h3>🔑 YOUR KEY</h3>
-
-  <div class="keyBox" onclick="copyKey(this)">
-    ${f.key}
-  </div>
-  <div class="copyMsg" id="copyMsg">Copied ✔</div>
-
-  <p>📅 Expiry: ${expiry}</p>
-
-  <p>⚡ Kill Limit: 10-12 (Legit Play Safe)</p>
-
-  <a href="https://t.me/+wRZN39fdVcRkYTM9" target="_blank" class="tgBtn">
-    📢 Join Paid Group
-  </a>
-
-  <br>
-
-  <!-- 🔥 UPDATED BUTTON -->
-  <button class="okBtn" onclick="location.reload()">OK</button>
-
-  </div>
+  <h3>⚠️ PAYMENT REJECTED</h3>
+  <button onclick="location.reload()">OK</button>
   </div>`;
  }
 
- if(f.status==="rejected"){
-  localStorage.removeItem("pendingUTR");
+ // ✅ APPROVED
+ if(f.status==="approved"){
+  let exp=new Date();
+  exp.setHours(exp.getHours()+12);
 
-  document.body.innerHTML=`
-  <div class="overlay">
+  document.getElementById("pop").innerHTML=`
   <div class="popup">
-  <h3>❌ REJECTED</h3>
-  <button class="okBtn" onclick="location.reload()">OK</button>
-  </div>
+  <h3>🔑 KEY</h3>
+  <div class="mono">${f.key}</div>
+  <p>Expire: ${exp.toLocaleString()}</p>
+  <p>Kill limit 10-12 (Play Safe Legit)</p>
+
+  <button onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">
+  TELEGRAM
+  </button>
+
+  <br>
+  <button onclick="location.reload()">OK</button>
+  <button onclick="location.reload()">CANCEL</button>
   </div>`;
  }
 
@@ -305,11 +168,7 @@ function showWaiting(utrVal){
  },2000);
 }
 
-function copyKey(el){
- navigator.clipboard.writeText(el.innerText);
- document.getElementById("copyMsg").style.display="block";
-}
-
 </script>
+
 </body>
 </html>
