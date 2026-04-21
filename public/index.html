@@ -66,7 +66,6 @@ background:#020617;
 color:#22c55e;
 border:1px solid #22c55e;
 }
-
 </style>
 </head>
 
@@ -78,10 +77,11 @@ border:1px solid #22c55e;
 <script>
 
 let themeColor="#22c55e";
-let lastRefresh = 0;
-let refreshHandled = false; // 🔥 ADD FIX
 
-// 🔥 LOAD CHECK
+// 🔥 STORE LAST REFRESH (FIX)
+let lastRefresh = localStorage.getItem("lastRefresh") || 0;
+
+// LOAD
 window.onload = ()=>{
  let savedUTR = localStorage.getItem("pendingUTR");
  if(savedUTR){
@@ -91,15 +91,13 @@ window.onload = ()=>{
  }
 };
 
-// 🔥 STATUS + REFRESH FIX
+// STATUS
 function loadHome(){
  fetch("/status").then(r=>r.json()).then(d=>{
 
-   // 🔥 ONLY 1 TIME REFRESH FIX
-   if(d.refresh && !refreshHandled){
-     refreshHandled = true;
-     lastRefresh = d.refresh;
-
+   // 🔥 FINAL FIX
+   if(d.refresh && d.refresh != lastRefresh){
+     localStorage.setItem("lastRefresh", d.refresh);
      localStorage.removeItem("pendingUTR");
      location.reload();
      return;
@@ -113,7 +111,7 @@ function loadHome(){
  });
 }
 
-// 🔥 HOME UI
+// HOME
 function showMain(){
 
  fetch("/settings").then(r=>r.json()).then(s=>{
@@ -130,7 +128,6 @@ function showMain(){
  <div class="card">
 
  <h3>Select Game</h3>
-
  <select class="gameSelect">
    <option>BGMI</option>
  </select>
@@ -172,7 +169,7 @@ function confirmBox(plan,price){
  if(!utrVal||utrVal.length!=12)return alert("Invalid UTR");
 
  document.body.innerHTML+=`
- <div class="overlay" id="pop">
+ <div class="overlay">
  <div class="popup">
    <h3>Confirm the action</h3>
    <button class="confirmBtn" onclick="start('${plan}','${price}','${utrVal}')">Confirm</button>
@@ -219,37 +216,20 @@ function showWaiting(utrVal){
 
  if(f.status==="rejected"){
   localStorage.removeItem("pendingUTR");
-
-  document.body.innerHTML=`
-  <div class="overlay">
-  <div class="popup">
-  <h3>❌ PAYMENT REJECTED</h3>
-  <button onclick="location.reload()">OK</button>
-  </div>
-  </div>`;
+  location.reload();
  }
 
  if(f.status==="approved"){
   localStorage.removeItem("pendingUTR");
-
-  document.body.innerHTML=`
-  <div class="overlay">
-  <div class="popup">
-  <h3>🔑 KEY</h3>
-  <div>${f.key}</div>
-  <button onclick="location.reload()">OK</button>
-  </div>
-  </div>`;
+  location.reload();
  }
  }
  });
  },2000);
 }
 
-// 🔥 AUTO CHECK REFRESH
-setInterval(()=>{
- loadHome();
-},3000);
+// AUTO CHECK
+setInterval(loadHome,3000);
 
 </script>
 
