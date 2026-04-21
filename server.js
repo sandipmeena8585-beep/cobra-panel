@@ -14,24 +14,46 @@ if(!fs.existsSync(DB)){
   systemOn:true,
   upi:"godxcobra@axl",
   qr:"",
-  plans:[{type:"",time:"1D",price:"100"}],
+  plans:[
+   {type:"",time:"5H",price:"50"},
+   {type:"",time:"1D",price:"100"},
+   {type:"",time:"3D",price:"200"},
+   {type:"",time:"7D",price:"400"},
+   {type:"",time:"15D",price:"600"},
+   {type:"",time:"30D",price:"1000"},
+   {type:"",time:"60D",price:"1200"},
+   {type:"",time:"FULL",price:"1400"}
+  ],
   stock:{},
   requests:[],
   history:[],
-  refresh:0   // 🔥 ADDED
+  refresh:0
  },null,2));
 }
 
-// LOAD DB
+// LOAD
 function db(){
  let data=JSON.parse(fs.readFileSync(DB));
 
- // 🔥 AUTO FIX (old DB)
- if(data.refresh===undefined){
-  data.refresh=0;
-  fs.writeFileSync(DB,JSON.stringify(data,null,2));
+ // 🔥 AUTO FIX OLD DB
+ if(!data.plans || data.plans.length===0){
+  data.plans=[
+   {type:"",time:"5H",price:"50"},
+   {type:"",time:"1D",price:"100"},
+   {type:"",time:"3D",price:"200"},
+   {type:"",time:"7D",price:"400"},
+   {type:"",time:"15D",price:"600"},
+   {type:"",time:"30D",price:"1000"},
+   {type:"",time:"60D",price:"1200"},
+   {type:"",time:"FULL",price:"1400"}
+  ];
  }
 
+ if(data.refresh===undefined){
+  data.refresh=0;
+ }
+
+ fs.writeFileSync(DB,JSON.stringify(data,null,2));
  return data;
 }
 
@@ -56,15 +78,13 @@ app.get("/admin",(req,res)=>{
  res.sendFile(path.join(__dirname,"public/admin.html"));
 });
 
-// ================= SYSTEM =================
-
-// STATUS (🔥 UPDATED)
+// STATUS
 app.get("/status",(req,res)=>{
  const d=db();
  res.json({on:d.systemOn,refresh:d.refresh});
 });
 
-// 🔥 TOGGLE PANEL
+// TOGGLE
 app.post("/toggle",(req,res)=>{
  let d=db();
  d.systemOn=!d.systemOn;
@@ -72,21 +92,21 @@ app.post("/toggle",(req,res)=>{
  res.json({on:d.systemOn});
 });
 
-// 🔥 REFRESH SIGNAL
+// REFRESH
 app.post("/refresh",(req,res)=>{
  let d=db();
- d.refresh=Date.now(); // trigger
+ d.refresh=Date.now();
  save(d);
  res.json({ok:true});
 });
 
-// ================= SETTINGS =================
+// SETTINGS
 app.get("/settings",(req,res)=>{
  let d=db();
  res.json({upi:d.upi,qr:d.qr});
 });
 
-// ================= PLANS =================
+// PLANS
 app.get("/plans",(req,res)=>{
  res.json(db().plans);
 });
@@ -98,7 +118,7 @@ app.post("/savePlans",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= BUY =================
+// BUY
 app.post("/buy",(req,res)=>{
  let d=db();
 
@@ -114,19 +134,18 @@ app.post("/buy",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= REQUEST =================
+// REQUEST
 app.get("/requests",(req,res)=>{
  res.json(db().requests);
 });
 
-// ================= APPROVE =================
+// APPROVE
 app.post("/approve",(req,res)=>{
  let d=db();
-
  let r=d.requests.find(x=>x.user===req.body.user);
- if(!r) return res.json({error:"not found"});
+ if(!r)return res.json({});
 
- let key=(d.stock[r.plan]||[]).shift() || "NO KEY";
+ let key=(d.stock[r.plan]||[]).shift()||"NO KEY";
 
  d.history.unshift({
   user:r.user,
@@ -144,10 +163,9 @@ app.post("/approve",(req,res)=>{
  res.json({key});
 });
 
-// ================= REJECT =================
+// REJECT
 app.post("/reject",(req,res)=>{
  let d=db();
-
  let r=d.requests.find(x=>x.user===req.body.user);
 
  d.history.unshift({
@@ -163,42 +181,32 @@ app.post("/reject",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= HISTORY =================
+// HISTORY
 app.get("/history",(req,res)=>{
  res.json(db().history);
 });
 
-// ================= STOCK =================
+// STOCK
 app.get("/stock",(req,res)=>{
  res.json(db().stock);
 });
 
 app.post("/addStock",(req,res)=>{
  let d=db();
-
- if(!d.stock[req.body.plan]){
-  d.stock[req.body.plan]=[];
- }
-
+ if(!d.stock[req.body.plan]) d.stock[req.body.plan]=[];
  d.stock[req.body.plan].push(req.body.key);
-
  save(d);
  res.json({ok:true});
 });
 
-// 🔥 DELETE STOCK
 app.post("/deleteStock",(req,res)=>{
  let d=db();
-
- if(d.stock[req.body.plan]){
-  d.stock[req.body.plan].splice(req.body.index,1);
- }
-
+ d.stock[req.body.plan]?.splice(req.body.index,1);
  save(d);
  res.json({ok:true});
 });
 
-// ================= START =================
+// START
 app.listen(3000,()=>{
  console.log("🔥 SERVER RUNNING");
 });
