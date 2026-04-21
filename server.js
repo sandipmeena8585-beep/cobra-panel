@@ -80,7 +80,7 @@ app.get("/admin",(req,res)=>{
  res.sendFile(path.join(__dirname,"public/admin.html"));
 });
 
-// STATUS (🔥 ADD UI DATA)
+// STATUS (🔥 UI + refresh)
 app.get("/status",(req,res)=>{
  const d=db();
  res.json({
@@ -96,6 +96,7 @@ app.get("/status",(req,res)=>{
 app.post("/toggle",(req,res)=>{
  let d=db();
  d.systemOn=!d.systemOn;
+ d.refresh=Date.now(); // 🔥 LIVE
  save(d);
  res.json({on:d.systemOn});
 });
@@ -117,17 +118,19 @@ app.post("/settings",(req,res)=>{
  if(req.body.textColor!==undefined) d.textColor=req.body.textColor;
  if(req.body.title!==undefined) d.title=req.body.title;
 
+ d.refresh=Date.now(); // 🔥 LIVE APPLY
+
  save(d);
  res.json({ok:true});
 });
 
-// 🔥 QR UPLOAD (NEW ADD)
+// 🔥 QR UPLOAD
 app.post("/uploadQR",upload.single("qr"),(req,res)=>{
  let d=db();
 
  d.qr="/uploads/"+req.file.filename;
-
  d.refresh=Date.now(); // 🔥 instant refresh
+
  save(d);
 
  res.json({ok:true,qr:d.qr});
