@@ -5,20 +5,9 @@
 <title>COBRA SERVER PANEL</title>
 
 <style>
-body{
-margin:0;
-font-family:Arial;
-background:#020617;
-color:white;
-text-align:center
-}
+body{margin:0;font-family:Arial;background:#020617;color:white;text-align:center}
 
-.top{
-padding:15px;
-font-size:20px;
-color:#22c55e;
-font-weight:bold;
-}
+.top{padding:15px;font-size:20px;color:#22c55e;font-weight:bold}
 
 .card{
 background:#0f172a;
@@ -48,9 +37,7 @@ display:block;
 font-size:16px;
 }
 
-/* ✅ SAME COLOR FIX */
-.gameSelect,
-#planSel{
+.gameSelect,#planSel{
 background:#020617;
 color:#22c55e;
 border:2px solid #22c55e;
@@ -59,69 +46,56 @@ border:2px solid #22c55e;
 /* POPUP */
 .overlay{
 position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.8);
-display:flex;
-justify-content:center;
-align-items:center;
+top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,0.85);
+display:flex;justify-content:center;align-items:center;
 }
 
 .popup{
 background:#020617;
-color:white;
 padding:22px;
 border-radius:16px;
 width:85%;
 max-width:320px;
 text-align:center;
-box-shadow:
-0 0 10px #22c55e,
-0 0 20px #22c55e,
-0 0 40px #22c55e;
-animation:pop .25s ease;
+box-shadow:0 0 30px #22c55e;
 }
 
-@keyframes pop{
-from{transform:scale(.8);opacity:0}
-to{transform:scale(1);opacity:1}
-}
-
-.confirmBtn{
-background:#22c55e;
-color:#000;
+.keyBox{
+background:#000;
 padding:10px;
-border:none;
 border-radius:8px;
-margin:5px;
-width:40%;
+margin:10px 0;
+font-family:monospace;
+color:#22c55e;
+cursor:pointer;
 }
 
-.cancelBtn{
-background:#1e293b;
-color:#fff;
+.copyMsg{
+font-size:12px;
+color:#22c55e;
+display:none;
+}
+
+.tgBtn{
+margin-top:10px;
+display:inline-block;
 padding:10px;
-border:none;
+background:#0088cc;
 border-radius:8px;
-margin:5px;
-width:40%;
+color:white;
+text-decoration:none;
 }
 
 .loader{
 border:4px solid #111;
 border-top:4px solid #22c55e;
 border-radius:50%;
-width:45px;
-height:45px;
-margin:auto;
+width:45px;height:45px;margin:auto;
 animation:spin 1s linear infinite
 }
 
-@keyframes spin{
-to{transform:rotate(360deg)}
-}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 .upi{
 font-family:monospace;
@@ -153,7 +127,6 @@ window.onload = ()=>{
 
 function loadHome(){
  fetch("/status").then(r=>r.json()).then(d=>{
-
    if(d.refresh && d.refresh != lastRefresh){
      localStorage.setItem("lastRefresh", d.refresh);
      localStorage.removeItem("pendingUTR");
@@ -230,18 +203,13 @@ function confirmBox(plan,price){
  <div class="overlay">
  <div class="popup">
    <h3>Confirm Payment</h3>
-   <p>Proceed payment?</p>
-
-   <button class="confirmBtn" onclick="start('${plan}','${price}','${utrVal}')">YES</button>
-   <button class="cancelBtn" onclick="location.reload()">NO</button>
+   <button onclick="start('${plan}','${price}','${utrVal}')">YES</button>
  </div>
  </div>`;
 }
 
 function start(plan,price,utrVal){
-
  localStorage.setItem("pendingUTR", utrVal);
-
  showWaiting(utrVal);
 
  fetch("/buy",{
@@ -272,6 +240,37 @@ function showWaiting(utrVal){
  if(f){
  clearInterval(chk);
 
+ if(f.status==="approved"){
+  localStorage.removeItem("pendingUTR");
+
+  let expiry = new Date().toDateString();
+
+  document.body.innerHTML=`
+  <div class="overlay">
+  <div class="popup">
+
+  <h3>🔑 YOUR KEY</h3>
+
+  <div class="keyBox" onclick="copyKey(this)">
+    ${f.key}
+  </div>
+  <div class="copyMsg" id="copyMsg">Copied ✔</div>
+
+  <p>📅 Expiry: ${expiry}</p>
+
+  <p>⚡ Kill Limit: 10-12 (Legit Play Safe)</p>
+
+  <a href="https://t.me/+wRZN39fdVcRkYTM9" target="_blank" class="tgBtn">
+    📢 Join Paid Group
+  </a>
+
+  <br><br>
+  <button onclick="location.reload()">OK</button>
+
+  </div>
+  </div>`;
+ }
+
  if(f.status==="rejected"){
   localStorage.removeItem("pendingUTR");
 
@@ -284,21 +283,15 @@ function showWaiting(utrVal){
   </div>`;
  }
 
- if(f.status==="approved"){
-  localStorage.removeItem("pendingUTR");
-
-  document.body.innerHTML=`
-  <div class="overlay">
-  <div class="popup">
-  <h3>🔑 YOUR KEY</h3>
-  <div>${f.key}</div>
-  <button onclick="location.reload()">OK</button>
-  </div>
-  </div>`;
- }
  }
  });
  },2000);
+}
+
+// COPY FUNCTION
+function copyKey(el){
+ navigator.clipboard.writeText(el.innerText);
+ document.getElementById("copyMsg").style.display="block";
 }
 
 </script>
