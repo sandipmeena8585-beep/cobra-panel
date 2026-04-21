@@ -61,6 +61,21 @@ text-align:center;
 box-shadow:0 0 30px #22c55e;
 }
 
+/* 🔥 NEW HEAVY OK BUTTON */
+.okBtn{
+margin-top:18px;
+padding:12px 28px;
+background:linear-gradient(135deg,#22c55e,#16a34a);
+color:#000;
+font-weight:bold;
+border:none;
+border-radius:10px;
+font-size:15px;
+box-shadow:
+0 0 10px #22c55e,
+0 0 20px #22c55e;
+}
+
 .keyBox{
 background:#000;
 padding:10px;
@@ -264,8 +279,10 @@ function showWaiting(utrVal){
     📢 Join Paid Group
   </a>
 
-  <br><br>
-  <button onclick="location.reload()">OK</button>
+  <br>
+
+  <!-- 🔥 UPDATED BUTTON -->
+  <button class="okBtn" onclick="location.reload()">OK</button>
 
   </div>
   </div>`;
@@ -278,7 +295,7 @@ function showWaiting(utrVal){
   <div class="overlay">
   <div class="popup">
   <h3>❌ REJECTED</h3>
-  <button onclick="location.reload()">OK</button>
+  <button class="okBtn" onclick="location.reload()">OK</button>
   </div>
   </div>`;
  }
@@ -288,7 +305,6 @@ function showWaiting(utrVal){
  },2000);
 }
 
-// COPY FUNCTION
 function copyKey(el){
  navigator.clipboard.writeText(el.innerText);
  document.getElementById("copyMsg").style.display="block";
