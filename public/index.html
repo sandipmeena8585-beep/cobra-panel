@@ -34,7 +34,6 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 
 .info{margin-top:15px;font-size:14px;color:#38bdf8}
 
-/* POPUP */
 .overlay{
  position:fixed;top:0;left:0;width:100%;height:100%;
  background:rgba(0,0,0,0.8);
@@ -143,7 +142,6 @@ function buy(plan,price){
  });
 }
 
-/* 🔥 ONLY CHANGE (NO FLOOR SYSTEM) */
 function confirmBox(plan){
  let utrVal = utr.value;
 
@@ -165,7 +163,10 @@ function closePop(){
  document.getElementById("pop").remove();
 }
 
+/* 🔥 ONLY FIX (ADMIN REQUEST ISSUE FIXED) */
 function startProcess(plan,utrVal){
+
+ let userName = "USER_" + Date.now(); // UNIQUE USER
 
  document.getElementById("pop").innerHTML=`
  <div class="popup">
@@ -176,7 +177,11 @@ function startProcess(plan,utrVal){
  fetch("/buy",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({user:"USER",plan:plan,utr:utrVal})
+  body:JSON.stringify({
+    user:userName,
+    plan:plan,
+    utr:utrVal
+  })
  });
 
  let chk=setInterval(()=>{
@@ -205,7 +210,6 @@ function startProcess(plan,utrVal){
        <h3>🔑 KEY</h3>
        <div class="keyBox">${f.key}</div>
        <p>Expire: ${exp.toLocaleString()}</p>
-       <p>Kill limit 10-12</p>
        <button onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">TELEGRAM</button>
        <br>
        <button onclick="location.reload()">OK</button>
@@ -215,7 +219,7 @@ function startProcess(plan,utrVal){
  });
  },2000);
 }
-/* END */
+/* END FIX */
 
 function tg(){
  window.open("https://t.me/GODx_COBRA");
