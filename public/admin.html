@@ -161,7 +161,6 @@ function panelControlUI(){
  });
 }
 
-// 🔥 FIXED REFRESH
 function refreshPanel(){
  fetch("/refresh",{method:"POST"})
  .then(()=>alert("Customer Panel Refreshed ✔"));
@@ -215,20 +214,53 @@ function stockUI(){
 
  let html=`<div class="card">
  <select id="planSel">
- ${p.map(x=>`<option>${x.type}${x.time}</option>`)}
+ ${p.map(x=>`<option>${x.type+x.time}</option>`)}
  </select>
  <input id="key" placeholder="ENTER KEY">
  <button onclick="addStock()">ADD</button>
  </div>`;
 
  p.forEach(x=>{
-   let count = (s[x.type+x.time]||[]).length;
-   html+=`<div class="card">${x.type}${x.time} → ${count} KEYS</div>`;
+   let plan = x.type+x.time;
+   let arr = s[plan]||[];
+
+   html+=`<div class="card"><b>${plan}</b><br>`;
+
+   arr.forEach((k,i)=>{
+     html+=`${k}
+     <button onclick="delStock('${plan}',${i})">❌</button><br>`;
+   });
+
+   html+=`</div>`;
  });
 
  main.innerHTML=html;
  });
  });
+}
+
+// 🔥 ADD STOCK
+function addStock(){
+ fetch("/addStock",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+    plan:planSel.value,
+    key:key.value
+  })
+ }).then(()=>{
+  key.value="";
+  stockUI();
+ });
+}
+
+// 🔥 DELETE STOCK
+function delStock(plan,index){
+ fetch("/deleteStock",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({plan,index})
+ }).then(stockUI);
 }
 
 // ================= REQUEST =================
