@@ -171,7 +171,7 @@ function selectQR(e){
  selectedFile = e.target.files[0];
 }
 
-// ✅ FIXED SAVE (ONLY CHANGE)
+// ✅ ONLY CHANGE (LIVE UPDATE FIX)
 function saveSettings(){
 
  fetch("/settings",{
@@ -198,6 +198,9 @@ function saveSettings(){
 
  })
  .then(()=>{
+  // 🔥 FORCE CUSTOMER REFRESH TRIGGER
+  fetch("/refresh",{method:"POST"});
+
   alert("UPDATED LIVE ✔");
  });
 
