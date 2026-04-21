@@ -1,94 +1,58 @@
-<!DOCTYPE html>
-<html>
-<head>
+<!DOCTYPE html>  
+<html>  
+<head>  
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 
-<title>COBRA SERVER PANEL</title>
-
-<style>
-body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center;-webkit-tap-highlight-color:transparent}
-
-.top{
- padding:15px;
- font-size:20px;
- font-weight:bold;
- color:#22c55e;
- animation:glow 1.5s infinite alternate;
-}
-@keyframes glow{from{opacity:0.6}to{opacity:1}}
-
-.card{
- background:#1e293b;
- margin:10px;
- padding:15px;
- border-radius:12px;
-}
+<title>COBRA SERVER PANEL</title>  
+  
+<style>  
+body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center;-webkit-tap-highlight-color:transparent}  
+.top{padding:15px;font-size:20px;font-weight:bold;color:#22c55e;animation:glow 1.5s infinite alternate;}  
+@keyframes glow{from{opacity:0.6}to{opacity:1}}  
+.card{background:#1e293b;margin:10px;padding:15px;border-radius:12px}  
 
 .buyBtn{
- padding:14px;
- border:none;
- border-radius:8px;
- background:#22c55e;
- color:white;
- margin-top:10px;
- font-size:16px;
- animation:btnGlow 1.2s infinite alternate;
+ padding:14px;border:none;border-radius:8px;background:#22c55e;color:white;
+ margin-top:10px;font-size:16px;animation:btnGlow 1.2s infinite alternate;
 }
-@keyframes btnGlow{
- from{box-shadow:0 0 5px #22c55e;}
- to{box-shadow:0 0 20px #22c55e;}
-}
+@keyframes btnGlow{from{box-shadow:0 0 5px #22c55e;}to{box-shadow:0 0 20px #22c55e;}}
 
-button{
- padding:12px;
- border:none;
- border-radius:8px;
- background:#22c55e;
- color:white;
- margin:6px;
- font-weight:bold;
-}
+button{padding:12px;border:none;border-radius:8px;background:#22c55e;color:white;margin:6px;font-weight:bold}
 .red{background:#ef4444}
 
-input,select{
- padding:10px;
- width:80%;
- margin:10px;
- border-radius:6px;
- border:none;
+input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
+.mono{font-family:monospace}
+
+.tgFloat{
+ position:fixed;bottom:20px;right:15px;background:#0088cc;color:#fff;
+ padding:10px 14px;border-radius:20px;font-size:12px;cursor:pointer;
+ box-shadow:0 0 10px #0088cc;
 }
+
+.info{margin-top:15px;font-size:14px;color:#38bdf8}
 
 .overlay{
- position:fixed;
- top:0;
- left:0;
- width:100%;
- height:100%;
+ position:fixed;top:0;left:0;width:100%;height:100%;
  background:rgba(0,0,0,0.8);
- display:flex;
- justify-content:center;
- align-items:center;
+ display:flex;justify-content:center;align-items:center;
  z-index:999;
 }
-
 .popup{
- background:#1e293b;
+ background:linear-gradient(145deg,#0f172a,#1e293b);
  color:#fff;
  padding:20px;
- border-radius:15px;
+ border-radius:18px;
  width:90%;
  max-width:320px;
  text-align:center;
- box-shadow:0 0 20px #22c55e;
+ box-shadow:0 0 25px #22c55e;
 }
-
 .loader{
  border:4px solid #333;
  border-top:4px solid #22c55e;
  border-radius:50%;
- width:40px;
- height:40px;
+ width:40px;height:40px;
  margin:10px auto;
  animation:spin 1s linear infinite;
 }
@@ -102,18 +66,22 @@ input,select{
  font-family:monospace;
  word-break:break-all;
 }
-</style>
-</head>
+</style>  
+</head>  
+  
+<body>  
+  
+<div class="top">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>  
+  
+<div id="main"></div>  
 
-<body>
+<div class="tgFloat" onclick="tg()">HELP</div>
+  
+<script>  
 
-<div class="top">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
+let lockClick = false;
 
-<div id="main"></div>
-
-<script>
-
-// ================= SYSTEM CHECK =================
+// ================= SYSTEM =================
 fetch("/status")
 .then(r=>r.json())
 .then(d=>{
@@ -124,11 +92,10 @@ fetch("/status")
  }
 });
 
-// ================= MAIN PAGE =================
+// ================= MAIN =================
 function showMain(){
  main.innerHTML=`
  <div class="card">
-
    <h3>Select Game</h3>
    <select><option>BGMI</option></select>
 
@@ -146,23 +113,28 @@ function showMain(){
 
    <button class="buyBtn" onclick="goBuy()">𝗕𝗨𝗬 𝗞𝗘𝗬</button>
 
+   <div class="info">
+   ━━━━━━━━━━━━━━━━━━ <br>
+   ⚡ FAST DELIVERY <br>
+   🔐 SECURE ACCESS <br>
+   ━━━━━━━━━━━━━━━━━━
+   </div>
  </div>`;
 }
 
-// ================= BUY CLICK FIX =================
-let lockClick = false;
-
+// ================= FIXED BUY =================
 function goBuy(){
  if(lockClick) return;
  lockClick = true;
 
- let val = planSel.value.split("|");
+ let val = document.getElementById("planSel").value.split("|");
+
  buy(val[0],val[1]);
 
- setTimeout(()=>{ lockClick=false; },1000);
+ setTimeout(()=>{ lockClick=false; },800);
 }
 
-// ================= PAYMENT PAGE =================
+// ================= PAYMENT =================
 function buy(plan,price){
  fetch("/settings")
  .then(r=>r.json())
@@ -171,21 +143,18 @@ function buy(plan,price){
   <div class="card">
     <h3>PAYMENT</h3>
     <p>Pay ₹${price}</p>
-
-    <div>${s.upi}</div>
+    <div class="mono">${s.upi}</div>
     <br>
     <img src="${s.qr}" width="200">
-
     <input id="utr" placeholder="ENTER UTR (12 digit)">
     <button onclick="confirmBox('${plan}')">VERIFY</button>
   </div>`;
  });
 }
 
-// ================= CONFIRM POPUP =================
+// ================= POPUP =================
 function confirmBox(plan){
-
- let utrVal = utr.value;
+ let utrVal = document.getElementById("utr").value;
 
  if(!utrVal || utrVal.length!=12){
    return alert("Enter Valid 12 Digit UTR");
@@ -194,14 +163,15 @@ function confirmBox(plan){
  document.body.innerHTML+=`
  <div class="overlay" id="pop">
   <div class="popup">
-
    <h3>PAYMENT CONFIRM</h3>
-
    <button onclick="startProcess('${plan}','${utrVal}')">YES</button>
-   <button class="red" onclick="location.reload()">NO</button>
-
+   <button class="red" onclick="closePop()">NO</button>
   </div>
  </div>`;
+}
+
+function closePop(){
+ document.getElementById("pop").remove();
 }
 
 // ================= PROCESS =================
@@ -211,12 +181,8 @@ function startProcess(plan,utrVal){
 
  document.getElementById("pop").innerHTML=`
  <div class="popup">
-
  <div class="loader"></div>
-
  <p>Please wait admin verify your request</p>
- <small>⚠️ Do not tap anywhere</small>
-
  </div>`;
 
  fetch("/buy",{
@@ -233,51 +199,44 @@ function startProcess(plan,utrVal){
  fetch("/history")
  .then(r=>r.json())
  .then(h=>{
-
    let f=h.find(x=>x.utr===utrVal);
 
    if(f){
-
      clearInterval(chk);
 
-     // REJECT
      if(f.status==="rejected"){
        document.getElementById("pop").innerHTML=`
        <div class="popup">
-       <h3>⚠️ PAYMENT REJECTED</h3>
+       <h3>❌ PAYMENT REJECTED</h3>
        <button onclick="location.reload()">OK</button>
        </div>`;
      }
 
-     // APPROVED
      if(f.status==="approved"){
-
        let exp=new Date();
        exp.setHours(exp.getHours()+12);
 
        document.getElementById("pop").innerHTML=`
        <div class="popup">
-
-       <h3>KEY</h3>
-
+       <h3>🔑 KEY</h3>
        <div class="keyBox">${f.key}</div>
-
        <p>Expire: ${exp.toLocaleString()}</p>
-       <p>Kill limit 10-12 (Play Safe)</p>
-
+       <button onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">TELEGRAM</button>
+       <br>
        <button onclick="location.reload()">OK</button>
-
        </div>`;
      }
-
    }
-
  });
  },2000);
-
 }
 
-</script>
+// ================= TG =================
+function tg(){
+ window.open("https://t.me/GODx_COBRA");
+}
 
-</body>
+</script>  
+  
+</body>  
 </html>
