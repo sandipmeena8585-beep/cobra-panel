@@ -20,12 +20,18 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center
 }
 @keyframes btnGlow{from{box-shadow:0 0 5px #22c55e;}to{box-shadow:0 0 20px #22c55e;}}
 
-button{padding:12px;border:none;border-radius:6px;background:#22c55e;color:white;margin:5px}
+button{padding:12px;border:none;border-radius:6px;margin:5px}
 .darkBtn{background:#020617;color:#fff}
-.tgBtn{background:#0088cc}
+.tgBtn{background:#0088cc;color:#fff}
+
+.btnRow{
+ display:flex;
+ justify-content:space-between;
+ margin-top:10px;
+}
 
 input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
-.mono{font-family:monospace}
+.mono{font-family:monospace;display:block;margin:8px 0}
 
 .tgFloat{
  position:fixed;bottom:20px;right:15px;background:#0088cc;color:#fff;
@@ -73,13 +79,14 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 
 let lastRefresh=0;
 let firstLoad=true;
+let lock=false; // 🔥 CHANGE 2 LOCK
 
 function copyText(t){
  navigator.clipboard.writeText(t);
  alert("Copied ✔");
 }
 
-// 🔥 FIXED STATUS (ONLY CHANGE)
+// STATUS
 function loadStatus(){
  fetch("/status")
  .then(r=>r.json())
@@ -90,22 +97,15 @@ function loadStatus(){
    return;
   }
 
-  // only admin refresh reload
+  // 🔥 ADMIN REFRESH = UNLOCK + RELOAD
   if(lastRefresh && d.refresh!==lastRefresh){
+    lock=false;
     location.reload();
     return;
   }
 
   lastRefresh=d.refresh;
 
-  document.body.style.background=d.color || "#0f172a";
-  document.body.style.color=d.textColor || "#fff";
-
-  if(d.title){
-    document.getElementById("title").innerText=d.title;
-  }
-
-  // only first time show home
   if(firstLoad){
     showMain();
     firstLoad=false;
@@ -149,6 +149,9 @@ function goBuy(){
 
 // PAYMENT
 function buy(plan,price){
+
+ if(lock) return; // 🔥 LOCK
+
  fetch("/settings")
  .then(r=>r.json())
  .then(s=>{
@@ -170,9 +173,14 @@ function buy(plan,price){
 
 // PROCESS
 function startProcess(plan,price){
+
+ if(lock) return;
+ lock=true; // 🔥 LOCK ENABLE
+
  let utrVal = utr.value;
 
  if(!utrVal || utrVal.length!=12){
+   lock=false;
    return alert("Enter Valid 12 Digit UTR");
  }
 
@@ -220,14 +228,15 @@ function startProcess(plan,price){
        <div class="popup">
        <h3>KEY</h3>
 
-       <div class="mono" onclick="copyText('${f.key}')">${f.key}</div>
+       <span class="mono" onclick="copyText('${f.key}')">${f.key}</span>
+       <span class="mono">Expire: ${exp.toLocaleString()}</span>
+       <span class="mono">Kill limit 10-12 (Play Safe Legit)</span>
 
-       <p>Expire: ${exp.toLocaleString()}</p>
+       <div class="btnRow">
+         <button class="tgBtn" onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">📩 PAID GROUP JOIN</button>
+         <button class="darkBtn" onclick="location.reload()">NOT JOIN</button>
+       </div>
 
-       <button class="tgBtn" onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">TELEGRAM</button>
-       <br>
-
-       <button class="darkBtn" onclick="location.reload()">OK</button>
        </div>`;
      }
    }
