@@ -3,7 +3,7 @@ const fs=require("fs");
 const path=require("path");
 
 const app=express();
-app.use(express.json({limit:"10mb"})); // 🔥 QR base64 support
+app.use(express.json({limit:"10mb"}));
 app.use(express.static("public"));
 
 const DB="./data.json";
@@ -14,6 +14,8 @@ if(!fs.existsSync(DB)){
   systemOn:true,
   upi:"godxcobra@axl",
   qr:"",
+  color:"#22c55e",
+  title:"COBRA SERVER PANEL",
   plans:[
    {type:"",time:"5H",price:"50"},
    {type:"",time:"1D",price:"100"},
@@ -48,13 +50,10 @@ function db(){
   ];
  }
 
- if(data.refresh===undefined){
-  data.refresh=0;
- }
-
- if(!data.stock){
-  data.stock={};
- }
+ if(data.refresh===undefined) data.refresh=0;
+ if(!data.stock) data.stock={};
+ if(!data.color) data.color="#22c55e";
+ if(!data.title) data.title="COBRA SERVER PANEL";
 
  fs.writeFileSync(DB,JSON.stringify(data,null,2));
  return data;
@@ -103,27 +102,27 @@ app.post("/refresh",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= 🔥 SETTINGS (ADDED FIX) =================
+// SETTINGS
 app.post("/settings",(req,res)=>{
  let d=db();
 
- if(req.body.upi !== undefined){
-  d.upi=req.body.upi;
- }
-
- // QR base64 save
- if(req.body.qr){
-  d.qr=req.body.qr;
- }
+ if(req.body.upi !== undefined) d.upi=req.body.upi;
+ if(req.body.qr) d.qr=req.body.qr;
+ if(req.body.color !== undefined) d.color=req.body.color;
+ if(req.body.title !== undefined) d.title=req.body.title;
 
  save(d);
  res.json({ok:true});
 });
 
-// GET SETTINGS
 app.get("/settings",(req,res)=>{
  let d=db();
- res.json({upi:d.upi,qr:d.qr});
+ res.json({
+  upi:d.upi,
+  qr:d.qr,
+  color:d.color,
+  title:d.title
+ });
 });
 
 // ================= PLANS =================
@@ -154,19 +153,16 @@ app.post("/buy",(req,res)=>{
  res.json({ok:true});
 });
 
-// REQUEST
 app.get("/requests",(req,res)=>{
  res.json(db().requests);
 });
 
-// APPROVE
 app.post("/approve",(req,res)=>{
  let d=db();
  let r=d.requests.find(x=>x.user===req.body.user);
  if(!r)return res.json({});
 
  let plan=r.plan.trim();
-
  let key="NO STOCK";
 
  if(d.stock[plan] && d.stock[plan].length>0){
@@ -189,7 +185,6 @@ app.post("/approve",(req,res)=>{
  res.json({key});
 });
 
-// REJECT
 app.post("/reject",(req,res)=>{
  let d=db();
  let r=d.requests.find(x=>x.user===req.body.user);
@@ -207,19 +202,15 @@ app.post("/reject",(req,res)=>{
  res.json({ok:true});
 });
 
-// HISTORY
 app.get("/history",(req,res)=>{
  res.json(db().history);
 });
 
-// ================= STOCK =================
-
-// GET
+// STOCK
 app.get("/stock",(req,res)=>{
  res.json(db().stock);
 });
 
-// ADD STOCK
 app.post("/addStock",(req,res)=>{
  let d=db();
 
@@ -236,7 +227,6 @@ app.post("/addStock",(req,res)=>{
  res.json({ok:true});
 });
 
-// DELETE STOCK
 app.post("/deleteStock",(req,res)=>{
  let d=db();
 
@@ -251,7 +241,4 @@ app.post("/deleteStock",(req,res)=>{
  res.json({ok:true});
 });
 
-// START
-app.listen(3000,()=>{
- console.log("🔥 SERVER RUNNING");
-});
+app.listen(3000,()=>console.log("🔥 SERVER RUNNING"));
