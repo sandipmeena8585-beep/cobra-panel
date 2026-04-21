@@ -85,7 +85,7 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <div onclick="home()">HOME</div>
 <div onclick="plansUI()">PLANS</div>
 <div onclick="stockUI()">STOCK</div>
-<div onclick="settingsUI()">UPI / QR</div>
+<div onclick="settingsUI()">UPI / QR / COLOR</div>
 <div onclick="reqUI()">REQUEST</div>
 <div onclick="panelControlUI()">PANEL CONTROL</div>
 <div onclick="logout()">LOGOUT</div>
@@ -135,7 +135,7 @@ function home(){
  closeMenu();
 }
 
-// ================= 🔥 QR FILE UPLOAD CHANGE =================
+// ================= SETTINGS (UPDATED 🔥) =================
 let qrBase64 = "";
 
 function settingsUI(){
@@ -144,7 +144,13 @@ function settingsUI(){
   <div class="card">
 
   <h3>UPI ID</h3>
-  <input id="upi" value="${d.upi || ""}" placeholder="Enter UPI ID">
+  <input id="upi" value="${d.upi || ""}">
+
+  <h3>Panel Title</h3>
+  <input id="title" value="${d.title || ""}">
+
+  <h3>Theme Color</h3>
+  <input id="color" type="color" value="${d.color || "#22c55e"}">
 
   <h3>UPLOAD QR CODE</h3>
   <input type="file" accept="image/*" onchange="uploadQR(event)">
@@ -158,7 +164,6 @@ function settingsUI(){
  });
 }
 
-// convert image → base64
 function uploadQR(e){
  let file = e.target.files[0];
  let reader = new FileReader();
@@ -176,13 +181,12 @@ function saveSettings(){
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify({
     upi:upi.value,
-    qr: qrBase64 || null
+    qr: qrBase64 || null,
+    color:color.value,
+    title:title.value
   })
  }).then(()=>alert("UPDATED LIVE ✔"));
 }
-// ================= END =================
-
-// बाकी code SAME नीचे 👇
 
 // ================= PANEL CONTROL =================
 function panelControlUI(){
@@ -204,31 +208,153 @@ function refreshPanel(){
  .then(()=>alert("Customer Panel Refreshed ✔"));
 }
 
-// ================= बाकी सब SAME =================
+// ================= PLANS =================
+function plansUI(){
+ fetch("/plans").then(r=>r.json()).then(data=>{
+ let options="";
+ data.forEach((x,i)=>{
+  options+=`<option value="${i}">${x.type}${x.time} - ₹${x.price}</option>`;
+ });
 
-// (मैंने नीचे कुछ भी change नहीं किया है)
+ main.innerHTML=`
+ <div class="card">
+ <select id="planSelect">${options}</select>
+ <input id="newTime" placeholder="Time">
+ <input id="newPrice" placeholder="Price">
+ <button onclick="updatePlan()">UPDATE</button>
+ <div id="msg"></div>
+ </div>`;
+ closeMenu();
+ });
+}
 
-function plansUI(){fetch("/plans").then(r=>r.json()).then(data=>{let options="";data.forEach((x,i)=>{options+=`<option value="${i}">${x.type}${x.time} - ₹${x.price}</option>`;});main.innerHTML=`<div class="card"><select id="planSelect">${options}</select><input id="newTime" placeholder="Time"><input id="newPrice" placeholder="Price"><button onclick="updatePlan()">UPDATE</button><div id="msg"></div></div>`;closeMenu();});}
+function updatePlan(){
+ fetch("/plans").then(r=>r.json()).then(data=>{
+ let i=planSelect.value;
+ data[i].time=newTime.value||data[i].time;
+ data[i].price=newPrice.value||data[i].price;
 
-function updatePlan(){fetch("/plans").then(r=>r.json()).then(data=>{let i=planSelect.value;data[i].time=newTime.value||data[i].time;data[i].price=newPrice.value||data[i].price;fetch("/savePlans",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)}).then(()=>msg.innerHTML="<div class='msg success'>UPDATED ✔</div>");});}
+ fetch("/savePlans",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify(data)
+ }).then(()=>msg.innerHTML="UPDATED ✔");
+ });
+}
 
+// ================= STOCK =================
 let activeIndex=null;
 
-function stockUI(){fetch("/plans").then(r=>r.json()).then(p=>{fetch("/stock").then(r=>r.json()).then(s=>{let html=`<div class="card"><select id="planSel">${p.map(x=>`<option>${x.type+x.time}</option>`)}</select><input id="key" placeholder="ENTER KEY"><button onclick="addStock()">ADD</button></div>`;p.forEach((x,i)=>{let plan=x.type+x.time;let arr=s[plan]||[];html+=`<div class="card" onclick="toggleKeys(${i})"><b>${plan}</b></div><div id="keys_${i}" style="display:none" class="card">`;arr.forEach((k,index)=>{html+=`${k}<button onclick="delStock('${plan}',${index});event.stopPropagation()">❌</button><br>`;});html+=`</div>`;});main.innerHTML=html;});});}
+function stockUI(){
+ fetch("/plans").then(r=>r.json()).then(p=>{
+ fetch("/stock").then(r=>r.json()).then(s=>{
 
-function toggleKeys(i){if(activeIndex===i){document.getElementById("keys_"+i).style.display="none";activeIndex=null;return;}if(activeIndex!==null){document.getElementById("keys_"+activeIndex).style.display="none";}document.getElementById("keys_"+i).style.display="block";activeIndex=i;}
+ let html=`
+ <div class="card">
+ <select id="planSel">${p.map(x=>`<option>${x.type+x.time}</option>`)}</select>
+ <input id="key" placeholder="ENTER KEY">
+ <button onclick="addStock()">ADD</button>
+ </div>`;
 
-function addStock(){fetch("/addStock",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan:planSel.value,key:key.value})}).then(()=>{key.value="";stockUI();});}
+ p.forEach((x,i)=>{
+ let plan=x.type+x.time;
+ let arr=s[plan]||[];
 
-function delStock(plan,index){fetch("/deleteStock",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan,index})}).then(stockUI);}
+ html+=`<div class="card" onclick="toggleKeys(${i})"><b>${plan}</b></div>
+ <div id="keys_${i}" style="display:none" class="card">`;
 
-function reqUI(){fetch("/requests").then(r=>r.json()).then(data=>{let html="";data.forEach(x=>{html+=`<div class="card"><b>${x.plan}</b> - ₹${x.price||"?"}<br>UTR: ${x.utr}<br>Time: ${x.time}<br><button class="green" onclick="approve('${x.user}')">YES</button><button class="red" onclick="reject('${x.user}')">NO</button></div>`;});main.innerHTML=html||"No Requests";});}
+ arr.forEach((k,index)=>{
+  html+=`${k}
+  <button onclick="delStock('${plan}',${index});event.stopPropagation()">❌</button><br>`;
+ });
 
-function approve(u){fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})}).then(r=>r.json()).then(d=>{alert("KEY: "+d.key);reqUI();});}
+ html+=`</div>`;
+ });
 
-function reject(u){fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})}).then(reqUI);}
+ main.innerHTML=html;
+ });
+ });
+}
 
-function toggleSystem(){fetch("/toggle",{method:"POST"}).then(()=>panelControlUI());}
+function toggleKeys(i){
+ if(activeIndex===i){
+  document.getElementById("keys_"+i).style.display="none";
+  activeIndex=null;
+  return;
+ }
+ if(activeIndex!==null){
+  document.getElementById("keys_"+activeIndex).style.display="none";
+ }
+ document.getElementById("keys_"+i).style.display="block";
+ activeIndex=i;
+}
+
+function addStock(){
+ fetch("/addStock",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+   plan:planSel.value,
+   key:key.value
+  })
+ }).then(()=>{
+  key.value="";
+  stockUI();
+ });
+}
+
+function delStock(plan,index){
+ fetch("/deleteStock",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({plan,index})
+ }).then(stockUI);
+}
+
+// ================= REQUEST =================
+function reqUI(){
+ fetch("/requests").then(r=>r.json()).then(data=>{
+ let html="";
+
+ data.forEach(x=>{
+ html+=`
+ <div class="card">
+ <b>${x.plan}</b> - ₹${x.price||"?"}
+ <br>UTR: ${x.utr}
+ <br>Time: ${x.time}
+
+ <button class="green" onclick="approve('${x.user}')">YES</button>
+ <button class="red" onclick="reject('${x.user}')">NO</button>
+ </div>`;
+ });
+
+ main.innerHTML=html||"No Requests";
+ });
+}
+
+function approve(u){
+ fetch("/approve",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({user:u})
+ }).then(r=>r.json()).then(d=>{
+  alert("KEY: "+d.key);
+  reqUI();
+ });
+}
+
+function reject(u){
+ fetch("/reject",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({user:u})
+ }).then(reqUI);
+}
+
+function toggleSystem(){
+ fetch("/toggle",{method:"POST"})
+ .then(()=>panelControlUI());
+}
 
 </script>
 
