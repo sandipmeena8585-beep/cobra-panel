@@ -9,11 +9,16 @@ app.use(express.static("public"));
 
 const DB="./data.json";
 
-// ================= UPLOAD SETUP =================
+// ================= UPLOAD FOLDER =================
+if(!fs.existsSync("public")){
+ fs.mkdirSync("public");
+}
+
 if(!fs.existsSync("public/uploads")){
  fs.mkdirSync("public/uploads",{recursive:true});
 }
 
+// ================= MULTER =================
 const storage=multer.diskStorage({
  destination:(req,file,cb)=>cb(null,"public/uploads"),
  filename:(req,file,cb)=>cb(null,Date.now()+"_"+file.originalname)
@@ -48,15 +53,20 @@ if(!fs.existsSync(DB)){
 
 // ================= LOAD =================
 function db(){
- let data=JSON.parse(fs.readFileSync(DB));
+ let data={};
+
+ try{
+  data=JSON.parse(fs.readFileSync(DB));
+ }catch(e){
+  data={};
+ }
 
  if(!data.stock) data.stock={};
- if(data.refresh===undefined) data.refresh=0;
+ if(!data.refresh) data.refresh=0;
  if(!data.color) data.color="#22c55e";
  if(!data.textColor) data.textColor="#ffffff";
  if(!data.title) data.title="COBRA SERVER PANEL";
 
- fs.writeFileSync(DB,JSON.stringify(data,null,2));
  return data;
 }
 
@@ -80,7 +90,7 @@ app.get("/admin",(req,res)=>{
  res.sendFile(path.join(__dirname,"public/admin.html"));
 });
 
-// STATUS (🔥 UI + refresh)
+// STATUS
 app.get("/status",(req,res)=>{
  const d=db();
  res.json({
@@ -96,12 +106,11 @@ app.get("/status",(req,res)=>{
 app.post("/toggle",(req,res)=>{
  let d=db();
  d.systemOn=!d.systemOn;
- d.refresh=Date.now(); // 🔥 LIVE
  save(d);
  res.json({on:d.systemOn});
 });
 
-// 🔥 REFRESH → CUSTOMER HOME
+// REFRESH
 app.post("/refresh",(req,res)=>{
  let d=db();
  d.refresh=Date.now();
@@ -118,24 +127,26 @@ app.post("/settings",(req,res)=>{
  if(req.body.textColor!==undefined) d.textColor=req.body.textColor;
  if(req.body.title!==undefined) d.title=req.body.title;
 
- d.refresh=Date.now(); // 🔥 LIVE APPLY
-
+ d.refresh=Date.now(); // 🔥 LIVE REFRESH
  save(d);
+
  res.json({ok:true});
 });
 
-// 🔥 QR UPLOAD
+// QR UPLOAD
 app.post("/uploadQR",upload.single("qr"),(req,res)=>{
  let d=db();
 
- d.qr="/uploads/"+req.file.filename;
- d.refresh=Date.now(); // 🔥 instant refresh
-
- save(d);
+ if(req.file){
+  d.qr="/uploads/"+req.file.filename;
+  d.refresh=Date.now();
+  save(d);
+ }
 
  res.json({ok:true,qr:d.qr});
 });
 
+// GET SETTINGS
 app.get("/settings",(req,res)=>{
  let d=db();
  res.json({
@@ -155,7 +166,7 @@ app.get("/plans",(req,res)=>{
 app.post("/savePlans",(req,res)=>{
  let d=db();
  d.plans=req.body;
- d.refresh=Date.now(); // 🔥 LIVE UPDATE
+ d.refresh=Date.now();
  save(d);
  res.json({ok:true});
 });
@@ -164,6 +175,7 @@ app.post("/savePlans",(req,res)=>{
 app.post("/buy",(req,res)=>{
  let d=db();
 
+ // duplicate UTR block
  if(d.requests.find(x=>x.utr===req.body.utr)){
   return res.json({ok:true});
  }
@@ -200,10 +212,7 @@ app.post("/approve",(req,res)=>{
  }
 
  d.history.unshift({
-  user:r.user,
-  plan:r.plan,
-  price:r.price,
-  utr:r.utr,
+  ...r,
   key:key,
   status:"approved",
   time:new Date().toLocaleString()
@@ -270,7 +279,9 @@ app.post("/deleteStock",(req,res)=>{
  res.json({ok:true});
 });
 
-// START
-app.listen(3000,()=>{
- console.log("🔥 SERVER RUNNING");
+// ================= START =================
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT,()=>{
+ console.log("🔥 SERVER RUNNING ON "+PORT);
 });
