@@ -15,7 +15,7 @@ if(!fs.existsSync(DB)){
   upi:"godxcobra@axl",
   qr:"",
   color:"#22c55e",
-  textColor:"#ffffff", // 🔥 ADDED
+  textColor:"#ffffff",
   title:"COBRA SERVER PANEL",
   plans:[
    {type:"",time:"5H",price:"50"},
@@ -38,7 +38,9 @@ if(!fs.existsSync(DB)){
 function db(){
  let data=JSON.parse(fs.readFileSync(DB));
 
- if(!data.textColor) data.textColor="#ffffff"; // 🔥 SAFE
+ if(!data.textColor) data.textColor="#ffffff";
+ if(!data.stock) data.stock={};
+ if(data.refresh===undefined) data.refresh=0;
 
  fs.writeFileSync(DB,JSON.stringify(data,null,2));
  return data;
@@ -80,15 +82,15 @@ app.post("/refresh",(req,res)=>{
  res.json({ok:true});
 });
 
-// SETTINGS 🔥
+// SETTINGS
 app.post("/settings",(req,res)=>{
  let d=db();
 
  if(req.body.upi !== undefined) d.upi=req.body.upi;
- if(req.body.qr) d.qr=req.body.qr;
+ if(req.body.qr !== undefined) d.qr=req.body.qr; // 🔥 FIX
  if(req.body.color !== undefined) d.color=req.body.color;
  if(req.body.title !== undefined) d.title=req.body.title;
- if(req.body.textColor !== undefined) d.textColor=req.body.textColor; // 🔥 ADD
+ if(req.body.textColor !== undefined) d.textColor=req.body.textColor;
 
  save(d);
  res.json({ok:true});
@@ -101,63 +103,122 @@ app.get("/settings",(req,res)=>{
   qr:d.qr,
   color:d.color,
   title:d.title,
-  textColor:d.textColor // 🔥 ADD
+  textColor:d.textColor
  });
 });
 
-// बाकी SAME (cut नहीं किया)
+// PLANS
 app.get("/plans",(req,res)=>res.json(db().plans));
-app.post("/savePlans",(req,res)=>{let d=db();d.plans=req.body;save(d);res.json({ok:true});});
 
-app.post("/buy",(req,res)=>{
+app.post("/savePlans",(req,res)=>{
  let d=db();
- d.requests.push({...req.body,time:new Date().toLocaleString()});
+ d.plans=req.body;
  save(d);
  res.json({ok:true});
 });
 
+// BUY
+app.post("/buy",(req,res)=>{
+ let d=db();
+
+ // 🔥 duplicate UTR block
+ if(d.requests.find(x=>x.utr===req.body.utr)){
+  return res.json({ok:true});
+ }
+
+ d.requests.push({
+  user:req.body.user,
+  plan:(req.body.plan||"").trim(),
+  price:req.body.price,
+  utr:req.body.utr,
+  time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
+ });
+
+ save(d);
+ res.json({ok:true});
+});
+
+// REQUEST
 app.get("/requests",(req,res)=>res.json(db().requests));
 
+// APPROVE
 app.post("/approve",(req,res)=>{
  let d=db();
  let r=d.requests.find(x=>x.user===req.body.user);
+
+ if(!r) return res.json({});
+
+ let plan=(r.plan||"").trim();
  let key="NO STOCK";
 
- if(d.stock[r.plan]?.length>0){
-  key=d.stock[r.plan].shift();
+ if(d.stock[plan]?.length>0){
+  key=d.stock[plan].shift(); // 🔥 1 tap = 1 key remove
  }
 
- d.history.unshift({...r,key,status:"approved"});
+ d.history.unshift({
+  ...r,
+  key:key,
+  status:"approved",
+  time:new Date().toLocaleString()
+ });
+
  d.requests=d.requests.filter(x=>x.user!==r.user);
+
  save(d);
  res.json({key});
 });
 
+// REJECT
 app.post("/reject",(req,res)=>{
  let d=db();
+ let r=d.requests.find(x=>x.user===req.body.user);
+
+ // 🔥 save reject history
+ d.history.unshift({
+  user:r?.user,
+  utr:r?.utr,
+  status:"rejected",
+  time:new Date().toLocaleString()
+ });
+
  d.requests=d.requests.filter(x=>x.user!==req.body.user);
+
  save(d);
  res.json({ok:true});
 });
 
+// HISTORY
 app.get("/history",(req,res)=>res.json(db().history));
 
+// STOCK
 app.get("/stock",(req,res)=>res.json(db().stock));
 
 app.post("/addStock",(req,res)=>{
  let d=db();
- let {plan,key}=req.body;
+
+ let plan=(req.body.plan||"").trim();
+ let key=(req.body.key||"").trim();
+
+ if(!plan || !key) return res.json({ok:false});
+
  if(!d.stock[plan]) d.stock[plan]=[];
+
  d.stock[plan].push(key);
+
  save(d);
  res.json({ok:true});
 });
 
 app.post("/deleteStock",(req,res)=>{
  let d=db();
- d.stock[req.body.plan].splice(req.body.index,1);
+
+ if(d.stock[req.body.plan] && d.stock[req.body.plan][req.body.index]){
+  d.stock[req.body.plan].splice(req.body.index,1);
+ }
+
  save(d);
  res.json({ok:true});
 });
 
+// START
 app.listen(3000,()=>console.log("🔥 SERVER RUNNING"));
