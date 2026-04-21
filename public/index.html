@@ -21,7 +21,7 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center
 @keyframes btnGlow{from{box-shadow:0 0 5px #22c55e;}to{box-shadow:0 0 20px #22c55e;}}
 
 button{padding:12px;border:none;border-radius:6px;margin:5px}
-.darkBtn{background:#0088cc;color:#fff} /* 🔥 CHANGE 1 (MATCH COLOR) */
+.darkBtn{background:#0088cc;color:#fff}
 .tgBtn{background:#0088cc;color:#fff}
 
 .btnRow{
@@ -31,7 +31,7 @@ button{padding:12px;border:none;border-radius:6px;margin:5px}
 }
 
 input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
-.mono{font-family:monospace;display:block;margin:8px 0;user-select:all} /* 🔥 CHANGE 2 (COPY FIX) */
+.mono{font-family:monospace;display:block;margin:8px 0;user-select:all}
 
 .tgFloat{
  position:fixed;bottom:20px;right:15px;background:#0088cc;color:#fff;
@@ -97,9 +97,10 @@ function loadStatus(){
    return;
   }
 
+  // ✅ 🔥 FIX (ONLY CHANGE)
   if(lastRefresh && d.refresh!==lastRefresh){
     lock=false;
-    location.reload();
+    showMain(); // ❌ reload हटाया, ✅ smooth update
     return;
   }
 
