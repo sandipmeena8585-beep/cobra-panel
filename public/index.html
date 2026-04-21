@@ -1,46 +1,41 @@
-<!DOCTYPE html>  
-<html>  
-<head>  
+<!DOCTYPE html>
+<html>
+<head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 
-<title>COBRA SERVER PANEL</title>  
-  
-<style>  
-body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center;-webkit-tap-highlight-color:transparent}  
-  
-.top{padding:15px;font-size:20px;font-weight:bold;color:#22c55e;animation:glow 1.5s infinite alternate;}  
-@keyframes glow{from{opacity:0.6}to{opacity:1}}  
-  
-.card{background:#1e293b;margin:10px;padding:15px;border-radius:12px}  
-  
+<title>COBRA SERVER PANEL</title>
+
+<style>
+body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center;-webkit-tap-highlight-color:transparent}
+
+.top{padding:15px;font-size:20px;font-weight:bold;color:#22c55e;animation:glow 1.5s infinite alternate;}
+@keyframes glow{from{opacity:0.6}to{opacity:1}}
+
+.card{background:#1e293b;margin:10px;padding:15px;border-radius:12px}
+
 .buyBtn{
  padding:14px;border:none;border-radius:8px;background:#22c55e;color:white;
  margin-top:10px;font-size:16px;animation:btnGlow 1.2s infinite alternate;
 }
+@keyframes btnGlow{from{box-shadow:0 0 5px #22c55e;}to{box-shadow:0 0 20px #22c55e;}}
 
 button{padding:12px;border:none;border-radius:6px;background:#22c55e;color:white;margin:5px}
-.okBtn{background:#020617}
+.darkBtn{background:#020617;color:#fff}
+.tgBtn{background:#0088cc}
 
 input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 .mono{font-family:monospace}
 
-.copyBox{
- background:#000;
- padding:10px;
- border-radius:8px;
- margin:10px 0;
- cursor:pointer;
+.tgFloat{
+ position:fixed;bottom:20px;right:15px;background:#0088cc;color:#fff;
+ padding:10px 14px;border-radius:20px;font-size:12px;cursor:pointer;
+ box-shadow:0 0 10px #0088cc;
 }
 
-.tgBtn{
- background:#0088cc;
- padding:10px;
- border-radius:8px;
- display:inline-block;
- margin-top:10px;
-}
+.info{margin-top:15px;font-size:14px;color:#38bdf8}
 
+/* POPUP */
 .overlay{
  position:fixed;top:0;left:0;width:100%;height:100%;
  background:rgba(0,0,0,0.7);
@@ -48,19 +43,14 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
  z-index:999;
 }
 .popup{
- background:#0f172a;
- color:#fff;
- padding:20px;
- border-radius:16px;
- width:85%;
- max-width:320px;
- box-shadow:0 0 20px #22c55e;
- animation:pop .2s ease;
+ background:#020617;color:#fff;padding:20px;border-radius:16px;
+ width:85%;max-width:320px;text-align:center;
+ animation:fadeIn .3s ease;
 }
-@keyframes pop{from{transform:scale(.8)}to{transform:scale(1)}}
+@keyframes fadeIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
 
 .loader{
- border:4px solid #333;
+ border:4px solid #111;
  border-top:4px solid #22c55e;
  border-radius:50%;
  width:40px;height:40px;
@@ -68,20 +58,27 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
  animation:spin 1s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
-</style>  
-</head>  
-  
-<body>  
-  
-<div class="top" id="title">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>  
-  
-<div id="main"></div>  
+</style>
+</head>
 
-<script>  
+<body>
+
+<div class="top" id="title">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
+
+<div id="main"></div>
+
+<div class="tgFloat" onclick="tg()">HELP</div>
+
+<script>
 
 let lastRefresh=0;
 
-// 🔥 STATUS
+function copyText(t){
+ navigator.clipboard.writeText(t);
+ alert("Copied ✔");
+}
+
+// STATUS CHECK
 function loadStatus(){
  fetch("/status")
  .then(r=>r.json())
@@ -92,30 +89,47 @@ function loadStatus(){
    return;
   }
 
-  // 🔥 1 TAP = 1 REFRESH
+  // 🔥 ADMIN REFRESH = ONE TIME RELOAD
   if(lastRefresh && d.refresh!==lastRefresh){
-    location.href="/"; 
+    location.reload();
   }
   lastRefresh=d.refresh;
+
+  document.body.style.background=d.color || "#0f172a";
+  document.body.style.color=d.textColor || "#fff";
+
+  if(d.title){
+    document.getElementById("title").innerText=d.title;
+  }
 
   showMain();
  });
 }
 
 loadStatus();
-setInterval(loadStatus,2000);
+setInterval(loadStatus,3000);
 
 // MAIN
 function showMain(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
- let options = plans.map(p=>`<option value="${p.type+p.time}|${p.price}">
- ${p.type+p.time} - ₹${p.price}</option>`).join("");
+ let options = plans.map(p=>`<option value="${p.type+p.time}|${p.price}">${p.type+p.time} - ₹${p.price}</option>`).join("");
 
  main.innerHTML=`
  <div class="card">
+   <h3>Select Game</h3>
+   <select><option>BGMI</option></select>
+
    <h3>Select Plan</h3>
    <select id="planSel">${options}</select>
-   <button class="buyBtn" onclick="goBuy()">BUY KEY</button>
+
+   <button class="buyBtn" onclick="goBuy()">𝗕𝗨𝗬 𝗞𝗘𝗬</button>
+
+   <div class="info">
+   ━━━━━━━━━━━━━━━━━━ <br>
+   ⚡ FAST DELIVERY <br>
+   🔐 SECURE ACCESS <br>
+   ━━━━━━━━━━━━━━━━━━
+   </div>
  </div>`;
  });
 }
@@ -125,19 +139,20 @@ function goBuy(){
  buy(val[0],val[1]);
 }
 
-// BUY
+// PAYMENT
 function buy(plan,price){
  fetch("/settings")
  .then(r=>r.json())
  .then(s=>{
   main.innerHTML=`
   <div class="card">
-    <h3>PAY ₹${price}</h3>
+    <h3>PAYMENT</h3>
+    <p>Pay ₹${price}</p>
 
-    <div class="copyBox" onclick="copyText('${s.upi}')">
-    ${s.upi} (tap to copy)
-    </div>
+    <!-- 🔥 UPI COPY -->
+    <div class="mono" onclick="copyText('${s.upi}')">${s.upi}</div>
 
+    <br>
     <img src="${s.qr}" width="200">
 
     <input id="utr" placeholder="ENTER UTR (12 digit)">
@@ -146,25 +161,19 @@ function buy(plan,price){
  });
 }
 
-// COPY
-function copyText(t){
- navigator.clipboard.writeText(t);
- alert("Copied ✔");
-}
-
 // PROCESS
 function startProcess(plan,price){
  let utrVal = utr.value;
 
  if(!utrVal || utrVal.length!=12){
-   return alert("Enter Valid UTR");
+   return alert("Enter Valid 12 Digit UTR");
  }
 
  document.body.innerHTML+=`
  <div class="overlay" id="pop">
   <div class="popup">
    <div class="loader"></div>
-   <p>Please wait admin verify</p>
+   <p>Please wait admin verify your request</p>
   </div>
  </div>`;
 
@@ -188,33 +197,31 @@ function startProcess(plan,price){
    if(f){
      clearInterval(chk);
 
-     // ❌ REJECT
      if(f.status==="rejected"){
        pop.innerHTML=`
        <div class="popup">
        <h3>❌ PAYMENT REJECTED</h3>
-       <button class="okBtn" onclick="location.reload()">OK</button>
+       <button class="darkBtn" onclick="location.reload()">OK</button>
        </div>`;
      }
 
-     // ✅ APPROVED
      if(f.status==="approved"){
+       let exp=new Date();
+       exp.setHours(exp.getHours()+12);
+
        pop.innerHTML=`
        <div class="popup">
-       <h3>🔑 YOUR KEY</h3>
+       <h3>KEY</h3>
 
-       <div class="copyBox" onclick="copyText('${f.key}')">
-       ${f.key} (tap to copy)
-       </div>
+       <!-- 🔥 KEY COPY -->
+       <div class="mono" onclick="copyText('${f.key}')">${f.key}</div>
 
-       <p>Kill limit 10-12 (Play Safe)</p>
+       <p>Expire: ${exp.toLocaleString()}</p>
 
-       <div class="tgBtn" onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">
-       JOIN TELEGRAM
-       </div>
-
+       <button class="tgBtn" onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">TELEGRAM</button>
        <br>
-       <button class="okBtn" onclick="location.reload()">OK</button>
+
+       <button class="darkBtn" onclick="location.reload()">OK</button>
        </div>`;
      }
    }
@@ -222,7 +229,11 @@ function startProcess(plan,price){
  },2000);
 }
 
-</script>  
-  
-</body>  
+function tg(){
+ window.open("https://t.me/GODx_COBRA");
+}
+
+</script>
+
+</body>
 </html>
