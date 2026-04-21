@@ -8,8 +8,25 @@
 body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center}
 .top{padding:15px;font-size:20px;color:#22c55e}
 .card{background:#1e293b;margin:10px;padding:15px;border-radius:12px}
-.buyBtn{padding:14px;color:white;border:none;border-radius:8px}
-input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
+
+.buyBtn{
+padding:14px;
+color:white;
+border:none;
+border-radius:8px;
+font-size:16px;
+width:85%;
+}
+
+input,select{
+padding:12px;
+width:85%;
+margin:10px auto;
+border-radius:8px;
+border:none;
+display:block;
+font-size:16px;
+}
 
 .overlay{
  position:fixed;top:0;left:0;width:100%;height:100%;
@@ -61,8 +78,9 @@ border:1px solid #22c55e;
 <script>
 
 let themeColor="#22c55e";
+let lastRefresh = 0;
 
-// 🔥 CHECK EXISTING PENDING
+// 🔥 LOAD CHECK
 window.onload = ()=>{
  let savedUTR = localStorage.getItem("pendingUTR");
  if(savedUTR){
@@ -72,15 +90,27 @@ window.onload = ()=>{
  }
 };
 
-// STATUS + HOME
+// 🔥 STATUS + REFRESH FIX
 function loadHome(){
  fetch("/status").then(r=>r.json()).then(d=>{
- if(!d.on){
-   document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN UPDATE</h2>";
- }else showMain();
+
+   // 🔥 ADMIN REFRESH → FORCE UNLOCK
+   if(d.refresh && d.refresh != lastRefresh){
+     lastRefresh = d.refresh;
+     localStorage.removeItem("pendingUTR");
+     location.reload();
+     return;
+   }
+
+   if(!d.on){
+     document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN UPDATE</h2>";
+   }else{
+     showMain();
+   }
  });
 }
 
+// 🔥 HOME UI
 function showMain(){
 
  fetch("/settings").then(r=>r.json()).then(s=>{
@@ -97,9 +127,10 @@ function showMain(){
  <div class="card">
 
  <h3>Select Game</h3>
+
+ <!-- 🔥 ONLY BGMI -->
  <select class="gameSelect">
-   <option>BGMI GLOBAL</option>
-   <option>BGMI INDIA</option>
+   <option>BGMI</option>
  </select>
 
  <h3>Select Plan</h3>
@@ -128,7 +159,7 @@ function buy(plan,price){
  ${s.qr ? `<img src="${s.qr}" width="160"><br>` : ""}
 
  <input id="utr" placeholder="UTR 12 digit">
- <button style="background:${themeColor}" onclick="confirmBox('${plan}','${price}')">VERIFY</button>
+ <button class="buyBtn" style="background:${themeColor}" onclick="confirmBox('${plan}','${price}')">VERIFY</button>
  </div>`;
  });
 }
@@ -148,7 +179,7 @@ function confirmBox(plan,price){
  </div>`;
 }
 
-// 🔥 START + SAVE UTR
+// START
 function start(plan,price,utrVal){
 
  localStorage.setItem("pendingUTR", utrVal);
@@ -167,7 +198,7 @@ function start(plan,price,utrVal){
  });
 }
 
-// 🔥 WAIT SCREEN (PERSIST)
+// WAIT
 function showWaiting(utrVal){
 
  document.body.innerHTML=`
@@ -212,6 +243,11 @@ function showWaiting(utrVal){
  });
  },2000);
 }
+
+// 🔥 AUTO CHECK REFRESH (LIVE)
+setInterval(()=>{
+ loadHome();
+},3000);
 
 </script>
 
