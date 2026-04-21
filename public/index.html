@@ -1,259 +1,174 @@
-const express=require("express");
-const fs=require("fs");
-const path=require("path");
+<!DOCTYPE html>
+<html>
+<head>
 
-const app=express();
-app.use(express.json({limit:"10mb"}));
-app.use(express.static("public"));
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 
-const DB="./data.json";
-const CONFIG="./config.json";
+<title>COBRA SERVER PANEL</title>
 
-// ================= CREATE FILES =================
+<style>
+body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center}
+.top{padding:15px;font-size:20px;color:#22c55e}
+.card{background:#1e293b;margin:10px;padding:15px;border-radius:12px}
+.buyBtn{padding:14px;background:#22c55e;color:white;border:none;border-radius:8px}
+input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 
-// DATA
-if(!fs.existsSync(DB)){
- fs.writeFileSync(DB,JSON.stringify({
-  systemOn:true,
-  upi:"godxcobra@axl",
-  qr:"",
-  plans:[
-   {type:"",time:"5H",price:"50"},
-   {type:"",time:"1D",price:"100"},
-   {type:"",time:"3D",price:"200"},
-   {type:"",time:"7D",price:"400"},
-   {type:"",time:"15D",price:"600"},
-   {type:"",time:"30D",price:"1000"},
-   {type:"",time:"60D",price:"1200"},
-   {type:"",time:"FULL",price:"1400"}
-  ],
-  stock:{},
-  requests:[],
-  history:[],
-  refresh:0
- },null,2));
+.overlay{
+ position:fixed;top:0;left:0;width:100%;height:100%;
+ background:rgba(0,0,0,0.8);
+ display:flex;justify-content:center;align-items:center;
+ z-index:999;
 }
 
-// CONFIG
-if(!fs.existsSync(CONFIG)){
- fs.writeFileSync(CONFIG,JSON.stringify({
-  note:"cobra config"
- },null,2));
+.popup{
+ background:#1e293b;
+ padding:20px;
+ border-radius:12px;
 }
 
-// ================= HELPERS =================
-function db(){
- let data=JSON.parse(fs.readFileSync(DB));
-
- if(!data.stock) data.stock={};
- if(data.refresh===undefined) data.refresh=0;
-
- fs.writeFileSync(DB,JSON.stringify(data,null,2));
- return data;
+.loader{
+ border:4px solid #333;
+ border-top:4px solid #22c55e;
+ border-radius:50%;
+ width:40px;height:40px;
+ margin:auto;
+ animation:spin 1s linear infinite;
 }
 
-function save(d){
- fs.writeFileSync(DB,JSON.stringify(d,null,2));
-}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-function loadConfig(){
- return JSON.parse(fs.readFileSync(CONFIG));
-}
+.mono{font-family:monospace}
+</style>
 
-function saveConfig(data){
- fs.writeFileSync(CONFIG,JSON.stringify(data,null,2));
-}
+</head>
 
-// ================= ROUTES =================
+<body>
 
-// CUSTOMER
-app.get("/",(req,res)=>{
- const d=db();
- if(!d.systemOn){
-  return res.send("<h2>⚠️ PLEASE WAIT ADMIN UPDATE</h2>");
- }
- res.sendFile(path.join(__dirname,"public/index.html"));
-});
+<div class="top">COBRA SERVER PANEL</div>
+<div id="main"></div>
 
-// ADMIN
-app.get("/admin",(req,res)=>{
- res.sendFile(path.join(__dirname,"public/admin.html"));
-});
+<script>
 
 // STATUS
-app.get("/status",(req,res)=>{
- const d=db();
- res.json({on:d.systemOn,refresh:d.refresh});
+fetch("/status")
+.then(r=>r.json())
+.then(d=>{
+ if(!d.on){
+   document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN UPDATE</h2>";
+ }else showMain();
 });
 
-// TOGGLE
-app.post("/toggle",(req,res)=>{
- let d=db();
- d.systemOn=!d.systemOn;
- save(d);
- res.json({on:d.systemOn});
-});
+// MAIN
+function showMain(){
+ fetch("/plans").then(r=>r.json()).then(plans=>{
+ let opt = plans.map(p=>`
+ <option value="${p.type+p.time}|${p.price}">
+ ${p.type+p.time} - ₹${p.price}</option>`).join("");
 
-// REFRESH
-app.post("/refresh",(req,res)=>{
- let d=db();
- d.refresh=Date.now();
- save(d);
- res.json({ok:true});
-});
+ main.innerHTML=`
+ <div class="card">
+ <h3>Select Plan</h3>
+ <select id="planSel">${opt}</select>
+ <button class="buyBtn" onclick="goBuy()">BUY KEY</button>
+ </div>`;
+ });
+}
 
-// ================= SETTINGS =================
-app.post("/settings",(req,res)=>{
- let d=db();
+function goBuy(){
+ let val=document.getElementById("planSel").value.split("|");
+ buy(val[0],val[1]);
+}
 
- if(req.body.upi!==undefined) d.upi=req.body.upi;
- if(req.body.qr!==undefined) d.qr=req.body.qr; // 🔥 FIX (empty भी allow)
+// PAYMENT
+function buy(plan,price){
+ fetch("/settings").then(r=>r.json()).then(s=>{
+ main.innerHTML=`
+ <div class="card">
+ <h3>PAY ₹${price}</h3>
+ <div>${s.upi}</div>
+ <br>
+ <img src="${s.qr}" width="200">
+ <input id="utr" placeholder="UTR 12 digit">
 
- save(d);
- res.json({ok:true});
-});
+ <!-- 🔥 CHANGE: NO CONFIRM POPUP -->
+ <button onclick="startProcess('${plan}','${price}')">VERIFY</button>
 
-app.get("/settings",(req,res)=>{
- let d=db();
- res.json({upi:d.upi,qr:d.qr});
-});
+ </div>`;
+ });
+}
 
-// ================= CONFIG =================
-app.get("/api/config",(req,res)=>{
- res.json(loadConfig());
-});
+// 🔥 DIRECT PROCESS
+function startProcess(plan,price){
 
-app.post("/api/config",(req,res)=>{
- saveConfig(req.body);
- res.json({ok:true});
-});
+ let utrVal=document.getElementById("utr").value;
 
-// ================= PLANS =================
-app.get("/plans",(req,res)=>{
- res.json(db().plans);
-});
-
-app.post("/savePlans",(req,res)=>{
- let d=db();
- d.plans=req.body;
- save(d);
- res.json({ok:true});
-});
-
-// ================= BUY =================
-app.post("/buy",(req,res)=>{
- let d=db();
-
- // 🔥 DUPLICATE PROTECTION
- if(d.requests.find(x=>x.utr===req.body.utr)){
-  return res.json({ok:true});
+ if(!utrVal || utrVal.length!=12){
+   return alert("Enter Valid 12 Digit UTR");
  }
 
- d.requests.push({
-  user:req.body.user,
-  plan:(req.body.plan||"").trim(),
-  price:req.body.price,
-  utr:req.body.utr,
-  time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
+ document.body.innerHTML+=`
+ <div class="overlay" id="pop">
+ <div class="popup">
+ <div class="loader"></div>
+ <p>Please wait admin verify your request</p>
+ <small>⚠️ Do not tap anywhere</small>
+ </div></div>`;
+
+ fetch("/buy",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+    user:"USER_"+Date.now(),
+    plan:plan,
+    price:price,
+    utr:utrVal
+  })
  });
 
- save(d);
- res.json({ok:true});
-});
+ let chk=setInterval(()=>{
+ fetch("/history").then(r=>r.json()).then(h=>{
+ let f=h.find(x=>x.utr===utrVal);
 
-// REQUEST
-app.get("/requests",(req,res)=>{
- res.json(db().requests);
-});
+ if(f){
+ clearInterval(chk);
 
-// APPROVE
-app.post("/approve",(req,res)=>{
- let d=db();
- let r=d.requests.find(x=>x.user===req.body.user);
- if(!r)return res.json({});
-
- let plan=r.plan.trim();
- let key="NO STOCK";
-
- if(d.stock[plan] && d.stock[plan].length>0){
-  key=d.stock[plan].shift(); // 🔥 1 tap = 1 key remove
+ // ❌ REJECT
+ if(f.status==="rejected"){
+  document.getElementById("pop").innerHTML=`
+  <div class="popup">
+  <h3>⚠️ PAYMENT REJECTED</h3>
+  <button onclick="location.reload()">OK</button>
+  </div>`;
  }
 
- d.history.unshift({
-  user:r.user,
-  plan:r.plan,
-  price:r.price,
-  utr:r.utr,
-  key:key,
-  status:"approved",
-  time:new Date().toLocaleString()
- });
+ // ✅ APPROVED
+ if(f.status==="approved"){
+  let exp=new Date();
+  exp.setHours(exp.getHours()+12);
 
- d.requests=d.requests.filter(x=>x.user!==r.user);
+  document.getElementById("pop").innerHTML=`
+  <div class="popup">
+  <h3>🔑 KEY</h3>
+  <div class="mono">${f.key}</div>
+  <p>Expire: ${exp.toLocaleString()}</p>
+  <p>Kill limit 10-12 (Play Safe Legit)</p>
 
- save(d);
- res.json({key});
-});
+  <button onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">
+  TELEGRAM
+  </button>
 
-// REJECT
-app.post("/reject",(req,res)=>{
- let d=db();
- let r=d.requests.find(x=>x.user===req.body.user);
-
- d.history.unshift({
-  user:r?.user,
-  utr:r?.utr,
-  status:"rejected",
-  time:new Date().toLocaleString()
- });
-
- d.requests=d.requests.filter(x=>x.user!==req.body.user);
-
- save(d);
- res.json({ok:true});
-});
-
-// HISTORY
-app.get("/history",(req,res)=>{
- res.json(db().history);
-});
-
-// ================= STOCK =================
-app.get("/stock",(req,res)=>{
- res.json(db().stock);
-});
-
-app.post("/addStock",(req,res)=>{
- let d=db();
-
- let plan=(req.body.plan||"").trim();
- let key=(req.body.key||"").trim();
-
- if(!plan || !key) return res.json({ok:false});
-
- if(!d.stock[plan]) d.stock[plan]=[];
-
- d.stock[plan].push(key);
-
- save(d);
- res.json({ok:true});
-});
-
-app.post("/deleteStock",(req,res)=>{
- let d=db();
-
- let plan=req.body.plan;
- let index=req.body.index;
-
- if(d.stock[plan] && d.stock[plan][index]){
-  d.stock[plan].splice(index,1);
+  <br>
+  <button onclick="location.reload()">OK</button>
+  <button onclick="location.reload()">CANCEL</button>
+  </div>`;
  }
 
- save(d);
- res.json({ok:true});
-});
+ }
+ });
+ },2000);
+}
 
-// START
-app.listen(3000,()=>{
- console.log("🔥 SERVER RUNNING");
-});
+</script>
+
+</body>
+</html>
