@@ -5,66 +5,129 @@
 <title>COBRA SERVER PANEL</title>
 
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center}
-.top{padding:15px;font-size:20px;color:#22c55e}
-.card{background:#1e293b;margin:10px;padding:15px;border-radius:12px}
+body{
+margin:0;
+font-family:Arial;
+background:#020617;
+color:white;
+text-align:center
+}
+
+.top{
+padding:15px;
+font-size:20px;
+color:#22c55e;
+font-weight:bold;
+}
+
+.card{
+background:#0f172a;
+margin:12px;
+padding:18px;
+border-radius:14px;
+box-shadow:0 0 20px rgba(0,0,0,0.5);
+}
 
 .buyBtn{
 padding:14px;
 color:white;
 border:none;
-border-radius:8px;
+border-radius:10px;
 font-size:16px;
-width:85%;
+width:90%;
+box-shadow:0 0 15px #22c55e;
 }
 
 input,select{
 padding:12px;
-width:85%;
+width:90%;
 margin:10px auto;
-border-radius:8px;
+border-radius:10px;
 border:none;
 display:block;
 font-size:16px;
 }
 
+/* ✅ SAME COLOR FIX */
+.gameSelect,
+#planSel{
+background:#020617;
+color:#22c55e;
+border:2px solid #22c55e;
+}
+
+/* POPUP */
 .overlay{
- position:fixed;top:0;left:0;width:100%;height:100%;
- background:linear-gradient(135deg,#ff512f,#dd2476);
- display:flex;justify-content:center;align-items:center;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.8);
+display:flex;
+justify-content:center;
+align-items:center;
 }
 
 .popup{
- background:#fff;color:#000;
- padding:20px;border-radius:14px;
- width:85%;max-width:320px;
- text-align:center;
+background:#020617;
+color:white;
+padding:22px;
+border-radius:16px;
+width:85%;
+max-width:320px;
+text-align:center;
+box-shadow:
+0 0 10px #22c55e,
+0 0 20px #22c55e,
+0 0 40px #22c55e;
+animation:pop .25s ease;
 }
 
-.confirmBtn{background:#000;color:#fff}
-.cancelBtn{background:#eee}
+@keyframes pop{
+from{transform:scale(.8);opacity:0}
+to{transform:scale(1);opacity:1}
+}
+
+.confirmBtn{
+background:#22c55e;
+color:#000;
+padding:10px;
+border:none;
+border-radius:8px;
+margin:5px;
+width:40%;
+}
+
+.cancelBtn{
+background:#1e293b;
+color:#fff;
+padding:10px;
+border:none;
+border-radius:8px;
+margin:5px;
+width:40%;
+}
 
 .loader{
- border:4px solid #ddd;
- border-top:4px solid #22c55e;
- border-radius:50%;
- width:40px;height:40px;margin:auto;
- animation:spin 1s linear infinite
+border:4px solid #111;
+border-top:4px solid #22c55e;
+border-radius:50%;
+width:45px;
+height:45px;
+margin:auto;
+animation:spin 1s linear infinite
 }
 
-@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spin{
+to{transform:rotate(360deg)}
+}
 
 .upi{
- font-family:monospace;
- font-size:16px;
- margin-top:-5px;
- margin-bottom:10px;
-}
-
-.gameSelect{
-background:#020617;
+font-family:monospace;
+font-size:16px;
+margin:5px 0 10px;
 color:#22c55e;
-border:1px solid #22c55e;
 }
 </style>
 </head>
@@ -77,12 +140,8 @@ border:1px solid #22c55e;
 <script>
 
 let themeColor="#22c55e";
-let textColor="#ffffff";
-
 let lastRefresh = localStorage.getItem("lastRefresh") || 0;
-let homeLoaded = false;
 
-// LOAD
 window.onload = ()=>{
  let savedUTR = localStorage.getItem("pendingUTR");
  if(savedUTR){
@@ -92,7 +151,6 @@ window.onload = ()=>{
  }
 };
 
-// HOME
 function loadHome(){
  fetch("/status").then(r=>r.json()).then(d=>{
 
@@ -108,35 +166,16 @@ function loadHome(){
      return;
    }
 
-   if(!homeLoaded){
-     homeLoaded = true;
-     showMain();
-   }
-
+   showMain();
  });
 }
 
-// REFRESH CHECK
-function checkRefresh(){
- fetch("/status").then(r=>r.json()).then(d=>{
-   if(d.refresh && d.refresh != localStorage.getItem("lastRefresh")){
-     localStorage.setItem("lastRefresh", d.refresh);
-     localStorage.removeItem("pendingUTR");
-     location.reload();
-   }
- });
-}
-
-// HOME UI
 function showMain(){
 
  fetch("/settings").then(r=>r.json()).then(s=>{
    themeColor = s.color || "#22c55e";
-   textColor = s.textColor || "#ffffff";
-
    document.getElementById("topTitle").innerText = s.title || "COBRA SERVER PANEL";
    document.getElementById("topTitle").style.color = themeColor;
-   document.body.style.color = textColor;
  });
 
  fetch("/plans").then(r=>r.json()).then(plans=>{
@@ -146,22 +185,19 @@ function showMain(){
  main.innerHTML=`
  <div class="card">
 
- <h3>Select Game</h3>
+ <h3 style="color:#22c55e">Select Game</h3>
 
- <select class="gameSelect" style="border-color:${themeColor};color:${themeColor}">
+ <select class="gameSelect">
    <option>BGMI</option>
  </select>
 
- <h3>Select Plan</h3>
+ <h3 style="color:#22c55e">Select Plan</h3>
+
  <select id="planSel">${opt}</select>
 
- <button class="buyBtn" style="background:${themeColor}">BUY KEY</button>
+ <button class="buyBtn" style="background:${themeColor}" onclick="goBuy()">BUY KEY</button>
 
  </div>`;
-
- // 🔥 FIX: button click after render
- document.querySelector(".buyBtn").onclick = goBuy;
-
  });
 }
 
@@ -170,7 +206,6 @@ function goBuy(){
  buy(val[0],val[1]);
 }
 
-// BUY
 function buy(plan,price){
  fetch("/settings").then(r=>r.json()).then(s=>{
  main.innerHTML=`
@@ -187,7 +222,6 @@ function buy(plan,price){
  });
 }
 
-// CONFIRM
 function confirmBox(plan,price){
  let utrVal=utr.value;
  if(!utrVal||utrVal.length!=12)return alert("Invalid UTR");
@@ -195,14 +229,15 @@ function confirmBox(plan,price){
  document.body.innerHTML+=`
  <div class="overlay">
  <div class="popup">
-   <h3>Confirm the action</h3>
-   <button class="confirmBtn" onclick="start('${plan}','${price}','${utrVal}')">Confirm</button>
-   <button class="cancelBtn" onclick="location.reload()">Cancel</button>
+   <h3>Confirm Payment</h3>
+   <p>Proceed payment?</p>
+
+   <button class="confirmBtn" onclick="start('${plan}','${price}','${utrVal}')">YES</button>
+   <button class="cancelBtn" onclick="location.reload()">NO</button>
  </div>
  </div>`;
 }
 
-// START
 function start(plan,price,utrVal){
 
  localStorage.setItem("pendingUTR", utrVal);
@@ -221,14 +256,13 @@ function start(plan,price,utrVal){
  });
 }
 
-// WAIT
 function showWaiting(utrVal){
 
  document.body.innerHTML=`
  <div class="overlay">
  <div class="popup">
  <div class="loader"></div>
- <p>Please wait admin verify</p>
+ <p>Waiting for admin verify...</p>
  </div>
  </div>`;
 
@@ -244,7 +278,7 @@ function showWaiting(utrVal){
   document.body.innerHTML=`
   <div class="overlay">
   <div class="popup">
-  <h3>❌ PAYMENT REJECTED</h3>
+  <h3>❌ REJECTED</h3>
   <button onclick="location.reload()">OK</button>
   </div>
   </div>`;
@@ -256,7 +290,7 @@ function showWaiting(utrVal){
   document.body.innerHTML=`
   <div class="overlay">
   <div class="popup">
-  <h3>🔑 KEY</h3>
+  <h3>🔑 YOUR KEY</h3>
   <div>${f.key}</div>
   <button onclick="location.reload()">OK</button>
   </div>
@@ -267,10 +301,6 @@ function showWaiting(utrVal){
  },2000);
 }
 
-// AUTO REFRESH CHECK
-setInterval(checkRefresh,3000);
-
 </script>
-
 </body>
 </html>
