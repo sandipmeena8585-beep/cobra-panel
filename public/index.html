@@ -24,7 +24,6 @@ button{padding:12px;border:none;border-radius:8px;background:#22c55e;color:white
 .red{background:#ef4444}
 
 input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
-.mono{font-family:monospace}
 
 .overlay{
  position:fixed;top:0;left:0;width:100%;height:100%;
@@ -33,15 +32,15 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
  z-index:999;
 }
 .popup{
- background:linear-gradient(145deg,#0f172a,#1e293b);
+ background:#1e293b;
  color:#fff;
  padding:20px;
- border-radius:18px;
+ border-radius:15px;
  width:90%;
  max-width:320px;
  text-align:center;
- box-shadow:0 0 25px #22c55e;
 }
+
 .loader{
  border:4px solid #333;
  border-top:4px solid #22c55e;
@@ -85,9 +84,6 @@ fetch("/status")
 function showMain(){
  main.innerHTML=`
  <div class="card">
-   <h3>Select Game</h3>
-   <select><option>BGMI</option></select>
-
    <h3>Select Plan</h3>
    <select id="planSel">
      <option value="5H|80">5H - ₹80</option>
@@ -95,42 +91,35 @@ function showMain(){
      <option value="3D|200">3 DAY - ₹200</option>
    </select>
 
-   <button class="buyBtn" onclick="goBuy()">𝗕𝗨𝗬 𝗞𝗘𝗬</button>
+   <button class="buyBtn" onclick="goBuy()">BUY KEY</button>
  </div>`;
 }
 
-// 🔥 FIX: double click रोक दिया
+// 🔥 FIX: multiple click रोकना
 let lockClick = false;
 
 function goBuy(){
- if(lockClick) return; // 🔥 STOP MULTI CLICK
+ if(lockClick) return;
  lockClick = true;
 
  let val = planSel.value.split("|");
  buy(val[0],val[1]);
 
- setTimeout(()=>{ lockClick=false; },1000); // unlock
+ setTimeout(()=>{ lockClick=false; },1000);
 }
 
 // ================= BUY =================
 function buy(plan,price){
- fetch("/settings")
- .then(r=>r.json())
- .then(s=>{
-  main.innerHTML=`
-  <div class="card">
-    <h3>PAYMENT</h3>
-    <p>Pay ₹${price}</p>
-    <div class="mono">${s.upi}</div>
-    <br>
-    <img src="${s.qr}" width="200">
-    <input id="utr" placeholder="ENTER UTR (12 digit)">
-    <button onclick="confirmBox('${plan}')">VERIFY</button>
-  </div>`;
- });
+ main.innerHTML=`
+ <div class="card">
+   <h3>PAYMENT</h3>
+   <p>Pay ₹${price}</p>
+   <input id="utr" placeholder="ENTER UTR (12 digit)">
+   <button onclick="confirmBox('${plan}')">VERIFY</button>
+ </div>`;
 }
 
-// ================= CONFIRM =================
+// ================= CONFIRM POPUP =================
 function confirmBox(plan){
  let utrVal = utr.value;
 
@@ -141,15 +130,11 @@ function confirmBox(plan){
  document.body.innerHTML+=`
  <div class="overlay" id="pop">
   <div class="popup">
-   <h3>PAYMENT CONFIRM</h3>
+   <h3>CONFIRM PAYMENT</h3>
    <button onclick="startProcess('${plan}','${utrVal}')">YES</button>
-   <button class="red" onclick="closePop()">NO</button>
+   <button class="red" onclick="location.reload()">NO</button>
   </div>
  </div>`;
-}
-
-function closePop(){
- document.getElementById("pop").remove();
 }
 
 // ================= PROCESS =================
@@ -157,10 +142,12 @@ function startProcess(plan,utrVal){
 
  let userName = "USER_" + Date.now();
 
+ // LOADER POPUP
  document.getElementById("pop").innerHTML=`
  <div class="popup">
  <div class="loader"></div>
  <p>Please wait admin verify your request</p>
+ <small>⚠️ Do not tap anywhere</small>
  </div>`;
 
  fetch("/buy",{
@@ -182,6 +169,7 @@ function startProcess(plan,utrVal){
    if(f){
      clearInterval(chk);
 
+     // ❌ REJECTED
      if(f.status==="rejected"){
        document.getElementById("pop").innerHTML=`
        <div class="popup">
@@ -190,11 +178,17 @@ function startProcess(plan,utrVal){
        </div>`;
      }
 
+     // ✅ APPROVED
      if(f.status==="approved"){
+       let exp=new Date();
+       exp.setHours(exp.getHours()+12);
+
        document.getElementById("pop").innerHTML=`
        <div class="popup">
        <h3>🔑 KEY</h3>
        <div class="keyBox">${f.key}</div>
+       <p>Expire: ${exp.toLocaleString()}</p>
+       <p>Kill limit 10-12 Play Safe</p>
        <button onclick="location.reload()">OK</button>
        </div>`;
      }
