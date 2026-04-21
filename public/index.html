@@ -72,13 +72,14 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 <script>
 
 let lastRefresh=0;
+let firstLoad=true;
 
 function copyText(t){
  navigator.clipboard.writeText(t);
  alert("Copied ✔");
 }
 
-// STATUS CHECK
+// 🔥 FIXED STATUS (ONLY CHANGE)
 function loadStatus(){
  fetch("/status")
  .then(r=>r.json())
@@ -89,10 +90,12 @@ function loadStatus(){
    return;
   }
 
-  // 🔥 ADMIN REFRESH = ONE TIME RELOAD
+  // only admin refresh reload
   if(lastRefresh && d.refresh!==lastRefresh){
     location.reload();
+    return;
   }
+
   lastRefresh=d.refresh;
 
   document.body.style.background=d.color || "#0f172a";
@@ -102,7 +105,12 @@ function loadStatus(){
     document.getElementById("title").innerText=d.title;
   }
 
-  showMain();
+  // only first time show home
+  if(firstLoad){
+    showMain();
+    firstLoad=false;
+  }
+
  });
 }
 
@@ -149,7 +157,6 @@ function buy(plan,price){
     <h3>PAYMENT</h3>
     <p>Pay ₹${price}</p>
 
-    <!-- 🔥 UPI COPY -->
     <div class="mono" onclick="copyText('${s.upi}')">${s.upi}</div>
 
     <br>
@@ -213,7 +220,6 @@ function startProcess(plan,price){
        <div class="popup">
        <h3>KEY</h3>
 
-       <!-- 🔥 KEY COPY -->
        <div class="mono" onclick="copyText('${f.key}')">${f.key}</div>
 
        <p>Expire: ${exp.toLocaleString()}</p>
