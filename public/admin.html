@@ -7,25 +7,65 @@
 <title>COBRA ADMIN</title>
 
 <style>
-body{margin:0;background:#0f172a;color:#fff;font-family:Arial}
-.login{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);}
-.login input,.login button{width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;}
+body{
+margin:0;
+background:#0f172a;
+color:#fff;
+font-family:Arial;
+-webkit-tap-highlight-color: transparent;
+}
+
+.login{
+ display:flex;flex-direction:column;justify-content:center;align-items:center;
+ height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);
+}
+.login input,.login button{
+ width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;
+}
 .login button{background:#000;color:#fff}
 
-.top{display:flex;align-items:center;gap:10px;padding:12px;background:#020617;position:fixed;width:100%;top:0;}
-.sidebar{position:fixed;left:-250px;width:250px;height:100%;background:#1e293b;transition:.3s;padding-top:60px;}
-.sidebar.active{left:0}
-.sidebar div{padding:12px;margin:8px;background:#334155;border-radius:8px}
+.top{
+ display:flex;align-items:center;gap:10px;padding:12px;
+ background:#020617;position:fixed;width:100%;top:0;
+}
 
-.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;}
+.title{font-weight:bold;}
+
+.menuIcon{
+ font-size:22px;
+ cursor:pointer;
+}
+
+.sidebar{
+ position:fixed;left:-250px;width:250px;height:100%;
+ background:#1e293b;transition:.3s;padding-top:60px;
+}
+.sidebar.active{left:0}
+.sidebar div{
+ padding:12px;margin:8px;background:#334155;border-radius:8px;
+}
+
+.overlay{
+ position:fixed;
+ top:0;left:0;width:100%;height:100%;
+ background:rgba(0,0,0,0.5);
+ display:none;
+}
 .overlay.active{display:block}
 
 .content{margin-top:60px;padding:10px}
 .card{background:#1e293b;padding:15px;margin:10px 0;border-radius:10px}
 
 button{padding:10px;border:none;border-radius:6px;margin:5px}
-.blue{background:#2563eb}
 .green{background:#22c55e}
+.red{background:#ef4444}
+.blue{background:#2563eb}
+
+img{
+ margin-top:10px;
+ max-width:150px;
+ border-radius:10px;
+}
 </style>
 </head>
 
@@ -41,15 +81,19 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <div id="panel" style="display:none">
 
 <div class="top">
-<div onclick="toggleMenu()">☰</div>
-<div>COBRA ADMIN</div>
+<div class="menuIcon" onclick="toggleMenu()">☰</div>
+<div class="title">𝗖𝗢𝗕𝗥𝗔 𝗔𝗗𝗠𝗜𝗡</div>
 </div>
 
 <div id="overlay" class="overlay" onclick="closeMenu()"></div>
 
 <div id="sidebar" class="sidebar">
 <div onclick="home()">HOME</div>
+<div onclick="plansUI()">PLANS</div>
+<div onclick="stockUI()">STOCK</div>
 <div onclick="settingsUI()">UPI / QR</div>
+<div onclick="reqUI()">REQUEST</div>
+<div onclick="panelControlUI()">PANEL CONTROL</div>
 <div onclick="logout()">LOGOUT</div>
 </div>
 
@@ -91,12 +135,13 @@ function closeMenu(){
  overlay.classList.remove("active");
 }
 
+// HOME
 function home(){
  main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
  closeMenu();
 }
 
-// ================= ✅ UPI + QR FIX =================
+// ================= 🔥 QR FILE UPLOAD CHANGE =================
 function settingsUI(){
  fetch("/settings").then(r=>r.json()).then(d=>{
   main.innerHTML=`
@@ -105,8 +150,10 @@ function settingsUI(){
   <h3>UPI ID</h3>
   <input id="upi" value="${d.upi || ""}" placeholder="Enter UPI ID">
 
-  <h3>QR CODE</h3>
-  <input id="qr" placeholder="Paste QR Image URL" value="${d.qr || ""}">
+  <h3>QR CODE UPLOAD</h3>
+  <input type="file" id="qrFile" accept="image/*">
+
+  ${d.qr ? `<img src="${d.qr}">` : ""}
 
   <button class="green" onclick="saveSettings()">UPDATE</button>
 
@@ -116,16 +163,33 @@ function settingsUI(){
 }
 
 function saveSettings(){
- fetch("/settings",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-    upi:upi.value,
-    qr:qr.value
-  })
- })
- .then(()=>alert("UPDATED LIVE ✔"));
+
+ let file = document.getElementById("qrFile").files[0];
+
+ if(file){
+   let reader = new FileReader();
+   reader.onload = function(){
+     sendData(reader.result);
+   };
+   reader.readAsDataURL(file);
+ }else{
+   sendData(null);
+ }
+
+ function sendData(qrData){
+   fetch("/settings",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      upi:upi.value,
+      qr: qrData
+    })
+   }).then(()=>alert("UPDATED ✔"));
+ }
 }
+// ================= END =================
+
+// बाकी code SAME रहेगा (कोई change नहीं)
 
 </script>
 
