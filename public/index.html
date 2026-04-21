@@ -147,14 +147,23 @@ function yesPay(plan,utrVal){
  let u = prompt("Enter Name");
  if(!u) return;
 
+ function yesPay(plan,utrVal){
+
+ let u = "USER"; // 🔥 popup हटाया, fixed name
+
  fetch("/buy",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({user:u,plan:plan,utr:utrVal})
+  body:JSON.stringify({
+    user:u,
+    plan:plan,
+    utr:utrVal
+  })
  }).then(()=>{
   localStorage.setItem("pendingUTR",utrVal);
   location.reload();
  });
+
 }
 
 function noPay(){
