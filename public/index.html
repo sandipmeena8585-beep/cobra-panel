@@ -77,9 +77,11 @@ border:1px solid #22c55e;
 <script>
 
 let themeColor="#22c55e";
+let textColor="#ffffff";
 
-// 🔥 STORE LAST REFRESH (FIX)
+// 🔥 FIX STORAGE
 let lastRefresh = localStorage.getItem("lastRefresh") || 0;
+let homeLoaded = false;
 
 // LOAD
 window.onload = ()=>{
@@ -91,11 +93,11 @@ window.onload = ()=>{
  }
 };
 
-// STATUS
+// 🔥 HOME LOAD (ONLY ONCE)
 function loadHome(){
  fetch("/status").then(r=>r.json()).then(d=>{
 
-   // 🔥 FINAL FIX
+   // 🔥 REFRESH ONLY 1 TIME
    if(d.refresh && d.refresh != lastRefresh){
      localStorage.setItem("lastRefresh", d.refresh);
      localStorage.removeItem("pendingUTR");
@@ -105,19 +107,39 @@ function loadHome(){
 
    if(!d.on){
      document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN UPDATE</h2>";
-   }else{
+     return;
+   }
+
+   // 🔥 UI ONLY ONCE
+   if(!homeLoaded){
+     homeLoaded = true;
      showMain();
+   }
+
+ });
+}
+
+// 🔥 REFRESH CHECK ONLY
+function checkRefresh(){
+ fetch("/status").then(r=>r.json()).then(d=>{
+   if(d.refresh && d.refresh != localStorage.getItem("lastRefresh")){
+     localStorage.setItem("lastRefresh", d.refresh);
+     localStorage.removeItem("pendingUTR");
+     location.reload();
    }
  });
 }
 
-// HOME
+// HOME UI
 function showMain(){
 
  fetch("/settings").then(r=>r.json()).then(s=>{
    themeColor = s.color || "#22c55e";
+   textColor = s.textColor || "#ffffff";
+
    document.getElementById("topTitle").innerText = s.title || "COBRA SERVER PANEL";
    document.getElementById("topTitle").style.color = themeColor;
+   document.body.style.color = textColor;
  });
 
  fetch("/plans").then(r=>r.json()).then(plans=>{
@@ -128,6 +150,7 @@ function showMain(){
  <div class="card">
 
  <h3>Select Game</h3>
+
  <select class="gameSelect">
    <option>BGMI</option>
  </select>
@@ -228,8 +251,8 @@ function showWaiting(utrVal){
  },2000);
 }
 
-// AUTO CHECK
-setInterval(loadHome,3000);
+// 🔥 ONLY REFRESH CHECK
+setInterval(checkRefresh,3000);
 
 </script>
 
