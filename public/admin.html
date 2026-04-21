@@ -88,6 +88,10 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <div onclick="settingsUI()">UPI / QR / COLOR</div>
 <div onclick="reqUI()">REQUEST</div>
 <div onclick="panelControlUI()">PANEL CONTROL</div>
+
+<!-- ✅ THEME ADDED -->
+<div onclick="themeUI()">THEME</div>
+
 <div onclick="logout()">LOGOUT</div>
 </div>
 
@@ -171,9 +175,7 @@ function selectQR(e){
  selectedFile = e.target.files[0];
 }
 
-// ✅ ONLY CHANGE (LIVE UPDATE FIX)
 function saveSettings(){
-
  fetch("/settings",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
@@ -185,25 +187,45 @@ function saveSettings(){
   })
  })
  .then(()=>{
-
   if(selectedFile){
     let fd=new FormData();
     fd.append("qr",selectedFile);
-
-    return fetch("/uploadQR",{
-      method:"POST",
-      body:fd
-    });
+    return fetch("/uploadQR",{method:"POST",body:fd});
   }
-
  })
  .then(()=>{
-  // 🔥 FORCE CUSTOMER REFRESH TRIGGER
   fetch("/refresh",{method:"POST"});
-
   alert("UPDATED LIVE ✔");
  });
+}
 
+// ================= THEME =================
+function themeUI(){
+ main.innerHTML=`
+ <div class="card">
+
+ <h3>Theme Presets</h3>
+
+ <button onclick="setTheme('#020617','#00ffcc')">🟢 COBRA</button>
+ <button onclick="setTheme('#0f172a','#ffffff')">⚫ DARK</button>
+ <button onclick="setTheme('#ffffff','#000000')">⚪ LIGHT</button>
+
+ </div>`;
+ closeMenu();
+}
+
+function setTheme(bg,text){
+ fetch("/settings",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+    color:bg,
+    textColor:text
+  })
+ }).then(()=>{
+   fetch("/refresh",{method:"POST"});
+   alert("THEME UPDATED ✔");
+ });
 }
 
 // ================= PANEL CONTROL =================
