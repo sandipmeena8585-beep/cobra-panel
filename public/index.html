@@ -67,18 +67,26 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ===== PREMIUM POPUP ADD ===== */
+.popup{
+ animation:popScale .35s ease;
+}
+@keyframes popScale{
+ from{transform:scale(0.7);opacity:0}
+ to{transform:scale(1);opacity:1}
+}
+
 .popup::before{
  content:"";
  position:absolute;
  inset:0;
  border-radius:16px;
- box-shadow:0 0 30px #22c55e;
+ box-shadow:0 0 35px #22c55e;
  opacity:0.4;
- animation:pulse 1.5s infinite;
+ animation:pulse 1.2s infinite;
 }
 @keyframes pulse{
  0%{opacity:0.3}
- 50%{opacity:0.8}
+ 50%{opacity:0.9}
  100%{opacity:0.3}
 }
 
@@ -253,6 +261,19 @@ function startProcess(plan,price){
 
    if(f){
      clearInterval(chk);
+
+     if(f.status==="rejected"){
+       pop.innerHTML=`
+       <div class="popup">
+
+       <div class="tick" style="color:red">✖</div>
+
+       <h3>❌ PAYMENT REJECTED</h3>
+
+       <button class="darkBtn" onclick="location.reload()">OK</button>
+
+       </div>`;
+     }
 
      if(f.status==="approved"){
        let exp=new Date();
