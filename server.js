@@ -29,7 +29,6 @@ if (!fs.existsSync(DB_FILE)) {
 function loadDB() {  
   let data = JSON.parse(fs.readFileSync(DB_FILE));  
 
-  // 🔥 AUTO FIX (IMPORTANT)
   if (data.refresh === undefined) {  
     data.refresh = 0;  
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));  
@@ -67,7 +66,6 @@ app.get("/admin", (req, res) => {
 
 // ================= SYSTEM =================  
 
-// ON / OFF PANEL  
 app.post("/toggle", (req, res) => {  
   let db = loadDB();  
   db.systemOn = !db.systemOn;  
@@ -75,7 +73,6 @@ app.post("/toggle", (req, res) => {
   res.json({ on: db.systemOn });  
 });  
 
-// STATUS  
 app.get("/status", (req, res) => {  
   const db = loadDB();  
   res.json({ on: db.systemOn, refresh: db.refresh });  
@@ -84,12 +81,8 @@ app.get("/status", (req, res) => {
 // 🔥 REFRESH SIGNAL (FIXED)
 app.post("/refresh", (req,res)=>{  
   let db = loadDB();  
-
-  // 🔥 FORCE CHANGE EVERY TIME
   db.refresh = Date.now() + Math.floor(Math.random()*1000);  
-
   saveDB(db);  
-
   res.json({ ok:true });  
 });  
 
@@ -105,12 +98,9 @@ app.get("/settings", (req, res) => {
 
 app.post("/settings", (req, res) => {  
   let db = loadDB();  
-
   db.upi = req.body.upi;  
   db.qr = req.body.qr;  
-
   saveDB(db);  
-
   res.json({ success: true });  
 });  
 
@@ -176,9 +166,13 @@ app.post("/removeStock", (req, res) => {
 app.post("/buy", (req, res) => {  
   let db = loadDB();  
 
+  // 🔥 PLAN PRICE FIX
+  let planData = db.plans.find(p => (p.type + p.time) === req.body.plan);
+
   db.requests.push({  
     user: req.body.user,  
     plan: req.body.plan,  
+    price: planData ? planData.price : "0",  
     utr: req.body.utr,  
     time: new Date().toLocaleString()  
   });  
@@ -216,7 +210,8 @@ app.post("/approve", (req, res) => {
 
   db.history.unshift({  
     user: user,  
-    plan: plan,  
+    plan: request.plan,  
+    price: request.price,  
     utr: request.utr,  
     key: key,  
     status: "approved",  
@@ -245,6 +240,8 @@ app.post("/reject", (req, res) => {
 
   db.history.unshift({  
     user: user,  
+    plan: request?.plan,  
+    price: request?.price,  
     utr: request?.utr,  
     status: "rejected",  
     time: new Date().toLocaleString()  
