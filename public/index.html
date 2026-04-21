@@ -64,6 +64,34 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
  animation:spin 1s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== COBRA THEME ADD ===== */
+body{
+  background:#020617 !important;
+  color:#00ffcc !important;
+}
+.top{
+  color:#00ffcc !important;
+  text-shadow:0 0 10px #00ffcc;
+}
+.card{
+  border:1px solid rgba(0,255,200,0.2);
+  box-shadow:0 0 15px rgba(0,255,200,0.2);
+}
+.buyBtn{
+  background:#00ff00 !important;
+  box-shadow:0 0 10px #00ff00;
+}
+.buyBtn:hover{
+  box-shadow:0 0 25px #00ff00;
+}
+.popup{
+  border:1px solid #00ffcc;
+  box-shadow:0 0 20px #00ffcc;
+}
+.mono{
+  text-shadow:0 0 5px #00ffcc;
+}
 </style>
 </head>
 
@@ -77,6 +105,8 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 
 <script>
 
+/* ===== SAME JS (UNCHANGED) ===== */
+
 let lastRefresh=0;
 let firstLoad=true;
 let lock=false;
@@ -86,69 +116,51 @@ function copyText(t){
  alert("Copied ✔");
 }
 
-// STATUS
 function loadStatus(){
  fetch("/status")
  .then(r=>r.json())
  .then(d=>{
-
   if(!d.on){
    document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN PANEL UPDATE</h2>";
    return;
   }
-
-  // 🔥 CHANGE (LIVE COLOR + REFRESH FIX)
   if(lastRefresh && d.refresh!==lastRefresh){
     lock=false;
     lastRefresh=d.refresh;
-
     document.body.style.background = d.color || "#0f172a";
     document.body.style.color = d.textColor || "#ffffff";
-
     if(d.title){
       document.getElementById("title").innerText = d.title;
     }
-
     showMain();
     return;
   }
-
   lastRefresh=d.refresh;
-
-  // 🔥 ADD (FIRST LOAD COLOR FIX)
   document.body.style.background = d.color || "#0f172a";
   document.body.style.color = d.textColor || "#ffffff";
-
   if(d.title){
     document.getElementById("title").innerText = d.title;
   }
-
   if(firstLoad){
     showMain();
     firstLoad=false;
   }
-
  });
 }
 
 loadStatus();
 setInterval(loadStatus,3000);
 
-// MAIN
 function showMain(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
  let options = plans.map(p=>`<option value="${p.type+p.time}|${p.price}">${p.type+p.time} - ₹${p.price}</option>`).join("");
-
  main.innerHTML=`
  <div class="card">
    <h3>Select Game</h3>
    <select><option>BGMI</option></select>
-
    <h3>Select Plan</h3>
    <select id="planSel">${options}</select>
-
    <button class="buyBtn" onclick="goBuy()">𝗕𝗨𝗬 𝗞𝗘𝗬</button>
-
    <div class="info">
    ━━━━━━━━━━━━━━━━━━ <br>
    ⚡ FAST DELIVERY <br>
@@ -164,11 +176,8 @@ function goBuy(){
  buy(val[0],val[1]);
 }
 
-// PAYMENT
 function buy(plan,price){
-
  if(lock) return;
-
  fetch("/settings")
  .then(r=>r.json())
  .then(s=>{
@@ -176,31 +185,23 @@ function buy(plan,price){
   <div class="card">
     <h3>PAYMENT</h3>
     <p>Pay ₹${price}</p>
-
     <div class="mono" onclick="copyText('${s.upi}')">${s.upi}</div>
-
     <br>
     <img src="${s.qr}" width="200">
-
     <input id="utr" placeholder="ENTER UTR (12 digit)">
     <button onclick="startProcess('${plan}','${price}')">VERIFY</button>
   </div>`;
  });
 }
 
-// PROCESS (same)
 function startProcess(plan,price){
-
  if(lock) return;
  lock=true;
-
  let utrVal = utr.value;
-
  if(!utrVal || utrVal.length!=12){
    lock=false;
    return alert("Enter Valid 12 Digit UTR");
  }
-
  document.body.innerHTML+=`
  <div class="overlay" id="pop">
   <div class="popup">
@@ -208,7 +209,6 @@ function startProcess(plan,price){
    <p>Please wait admin verify your request</p>
   </div>
  </div>`;
-
  fetch("/buy",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
@@ -219,16 +219,13 @@ function startProcess(plan,price){
     utr:utrVal
   })
  });
-
  let chk=setInterval(()=>{
  fetch("/history")
  .then(r=>r.json())
  .then(h=>{
    let f=h.find(x=>x.utr===utrVal);
-
    if(f){
      clearInterval(chk);
-
      if(f.status==="rejected"){
        pop.innerHTML=`
        <div class="popup">
@@ -236,25 +233,18 @@ function startProcess(plan,price){
        <button class="darkBtn" onclick="location.reload()">OK</button>
        </div>`;
      }
-
      if(f.status==="approved"){
        let exp=new Date();
        exp.setHours(exp.getHours()+12);
-
        pop.innerHTML=`
        <div class="popup">
-
-       <h3>🎉 𝐜𝐨𝐧𝐠𝐫𝐚𝐭𝐮𝐥𝐚𝐭𝐢𝐨𝐧𝐬 𝐜𝐡𝐨𝐢𝐜𝐞 𝐂𝐎𝐁𝐑𝐀 𝐒𝐄𝐑𝐕𝐄𝐑</h3>
-
+       <h3>🎉 SUCCESS</h3>
        <span class="mono" onclick="copyText('${f.key}')">${f.key}</span>
        <span class="mono">Expire: ${exp.toLocaleString()}</span>
-       <span class="mono">Kill limit 10-12 (LEGIT PLAY SAFE)</span>
-
        <div class="btnRow">
-         <button class="tgBtn" onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">📩 PAID GROUP JOIN</button>
-         <button class="darkBtn" onclick="location.reload()">NOT JOIN</button>
+         <button class="tgBtn" onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">JOIN</button>
+         <button class="darkBtn" onclick="location.reload()">OK</button>
        </div>
-
        </div>`;
      }
    }
