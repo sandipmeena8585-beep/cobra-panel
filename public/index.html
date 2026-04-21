@@ -79,6 +79,7 @@ border:1px solid #22c55e;
 
 let themeColor="#22c55e";
 let lastRefresh = 0;
+let refreshHandled = false; // 🔥 ADD FIX
 
 // 🔥 LOAD CHECK
 window.onload = ()=>{
@@ -94,9 +95,11 @@ window.onload = ()=>{
 function loadHome(){
  fetch("/status").then(r=>r.json()).then(d=>{
 
-   // 🔥 ADMIN REFRESH → FORCE UNLOCK
-   if(d.refresh && d.refresh != lastRefresh){
+   // 🔥 ONLY 1 TIME REFRESH FIX
+   if(d.refresh && !refreshHandled){
+     refreshHandled = true;
      lastRefresh = d.refresh;
+
      localStorage.removeItem("pendingUTR");
      location.reload();
      return;
@@ -128,7 +131,6 @@ function showMain(){
 
  <h3>Select Game</h3>
 
- <!-- 🔥 ONLY BGMI -->
  <select class="gameSelect">
    <option>BGMI</option>
  </select>
@@ -244,7 +246,7 @@ function showWaiting(utrVal){
  },2000);
 }
 
-// 🔥 AUTO CHECK REFRESH (LIVE)
+// 🔥 AUTO CHECK REFRESH
 setInterval(()=>{
  loadHome();
 },3000);
