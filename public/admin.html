@@ -135,7 +135,7 @@ function home(){
  closeMenu();
 }
 
-// ================= SETTINGS (UPDATED 🔥) =================
+// ================= SETTINGS =================
 let qrBase64 = "";
 
 function settingsUI(){
@@ -151,6 +151,10 @@ function settingsUI(){
 
   <h3>Theme Color</h3>
   <input id="color" type="color" value="${d.color || "#22c55e"}">
+
+  <!-- 🔥 ADDED (TEXT COLOR) -->
+  <h3>Text Color</h3>
+  <input id="textColor" type="color" value="${d.textColor || "#ffffff"}">
 
   <h3>UPLOAD QR CODE</h3>
   <input type="file" accept="image/*" onchange="uploadQR(event)">
@@ -183,7 +187,10 @@ function saveSettings(){
     upi:upi.value,
     qr: qrBase64 || null,
     color:color.value,
-    title:title.value
+    title:title.value,
+
+    // 🔥 ADDED
+    textColor:textColor.value
   })
  }).then(()=>alert("UPDATED LIVE ✔"));
 }
