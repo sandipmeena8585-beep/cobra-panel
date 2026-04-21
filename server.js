@@ -1,6 +1,7 @@
 const express=require("express");
 const fs=require("fs");
 const path=require("path");
+const multer=require("multer");
 
 const app=express();
 app.use(express.json({limit:"10mb"}));
@@ -8,7 +9,19 @@ app.use(express.static("public"));
 
 const DB="./data.json";
 
-// CREATE DB
+// 📁 upload folder
+if(!fs.existsSync("public/uploads")){
+ fs.mkdirSync("public/uploads",{recursive:true});
+}
+
+// multer setup
+const storage=multer.diskStorage({
+ destination:(req,file,cb)=>cb(null,"public/uploads"),
+ filename:(req,file,cb)=>cb(null,Date.now()+"_"+file.originalname)
+});
+const upload=multer({storage});
+
+// ================= DB =================
 if(!fs.existsSync(DB)){
  fs.writeFileSync(DB,JSON.stringify({
   systemOn:true,
@@ -34,47 +47,56 @@ if(!fs.existsSync(DB)){
  },null,2));
 }
 
-// LOAD
 function db(){
- let data=JSON.parse(fs.readFileSync(DB));
+ let d=JSON.parse(fs.readFileSync(DB));
 
- if(!data.textColor) data.textColor="#ffffff";
- if(!data.stock) data.stock={};
- if(data.refresh===undefined) data.refresh=0;
+ if(!d.stock) d.stock={};
+ if(d.refresh===undefined) d.refresh=0;
 
- fs.writeFileSync(DB,JSON.stringify(data,null,2));
- return data;
+ return d;
 }
 
 function save(d){
  fs.writeFileSync(DB,JSON.stringify(d,null,2));
 }
 
-// ROUTES
+// ================= ROUTES =================
+
+// CUSTOMER
 app.get("/",(req,res)=>{
- const d=db();
+ let d=db();
  if(!d.systemOn){
   return res.send("<h2>⚠️ PLEASE WAIT ADMIN UPDATE</h2>");
  }
  res.sendFile(path.join(__dirname,"public/index.html"));
 });
 
+// ADMIN
 app.get("/admin",(req,res)=>{
  res.sendFile(path.join(__dirname,"public/admin.html"));
 });
 
+// STATUS (🔥 refresh + UI data)
 app.get("/status",(req,res)=>{
- const d=db();
- res.json({on:d.systemOn,refresh:d.refresh});
+ let d=db();
+ res.json({
+  on:d.systemOn,
+  refresh:d.refresh,
+  color:d.color,
+  textColor:d.textColor,
+  title:d.title
+ });
 });
 
+// TOGGLE
 app.post("/toggle",(req,res)=>{
  let d=db();
  d.systemOn=!d.systemOn;
  save(d);
- res.json({on:d.systemOn});
+ res.json({ok:true});
 });
 
+// 🔥 REFRESH → CUSTOMER HOME
 app.post("/refresh",(req,res)=>{
  let d=db();
  d.refresh=Date.now();
@@ -82,18 +104,34 @@ app.post("/refresh",(req,res)=>{
  res.json({ok:true});
 });
 
-// SETTINGS
+// ================= SETTINGS =================
+
+// 🔥 UPI + UI UPDATE LIVE
 app.post("/settings",(req,res)=>{
  let d=db();
 
- if(req.body.upi !== undefined) d.upi=req.body.upi;
- if(req.body.qr !== undefined) d.qr=req.body.qr;
- if(req.body.color !== undefined) d.color=req.body.color;
- if(req.body.title !== undefined) d.title=req.body.title;
- if(req.body.textColor !== undefined) d.textColor=req.body.textColor;
+ if(req.body.upi!==undefined) d.upi=req.body.upi;
+ if(req.body.color!==undefined) d.color=req.body.color;
+ if(req.body.textColor!==undefined) d.textColor=req.body.textColor;
+ if(req.body.title!==undefined) d.title=req.body.title;
 
  save(d);
  res.json({ok:true});
+});
+
+// 🔥 QR UPLOAD (REAL FILE)
+app.post("/uploadQR",upload.single("qr"),(req,res)=>{
+ let d=db();
+
+ d.qr="/uploads/"+req.file.filename;
+
+ save(d);
+
+ // 🔥 force refresh
+ d.refresh=Date.now();
+ save(d);
+
+ res.json({ok:true,path:d.qr});
 });
 
 app.get("/settings",(req,res)=>{
@@ -102,33 +140,33 @@ app.get("/settings",(req,res)=>{
   upi:d.upi,
   qr:d.qr,
   color:d.color,
-  title:d.title,
-  textColor:d.textColor
+  textColor:d.textColor,
+  title:d.title
  });
 });
 
-// PLANS
+// ================= PLANS =================
 app.get("/plans",(req,res)=>res.json(db().plans));
 
 app.post("/savePlans",(req,res)=>{
  let d=db();
  d.plans=req.body;
+ d.refresh=Date.now(); // 🔥 live update
  save(d);
  res.json({ok:true});
 });
 
-// BUY
+// ================= BUY =================
 app.post("/buy",(req,res)=>{
  let d=db();
 
- // duplicate UTR block
  if(d.requests.find(x=>x.utr===req.body.utr)){
   return res.json({ok:true});
  }
 
  d.requests.push({
   user:req.body.user,
-  plan:(req.body.plan||"").trim(),
+  plan:req.body.plan.trim(),
   price:req.body.price,
   utr:req.body.utr,
   time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
@@ -148,18 +186,17 @@ app.post("/approve",(req,res)=>{
 
  if(!r) return res.json({});
 
- let plan=(r.plan||"").trim();
  let key="NO STOCK";
 
- if(d.stock[plan]?.length>0){
-  key=d.stock[plan].shift();
+ if(d.stock[r.plan]?.length>0){
+  key=d.stock[r.plan].shift();
  }
 
  d.history.unshift({
   ...r,
-  key:key,
+  key,
   status:"approved",
-  time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
+  time:new Date().toLocaleString()
  });
 
  d.requests=d.requests.filter(x=>x.user!==r.user);
@@ -177,7 +214,7 @@ app.post("/reject",(req,res)=>{
   user:r?.user,
   utr:r?.utr,
   status:"rejected",
-  time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
+  time:new Date().toLocaleString()
  });
 
  d.requests=d.requests.filter(x=>x.user!==req.body.user);
@@ -189,14 +226,14 @@ app.post("/reject",(req,res)=>{
 // HISTORY
 app.get("/history",(req,res)=>res.json(db().history));
 
-// STOCK
+// ================= STOCK =================
 app.get("/stock",(req,res)=>res.json(db().stock));
 
 app.post("/addStock",(req,res)=>{
  let d=db();
 
- let plan=(req.body.plan||"").trim();
- let key=(req.body.key||"").trim();
+ let plan=req.body.plan.trim();
+ let key=req.body.key.trim();
 
  if(!plan || !key) return res.json({ok:false});
 
