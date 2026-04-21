@@ -60,12 +60,6 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 .green{background:#22c55e}
 .red{background:#ef4444}
 .blue{background:#2563eb}
-
-img{
- margin-top:10px;
- max-width:150px;
- border-radius:10px;
-}
 </style>
 </head>
 
@@ -142,6 +136,8 @@ function home(){
 }
 
 // ================= 🔥 QR FILE UPLOAD CHANGE =================
+let qrBase64 = "";
+
 function settingsUI(){
  fetch("/settings").then(r=>r.json()).then(d=>{
   main.innerHTML=`
@@ -150,10 +146,10 @@ function settingsUI(){
   <h3>UPI ID</h3>
   <input id="upi" value="${d.upi || ""}" placeholder="Enter UPI ID">
 
-  <h3>QR CODE UPLOAD</h3>
-  <input type="file" id="qrFile" accept="image/*">
-
-  ${d.qr ? `<img src="${d.qr}">` : ""}
+  <h3>UPLOAD QR CODE</h3>
+  <input type="file" accept="image/*" onchange="uploadQR(event)">
+  <br><br>
+  ${d.qr ? `<img src="${d.qr}" width="120">` : ""}
 
   <button class="green" onclick="saveSettings()">UPDATE</button>
 
@@ -162,34 +158,77 @@ function settingsUI(){
  });
 }
 
+// convert image → base64
+function uploadQR(e){
+ let file = e.target.files[0];
+ let reader = new FileReader();
+
+ reader.onload = function(){
+   qrBase64 = reader.result;
+ };
+
+ reader.readAsDataURL(file);
+}
+
 function saveSettings(){
-
- let file = document.getElementById("qrFile").files[0];
-
- if(file){
-   let reader = new FileReader();
-   reader.onload = function(){
-     sendData(reader.result);
-   };
-   reader.readAsDataURL(file);
- }else{
-   sendData(null);
- }
-
- function sendData(qrData){
-   fetch("/settings",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      upi:upi.value,
-      qr: qrData
-    })
-   }).then(()=>alert("UPDATED ✔"));
- }
+ fetch("/settings",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+    upi:upi.value,
+    qr: qrBase64 || null
+  })
+ }).then(()=>alert("UPDATED LIVE ✔"));
 }
 // ================= END =================
 
-// बाकी code SAME रहेगा (कोई change नहीं)
+// बाकी code SAME नीचे 👇
+
+// ================= PANEL CONTROL =================
+function panelControlUI(){
+ fetch("/status").then(r=>r.json()).then(d=>{
+  main.innerHTML=`
+  <div class="card">
+    <h3>Panel Control</h3>
+    <button onclick="toggleSystem()">
+      ${d.on ? "TURN OFF PANEL" : "TURN ON PANEL"}
+    </button>
+    <button class="blue" onclick="refreshPanel()">REFRESH PANEL</button>
+  </div>`;
+  closeMenu();
+ });
+}
+
+function refreshPanel(){
+ fetch("/refresh",{method:"POST"})
+ .then(()=>alert("Customer Panel Refreshed ✔"));
+}
+
+// ================= बाकी सब SAME =================
+
+// (मैंने नीचे कुछ भी change नहीं किया है)
+
+function plansUI(){fetch("/plans").then(r=>r.json()).then(data=>{let options="";data.forEach((x,i)=>{options+=`<option value="${i}">${x.type}${x.time} - ₹${x.price}</option>`;});main.innerHTML=`<div class="card"><select id="planSelect">${options}</select><input id="newTime" placeholder="Time"><input id="newPrice" placeholder="Price"><button onclick="updatePlan()">UPDATE</button><div id="msg"></div></div>`;closeMenu();});}
+
+function updatePlan(){fetch("/plans").then(r=>r.json()).then(data=>{let i=planSelect.value;data[i].time=newTime.value||data[i].time;data[i].price=newPrice.value||data[i].price;fetch("/savePlans",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)}).then(()=>msg.innerHTML="<div class='msg success'>UPDATED ✔</div>");});}
+
+let activeIndex=null;
+
+function stockUI(){fetch("/plans").then(r=>r.json()).then(p=>{fetch("/stock").then(r=>r.json()).then(s=>{let html=`<div class="card"><select id="planSel">${p.map(x=>`<option>${x.type+x.time}</option>`)}</select><input id="key" placeholder="ENTER KEY"><button onclick="addStock()">ADD</button></div>`;p.forEach((x,i)=>{let plan=x.type+x.time;let arr=s[plan]||[];html+=`<div class="card" onclick="toggleKeys(${i})"><b>${plan}</b></div><div id="keys_${i}" style="display:none" class="card">`;arr.forEach((k,index)=>{html+=`${k}<button onclick="delStock('${plan}',${index});event.stopPropagation()">❌</button><br>`;});html+=`</div>`;});main.innerHTML=html;});});}
+
+function toggleKeys(i){if(activeIndex===i){document.getElementById("keys_"+i).style.display="none";activeIndex=null;return;}if(activeIndex!==null){document.getElementById("keys_"+activeIndex).style.display="none";}document.getElementById("keys_"+i).style.display="block";activeIndex=i;}
+
+function addStock(){fetch("/addStock",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan:planSel.value,key:key.value})}).then(()=>{key.value="";stockUI();});}
+
+function delStock(plan,index){fetch("/deleteStock",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan,index})}).then(stockUI);}
+
+function reqUI(){fetch("/requests").then(r=>r.json()).then(data=>{let html="";data.forEach(x=>{html+=`<div class="card"><b>${x.plan}</b> - ₹${x.price||"?"}<br>UTR: ${x.utr}<br>Time: ${x.time}<br><button class="green" onclick="approve('${x.user}')">YES</button><button class="red" onclick="reject('${x.user}')">NO</button></div>`;});main.innerHTML=html||"No Requests";});}
+
+function approve(u){fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})}).then(r=>r.json()).then(d=>{alert("KEY: "+d.key);reqUI();});}
+
+function reject(u){fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})}).then(reqUI);}
+
+function toggleSystem(){fetch("/toggle",{method:"POST"}).then(()=>panelControlUI());}
 
 </script>
 
