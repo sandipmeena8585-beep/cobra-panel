@@ -108,7 +108,6 @@ function buy(plan,price){
  });
 }
 
-// ===== SAME FLOW =====
 function confirmBox(plan){
  let utrVal = utr.value;
 
@@ -187,26 +186,26 @@ function tg(){
  window.open("https://t.me/GODx_COBRA");
 }
 
-// ================= 🔥 ONLY CHANGE (FINAL FIX) =================
+// ================= 🔥 FINAL 1 CHANGE =================
 let last = localStorage.getItem("lastRefresh") || 0;
+let handled = false; // 🔥 NEW
 
 setInterval(()=>{
  fetch("/status")
  .then(r=>r.json())
  .then(d=>{
-   if(d.refresh != last){
+   if(d.refresh != last && !handled){
+
+     handled = true; // 🔥 1 बार ही चलेगा
 
      localStorage.setItem("lastRefresh", d.refresh);
-
-     // 🔥 MAIN FIX
      localStorage.removeItem("pendingUTR");
 
-     // 🔥 RELOAD की जगह direct home
-     showMain();
+     showMain(); // 🔥 direct floor 1
    }
  });
 },3000);
-// ============================================================
+// ===================================================
 
 </script>  
   
