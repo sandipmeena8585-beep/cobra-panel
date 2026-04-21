@@ -92,7 +92,6 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <div onclick="settingsUI()">UPI / QR</div>
 <div onclick="reqUI()">REQUEST</div>
 
-<!-- SAME + 1 CHANGE PAGE -->
 <div onclick="panelControlUI()">PANEL CONTROL</div>
 
 <div onclick="logout()">LOGOUT</div>
@@ -142,7 +141,7 @@ function home(){
  closeMenu();
 }
 
-// ================= 🔥 PANEL CONTROL =================
+// ================= PANEL CONTROL =================
 function panelControlUI(){
  fetch("/status").then(r=>r.json()).then(d=>{
 
@@ -154,7 +153,6 @@ function panelControlUI(){
       ${d.on ? "TURN OFF PANEL" : "TURN ON PANEL"}
     </button>
 
-    <!-- 🔥 NEW CHANGE -->
     <button class="blue" onclick="refreshPanel()">REFRESH PANEL</button>
 
   </div>`;
@@ -163,10 +161,10 @@ function panelControlUI(){
  });
 }
 
-// 🔥 NEW FUNCTION
+// 🔥 FIXED REFRESH
 function refreshPanel(){
  fetch("/refresh",{method:"POST"})
- .then(()=>alert("Customer Panel Refreshed"));
+ .then(()=>alert("Customer Panel Refreshed ✔"));
 }
 
 // ================= PLANS =================
@@ -177,7 +175,7 @@ function plansUI(){
     options+=`<option value="${i}">${x.type}${x.time} - ₹${x.price}</option>`;
   });
 
-  let html=`
+  main.innerHTML=`
   <div class="card">
   <select id="planSelect">${options}</select>
   <input id="newTime" placeholder="Time">
@@ -186,7 +184,6 @@ function plansUI(){
   <div id="msg"></div>
   </div>`;
 
-  main.innerHTML=html;
   closeMenu();
  });
 }
@@ -194,8 +191,6 @@ function plansUI(){
 function updatePlan(){
  fetch("/plans").then(r=>r.json()).then(data=>{
   let i = planSelect.value;
-
-  if(!data[i]) return;
 
   data[i].time = newTime.value || data[i].time;
   data[i].price = newPrice.value || data[i].price;
@@ -205,17 +200,12 @@ function updatePlan(){
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify(data)
   })
-  .then(r=>r.ok ? showSuccess() : showFail())
-  .catch(()=>showFail());
+  .then(()=>showSuccess());
  });
 }
 
 function showSuccess(){
- msg.innerHTML="<div class='msg success'>SUCCESS UPDATED</div>";
-}
-
-function showFail(){
- msg.innerHTML="<div class='msg fail'>FAILED UPDATE</div>";
+ msg.innerHTML="<div class='msg success'>UPDATED ✔</div>";
 }
 
 // ================= STOCK =================
@@ -228,7 +218,7 @@ function stockUI(){
  ${p.map(x=>`<option>${x.type}${x.time}</option>`)}
  </select>
  <input id="key" placeholder="ENTER KEY">
- <button onclick="addStock()">UPDATE</button>
+ <button onclick="addStock()">ADD</button>
  </div>`;
 
  p.forEach(x=>{
@@ -237,43 +227,8 @@ function stockUI(){
  });
 
  main.innerHTML=html;
-
  });
  });
-}
-
-function addStock(){
- fetch("/addStock",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-    plan:planSel.value,
-    key:key.value
-  })
- }).then(()=>alert("Stock Added"));
-}
-
-// ================= SETTINGS =================
-function settingsUI(){
- fetch("/settings").then(r=>r.json()).then(d=>{
-  main.innerHTML=`
-  <div class="card">
-  <input id="upi" value="${d.upi}">
-  <input id="qr" placeholder="QR Image Path">
-  <button onclick="saveSettings()">UPDATE</button>
-  </div>`;
- });
-}
-
-function saveSettings(){
- fetch("/settings",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-    upi:upi.value,
-    qr:qr.value
-  })
- }).then(()=>alert("Updated"));
 }
 
 // ================= REQUEST =================
@@ -284,9 +239,9 @@ function reqUI(){
   data.forEach(x=>{
     html+=`
     <div class="card">
-    ${x.plan} <br>
-    ${x.utr} <br>
-    ${x.time}
+    <b>${x.plan}</b> - ₹${x.price || "?"} <br>
+    UTR: ${x.utr} <br>
+    Time: ${x.time}
     <br>
     <button class="green" onclick="approve('${x.user}')">YES</button>
     <button class="red" onclick="reject('${x.user}')">NO</button>
@@ -319,7 +274,6 @@ function reject(u){
 // ================= SYSTEM =================
 function toggleSystem(){
  fetch("/toggle",{method:"POST"})
- .then(r=>r.json())
  .then(()=>panelControlUI());
 }
 
