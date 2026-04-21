@@ -32,7 +32,7 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 
 .info{margin-top:15px;font-size:14px;color:#38bdf8}
 
-/* 🔥 CUSTOM POPUP */
+/* POPUP */
 .overlay{
  position:fixed;
  top:0;left:0;
@@ -125,7 +125,7 @@ function buy(plan,price){
  });
 }
 
-/* 🔥 UPDATED CUSTOM CONFIRM */
+// ✅ CUSTOM CONFIRM (NO BROWSER POPUP)
 function confirmBox(plan){
  let utrVal = utr.value;
 
@@ -134,7 +134,7 @@ function confirmBox(plan){
  }
 
  document.body.innerHTML += `
- <div class="overlay" id="pop">
+ <div class="overlay">
    <div class="popup">
      <h3>PAYMENT CONFIRM</h3>
      <button onclick="yesPay('${plan}','${utrVal}')">YES</button>
@@ -143,13 +143,10 @@ function confirmBox(plan){
  </div>`;
 }
 
+// ✅ 🔥 CHANGE ONLY HERE (NO NAME POPUP)
 function yesPay(plan,utrVal){
- let u = prompt("Enter Name");
- if(!u) return;
 
- function yesPay(plan,utrVal){
-
- let u = "USER"; // 🔥 popup हटाया, fixed name
+ let u = "USER"; // 👈 popup removed
 
  fetch("/buy",{
   method:"POST",
@@ -163,7 +160,6 @@ function yesPay(plan,utrVal){
   localStorage.setItem("pendingUTR",utrVal);
   location.reload();
  });
-
 }
 
 function noPay(){
