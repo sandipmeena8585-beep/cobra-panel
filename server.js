@@ -35,7 +35,6 @@ if(!fs.existsSync(DB)){
 function db(){
  let data=JSON.parse(fs.readFileSync(DB));
 
- // 🔥 AUTO FIX OLD DB
  if(!data.plans || data.plans.length===0){
   data.plans=[
    {type:"",time:"5H",price:"50"},
@@ -51,6 +50,10 @@ function db(){
 
  if(data.refresh===undefined){
   data.refresh=0;
+ }
+
+ if(!data.stock){
+  data.stock={}; // 🔥 FIX
  }
 
  fs.writeFileSync(DB,JSON.stringify(data,null,2));
@@ -124,7 +127,7 @@ app.post("/buy",(req,res)=>{
 
  d.requests.push({
   user:req.body.user,
-  plan:req.body.plan,
+  plan:req.body.plan.trim(), // 🔥 FIX
   price:req.body.price,
   utr:req.body.utr,
   time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
@@ -145,7 +148,13 @@ app.post("/approve",(req,res)=>{
  let r=d.requests.find(x=>x.user===req.body.user);
  if(!r)return res.json({});
 
- let key=(d.stock[r.plan]||[]).shift()||"NO KEY";
+ let plan = r.plan.trim(); // 🔥 FIX
+
+ let key="NO STOCK";
+
+ if(d.stock[plan] && d.stock[plan].length>0){
+  key=d.stock[plan].shift(); // 🔥 1 tap = 1 key remove
+ }
 
  d.history.unshift({
   user:r.user,
@@ -186,22 +195,41 @@ app.get("/history",(req,res)=>{
  res.json(db().history);
 });
 
-// STOCK
+// ================= STOCK =================
+
+// GET
 app.get("/stock",(req,res)=>{
  res.json(db().stock);
 });
 
+// ADD STOCK (🔥 FIXED)
 app.post("/addStock",(req,res)=>{
  let d=db();
- if(!d.stock[req.body.plan]) d.stock[req.body.plan]=[];
- d.stock[req.body.plan].push(req.body.key);
+
+ let plan=req.body.plan.trim();
+ let key=req.body.key.trim();
+
+ if(!plan || !key) return res.json({ok:false});
+
+ if(!d.stock[plan]) d.stock[plan]=[];
+
+ d.stock[plan].push(key);
+
  save(d);
  res.json({ok:true});
 });
 
+// DELETE STOCK (🔥 WORKING)
 app.post("/deleteStock",(req,res)=>{
  let d=db();
- d.stock[req.body.plan]?.splice(req.body.index,1);
+
+ let plan=req.body.plan;
+ let index=req.body.index;
+
+ if(d.stock[plan] && d.stock[plan][index]){
+  d.stock[plan].splice(index,1);
+ }
+
  save(d);
  res.json({ok:true});
 });
