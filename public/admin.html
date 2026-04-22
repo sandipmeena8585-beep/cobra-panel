@@ -200,10 +200,13 @@ function saveSettings(){
 function themeUI(){
  main.innerHTML=`
  <div class="card">
+
  <h3>Theme Presets</h3>
+
  <button onclick="setTheme('#020617','#00ffcc')">🟢 COBRA</button>
  <button onclick="setTheme('#0f172a','#ffffff')">⚫ DARK</button>
  <button onclick="setTheme('#ffffff','#000000')">⚪ LIGHT</button>
+
  </div>`;
  closeMenu();
 }
@@ -347,71 +350,56 @@ function delStock(plan,index){
 
 // ================= REQUEST =================
 
-// ✅ CHANGE 1: auto refresh
-let reqInterval=null;
+// ✅ ONLY CHANGE (AUTO REFRESH)
+let reqInterval;
 
 function reqUI(){
+
  if(reqInterval) clearInterval(reqInterval);
 
- function loadReq(){
- fetch("/requests").then(r=>r.json()).then(data=>{
- let html="";
- data.forEach(x=>{
- html+=`
- <div class="card">
- <b>${x.plan}</b> - ₹${x.price||"?"}
- <br>UTR: ${x.utr}
- <br>Time: ${x.time}
- <button class="green" onclick="approve('${x.user}')">YES</button>
- <button class="red" onclick="reject('${x.user}')">NO</button>
- </div>`;
- });
- main.innerHTML=html||"No Requests";
- });
+ function load(){
+  fetch("/requests").then(r=>r.json()).then(data=>{
+   let html="";
+
+   data.forEach(x=>{
+   html+=`
+   <div class="card">
+   <b>${x.plan}</b> - ₹${x.price||"?"}
+   <br>UTR: ${x.utr}
+   <br>Time: ${x.time}
+
+   <button class="green" onclick="approve('${x.user}')">YES</button>
+   <button class="red" onclick="reject('${x.user}')">NO</button>
+   </div>`;
+   });
+
+   main.innerHTML=html||"No Requests";
+  });
  }
 
- loadReq();
- reqInterval=setInterval(loadReq,3000); // auto update
+ load();
+ reqInterval = setInterval(load,3000);
 }
 
-// ✅ CHANGE 2: double click block + refresh trigger
-let actionLock=false;
-
 function approve(u){
- if(actionLock) return;
- actionLock=true;
-
  fetch("/approve",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify({user:u})
- })
- .then(()=>fetch("/refresh",{method:"POST"}))
- .then(r=>r.json())
- .then(d=>{
+ }).then(r=>r.json()).then(d=>{
   alert("KEY: "+d.key);
-  actionLock=false;
   reqUI();
  });
 }
 
 function reject(u){
- if(actionLock) return;
- actionLock=true;
-
  fetch("/reject",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify({user:u})
- })
- .then(()=>fetch("/refresh",{method:"POST"}))
- .then(()=>{
-  actionLock=false;
-  reqUI();
- });
+ }).then(reqUI);
 }
 
-// ================= SYSTEM =================
 function toggleSystem(){
  fetch("/toggle",{method:"POST"})
  .then(()=>panelControlUI());
