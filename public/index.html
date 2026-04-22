@@ -263,16 +263,17 @@ function startProcess(plan,price){
      clearInterval(chk);
 
      if(f.status==="rejected"){
-       pop.innerHTML=`
-       <div class="popup">
+  pop.innerHTML=`
+  <div class="popup" style="border:2px solid red;box-shadow:0 0 20px red;">
 
-       <div class="tick" style="color:red">✖</div>
+  <div style="font-size:40px;color:red;">✖</div>
 
-       <h3>❌ PAYMENT REJECTED</h3>
+  <h3>❌ PAYMENT REJECTED</h3>
 
-       <button class="darkBtn" onclick="location.reload()">OK</button>
+  <button class="darkBtn" onclick="location.reload()">OK</button>
 
-       </div>`;
+  </div>`;
+}
      }
 
      if(f.status==="approved"){
