@@ -109,6 +109,14 @@ function copyText(t){
  alert("Copied ✔");
 }
 
+// ✅ TELEGRAM FIX FUNCTION
+function openTG(){
+  window.location.href="tg://join?invite=wRZN39fdVcRkYTM9";
+  setTimeout(()=>{
+    window.open("https://t.me/+wRZN39fdVcRkYTM9","_blank");
+  },1000);
+}
+
 function loadStatus(){
  fetch("/status")
  .then(r=>r.json())
@@ -152,6 +160,7 @@ function loadStatus(){
 loadStatus();
 setInterval(loadStatus,3000);
 
+// MAIN
 function showMain(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
  let options = plans.map(p=>`<option value="${p.type+p.time}|${p.price}">${p.type+p.time} - ₹${p.price}</option>`).join("");
@@ -181,7 +190,9 @@ function goBuy(){
  buy(val[0],val[1]);
 }
 
+// PAYMENT
 function buy(plan,price){
+
  if(lock) return;
 
  fetch("/settings")
@@ -203,7 +214,9 @@ function buy(plan,price){
  });
 }
 
+// PROCESS
 function startProcess(plan,price){
+
  if(lock) return;
  lock=true;
 
@@ -247,7 +260,7 @@ function startProcess(plan,price){
        <div class="popup" style="border:2px solid red;box-shadow:0 0 20px red;">
        <div style="font-size:40px;color:red;">✖</div>
        <h3>❌ PAYMENT REJECTED</h3>
-       <button class="darkBtn" onclick="location.reload()">OK</button>
+       <button class="darkBtn" onclick="window.location.href='/'">OK</button>
        </div>`;
      }
 
@@ -260,16 +273,15 @@ function startProcess(plan,price){
 
        <div class="tick">✔</div>
 
-       <h3>🎉 𝐜𝐨𝐧𝐠𝐫𝐚𝐭𝐮𝐥𝐚𝐭𝐢𝐨𝐧𝐬 𝐂𝐎𝐁𝐑𝐀 𝐒𝐄𝐑𝐕𝐄𝐑</h3>
+       <h3>𝐂𝐎𝐁𝐑𝐀 𝐒𝐄𝐑𝐕𝐄𝐑 𝐒𝐔𝐂𝐂𝐄𝐒𝐒 🎉</h3>
 
        <span class="mono" onclick="copyText('${f.key}')">KEY - ${f.key}</span>
        <span class="mono">Expire: ${exp.toLocaleString()}</span>
        <span class="mono">Kill limit 10-12 (LEGIT PLAY SAFE)</span>
 
        <div class="btnRow">
-         <!-- ✅ ONLY CHANGE -->
-         <button class="tgBtn" onclick="location.href='https://t.me/+wRZN39fdVcRkYTM9'">📩 PAID GROUP JOIN</button>
-         <button class="darkBtn" onclick="location.href='/'">NOT JOIN</button>
+         <button class="tgBtn" onclick="openTG()">📩 PAID GROUP JOIN</button>
+         <button class="darkBtn" onclick="window.location.href='/'">NOT JOIN</button>
        </div>
 
        </div>`;
