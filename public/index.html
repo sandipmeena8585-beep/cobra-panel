@@ -67,13 +67,8 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ===== PREMIUM POPUP ADD ===== */
-.popup{
- animation:popScale .35s ease;
-}
-@keyframes popScale{
- from{transform:scale(0.7);opacity:0}
- to{transform:scale(1);opacity:1}
-}
+.popup{animation:popScale .35s ease;}
+@keyframes popScale{from{transform:scale(0.7);opacity:0}to{transform:scale(1);opacity:1}}
 
 .popup::before{
  content:"";
@@ -84,27 +79,20 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
  opacity:0.4;
  animation:pulse 1.2s infinite;
 }
-@keyframes pulse{
- 0%{opacity:0.3}
- 50%{opacity:0.9}
- 100%{opacity:0.3}
-}
+@keyframes pulse{0%{opacity:0.3}50%{opacity:0.9}100%{opacity:0.3}}
 
 .tick{
  font-size:42px;
  color:#22c55e;
  animation:tickPop .4s ease;
 }
-@keyframes tickPop{
- from{transform:scale(0)}
- to{transform:scale(1)}
-}
+@keyframes tickPop{from{transform:scale(0)}to{transform:scale(1)}}
 </style>
 </head>
 
 <body>
 
-<div class="top" id="title">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
+<div class="top" id="title">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗟</div>
 
 <div id="main"></div>
 
@@ -121,7 +109,6 @@ function copyText(t){
  alert("Copied ✔");
 }
 
-// STATUS
 function loadStatus(){
  fetch("/status")
  .then(r=>r.json())
@@ -167,7 +154,6 @@ function loadStatus(){
 loadStatus();
 setInterval(loadStatus,3000);
 
-// MAIN
 function showMain(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
  let options = plans.map(p=>`<option value="${p.type+p.time}|${p.price}">${p.type+p.time} - ₹${p.price}</option>`).join("");
@@ -197,9 +183,7 @@ function goBuy(){
  buy(val[0],val[1]);
 }
 
-// PAYMENT
 function buy(plan,price){
-
  if(lock) return;
 
  fetch("/settings")
@@ -221,9 +205,7 @@ function buy(plan,price){
  });
 }
 
-// PROCESS
 function startProcess(plan,price){
-
  if(lock) return;
  lock=true;
 
@@ -263,17 +245,12 @@ function startProcess(plan,price){
      clearInterval(chk);
 
      if(f.status==="rejected"){
-  pop.innerHTML=`
-  <div class="popup" style="border:2px solid red;box-shadow:0 0 20px red;">
-
-  <div style="font-size:40px;color:red;">✖</div>
-
-  <h3>❌ PAYMENT REJECTED</h3>
-
-  <button class="darkBtn" onclick="location.reload()">OK</button>
-
-  </div>`;
-}
+       pop.innerHTML=`
+       <div class="popup" style="border:2px solid red;box-shadow:0 0 20px red;">
+       <div style="font-size:40px;color:red;">✖</div>
+       <h3>❌ PAYMENT REJECTED</h3>
+       <button class="darkBtn" onclick="location.reload()">OK</button>
+       </div>`;
      }
 
      if(f.status==="approved"){
@@ -287,7 +264,7 @@ function startProcess(plan,price){
 
        <h3>🎉 𝐜𝐨𝐧𝐠𝐫𝐚𝐭𝐮𝐥𝐚𝐭𝐢𝐨𝐧𝐬 𝐜𝐡𝐨𝐢𝐜𝐞 𝐂𝐎𝐁𝐑𝐀 𝐒𝐄𝐑𝐕𝐄𝐑</h3>
 
-       <span class="mono" onclick="copyText('${f.key}')">${f.key}</span>
+       <span class="mono" onclick="copyText('${f.key}')">KEY - ${f.key}</span>
        <span class="mono">Expire: ${exp.toLocaleString()}</span>
        <span class="mono">Kill limit 10-12 (LEGIT PLAY SAFE)</span>
 
