@@ -23,6 +23,7 @@ input,select{padding:10px;width:90%;margin:8px;border:none;border-radius:6px}
 position:fixed;top:0;left:0;width:100%;height:100%;
 display:flex;justify-content:center;align-items:center;
 backdrop-filter:blur(8px);
+background:rgba(0,0,0,0.6);
 z-index:999;
 }
 
@@ -62,20 +63,39 @@ let last=0;
 let lock=false;
 let shown=false;
 
+// ================= OVERLAY SYSTEM =================
+function showOverlay(html){
+ let old=document.getElementById("overlayBox");
+ if(old) old.remove();
+
+ let div=document.createElement("div");
+ div.id="overlayBox";
+ div.className="overlay";
+ div.innerHTML=html;
+
+ document.body.appendChild(div);
+}
+
+function removeOverlay(){
+ let o=document.getElementById("overlayBox");
+ if(o) o.remove();
+}
+
 // ================= LOAD =================
 function load(){
  fetch("/status").then(r=>r.json()).then(d=>{
 
-  // ADMIN OFF LOCK
+  // ADMIN OFF
   if(!d.on){
-   document.body.innerHTML=`
-   <div class="overlay">
+   showOverlay(`
     <div class="popup">
      <h3>⚠️ PLEASE WAIT</h3>
      <p>ADMIN UPDATE</p>
     </div>
-   </div>`;
+   `);
    return;
+  }else{
+   removeOverlay();
   }
 
   document.body.style.background=d.color;
@@ -87,11 +107,10 @@ function load(){
    showMain();
   }
 
-  // TRIAL LOCK
+  // TRIAL
   fetch("/trial").then(r=>r.json()).then(t=>{
    if(t.on){
-    document.body.innerHTML+=`
-    <div class="overlay">
+    showOverlay(`
      <div class="popup">
       <h3>${t.title}</h3>
       <span class="mono" onclick="copy('${t.key}')">KEY - ${t.key}</span>
@@ -99,12 +118,13 @@ function load(){
       <span class="mono">${t.expire}</span>
       <button onclick="window.open('${t.telegram}','_blank')">JOIN TELEGRAM</button>
      </div>
-    </div>`;
+    `);
    }
   });
 
  });
 }
+
 setInterval(load,3000);
 load();
 
@@ -172,18 +192,15 @@ function verify(plan,price){
   return alert("Enter valid UTR");
  }
 
- // SAVE UTR
  localStorage.setItem("utr",u);
  localStorage.setItem("plan",plan);
 
- // LOADER
- document.body.innerHTML+=`
- <div class="overlay" id="pop">
+ showOverlay(`
   <div class="popup">
    <div class="loader"></div>
    <p>Please wait admin verify</p>
   </div>
- </div>`;
+ `);
 
  fetch("/buy",{
   method:"POST",
@@ -200,13 +217,12 @@ function verify(plan,price){
 
   if(d.blocked){
    alert("BLOCKED "+d.time+" sec");
-   location.reload();
+   reset();
   }
 
   if(d.used){
    alert("UTR already used");
-   localStorage.clear();
-   location.reload();
+   reset();
   }
 
   if(d.direct){
@@ -252,7 +268,7 @@ function showSuccess(key){
  let exp=new Date();
  exp.setHours(exp.getHours()+12);
 
- pop.innerHTML=`
+ showOverlay(`
  <div class="popup">
 
   <h3>COBRA SERVER 🎉</h3>
@@ -267,18 +283,20 @@ function showSuccess(key){
    <button class="noBtn" onclick="reset()">NOT JOIN</button>
   </div>
 
- </div>`;
+ </div>
+ `);
 
  navigator.vibrate?.(200);
 }
 
 // ================= REJECT =================
 function showReject(){
- pop.innerHTML=`
+ showOverlay(`
  <div class="popup">
   <h3>❌ PAYMENT REJECTED</h3>
   <button onclick="reset()">OK</button>
- </div>`;
+ </div>
+ `);
 }
 
 // ================= UTILS =================
