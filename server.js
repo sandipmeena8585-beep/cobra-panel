@@ -89,7 +89,6 @@ function db(){
  if(!data.textColor) data.textColor="#ffffff";
  if(!data.title) data.title="COBRA SERVER PANEL";
 
- // 🔥 FIX (plans missing)
  if(!data.plans || data.plans.length===0){
   data.plans=[
    {type:"",time:"5H",price:"50"},
@@ -211,7 +210,11 @@ app.post("/savePlans",(req,res)=>{
 app.post("/buy",(req,res)=>{
  let d=db();
 
- if(d.requests.find(x=>x.utr===req.body.utr)){
+ // ✅ ONLY CHANGE (duplicate + approved fix)
+ if(
+  d.history.find(x=>x.utr===req.body.utr && x.status==="approved") ||
+  d.requests.find(x=>x.utr===req.body.utr)
+ ){
   return res.json({ok:true});
  }
 
