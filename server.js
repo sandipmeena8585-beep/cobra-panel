@@ -48,7 +48,18 @@ if(!fs.existsSync(DB)){
   requests:[],
   history:[],
   refresh:0,
-  qrTime:0
+  qrTime:0,
+
+  // 🔥 TRIAL ADD
+  trial:{
+    on:false,
+    title:"COBRA SERVER",
+    key:"TRIAL-KEY",
+    kill:"10-12 LEGIT PLAY SAFE",
+    telegram:"https://t.me/yourlink",
+    updates:["","",""]
+  }
+
  },null,2));
 }
 
@@ -68,6 +79,18 @@ function db(){
  if(!d.color) d.color="#22c55e";
  if(!d.textColor) d.textColor="#ffffff";
  if(!d.title) d.title="COBRA SERVER PANEL";
+
+ // 🔥 TRIAL SAFE LOAD
+ if(!d.trial){
+  d.trial={
+    on:false,
+    title:"COBRA SERVER",
+    key:"TRIAL-KEY",
+    kill:"10-12 LEGIT PLAY SAFE",
+    telegram:"https://t.me/yourlink",
+    updates:["","",""]
+  };
+ }
 
  return d;
 }
@@ -179,24 +202,17 @@ app.post("/savePlans",(req,res)=>{
 app.post("/buy",(req,res)=>{
  let d=db();
 
- // 🔥 FIX START (ONLY CHANGE)
  let approved=d.history.find(x=>x.utr===req.body.utr && x.status==="approved");
 
  if(approved){
-
-  // अगर पहले claim हो चुका
   if(approved.claimed){
-   return res.json({ok:true}); // ❌ दुबारा key नहीं
+   return res.json({ok:true});
   }
-
-  // पहली बार claim
   approved.claimed=true;
   approved.claimTime=new Date().toLocaleString();
-
   save(d);
   return res.json({ok:true});
  }
- // 🔥 FIX END
 
  if(d.requests.find(x=>x.utr===req.body.utr)){
   return res.json({ok:true});
@@ -307,6 +323,22 @@ app.post("/deleteStock",(req,res)=>{
  d.refresh=Date.now();
  save(d);
 
+ res.json({ok:true});
+});
+
+// ================= TRIAL ROUTES =================
+
+// GET
+app.get("/trial",(req,res)=>{
+ res.json(db().trial);
+});
+
+// UPDATE
+app.post("/trial",(req,res)=>{
+ let d=db();
+ d.trial={...d.trial,...req.body};
+ d.refresh=Date.now();
+ save(d);
  res.json({ok:true});
 });
 
