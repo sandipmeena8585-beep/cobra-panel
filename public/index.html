@@ -7,42 +7,27 @@
 <title>COBRA SERVER PANEL</title>
 
 <style>
-/* 🔥 SAME CSS (NO CHANGE) */
-body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center}
 
-.top{padding:15px;font-size:20px;font-weight:bold;color:#22c55e;animation:glow 1.5s infinite alternate;}
-@keyframes glow{from{opacity:0.6}to{opacity:1}}
+.top{padding:15px;font-size:20px;font-weight:bold;color:#22c55e}
 
 .card{background:#1e293b;margin:10px;padding:15px;border-radius:12px}
 
 .buyBtn{
  padding:14px;border:none;border-radius:8px;background:#22c55e;color:white;
- margin-top:10px;font-size:16px;animation:btnGlow 1.2s infinite alternate;
+ margin-top:10px;font-size:16px;
 }
-@keyframes btnGlow{from{box-shadow:0 0 5px #22c55e;}to{box-shadow:0 0 20px #22c55e;}}
 
 button{padding:12px;border:none;border-radius:6px;margin:5px}
 .darkBtn{background:#0088cc;color:#fff}
 .tgBtn{background:#0088cc;color:#fff}
 
-.btnRow{
- display:flex;
- justify-content:space-between;
- margin-top:10px;
-}
+.btnRow{display:flex;justify-content:space-between;margin-top:10px}
 
 input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 .mono{font-family:monospace;display:block;margin:8px 0;user-select:all}
 
-.tgFloat{
- position:fixed;bottom:20px;right:15px;background:#0088cc;color:#fff;
- padding:10px 14px;border-radius:20px;font-size:12px;cursor:pointer;
- box-shadow:0 0 10px #0088cc;
-}
-
-.info{margin-top:15px;font-size:14px;color:#38bdf8}
-
-/* POPUP */
+/* popup */
 .overlay{
  position:fixed;top:0;left:0;width:100%;height:100%;
  background:rgba(0,0,0,0.7);
@@ -52,11 +37,7 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 .popup{
  background:#020617;color:#fff;padding:20px;border-radius:16px;
  width:85%;max-width:320px;text-align:center;
- animation:fadeIn .3s ease;
- position:relative;
 }
-@keyframes fadeIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
-
 .loader{
  border:4px solid #111;
  border-top:4px solid #22c55e;
@@ -67,81 +48,64 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* PREMIUM */
-.popup{animation:popScale .35s ease;}
-@keyframes popScale{from{transform:scale(0.7);opacity:0}to{transform:scale(1);opacity:1}}
-
-.popup::before{
- content:"";
- position:absolute;
- inset:0;
- border-radius:16px;
- box-shadow:0 0 35px #22c55e;
- opacity:0.4;
- animation:pulse 1.2s infinite;
-}
-@keyframes pulse{0%{opacity:0.3}50%{opacity:0.9}100%{opacity:0.3}}
-
-.tick{
- font-size:42px;
- color:#22c55e;
- animation:tickPop .4s ease;
-}
-@keyframes tickPop{from{transform:scale(0)}to{transform:scale(1)}}
+.tick{font-size:40px;color:#22c55e}
 </style>
 </head>
 
 <body>
 
-<div class="top" id="title">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
-
+<div class="top" id="title">COBRA SERVER PANEL</div>
 <div id="main"></div>
-
-<div class="tgFloat" onclick="tg()">HELP</div>
 
 <script>
 
-// ================= 🔥 TRIAL ADD (ONLY THIS PART NEW) =================
-fetch("/trial").then(r=>r.json()).then(t=>{
+// ================= TRIAL SYSTEM =================
+let trialShown=false;
 
- if(!t || !t.on) return;
+function loadTrial(){
+ fetch("/trial")
+ .then(r=>r.json())
+ .then(t=>{
 
- document.body.innerHTML += `
- <div class="overlay">
- <div class="popup">
+  if(!t || !t.on) return;
+  if(trialShown) return;
 
- <h3>${t.title}</h3>
+  trialShown=true;
 
- <span class="mono" onclick="copyText('${t.key}')">
- KEY - ${t.key}
- </span>
+  document.body.innerHTML += `
+  <div class="overlay">
+  <div class="popup">
 
- <span class="mono">${t.kill}</span>
+  <div class="tick">✔</div>
 
- <button class="tgBtn" onclick="window.open('${t.telegram}','_blank')">
- 📢 JOIN TELEGRAM
- </button>
+  <h3>${t.title}</h3>
 
- <br><br>
+  <span class="mono" onclick="copyText('${t.key}')">
+  TAP KEY - ${t.key}
+  </span>
 
- ${t.updates.map(x=>`
-   <div style="color:#38bdf8">${x}</div>
- `).join("")}
+  <span class="mono">${t.expire}</span>
+  <span class="mono">${t.kill}</span>
 
- <br>
+  <div class="btnRow">
+    <button class="tgBtn" onclick="window.open('${t.telegram}','_blank')">
+    📩 JOIN GROUP
+    </button>
 
- <button class="darkBtn" onclick="this.closest('.overlay').remove()">
- OK
- </button>
+    <button class="darkBtn" onclick="this.closest('.overlay').remove()">
+    OK
+    </button>
+  </div>
 
- </div>
- </div>
- `;
-});
-// ================= END =================
+  </div>
+  </div>`;
+ });
+}
 
+loadTrial();
+setInterval(loadTrial,5000);
 
-// 🔥 BELOW YOUR FULL ORIGINAL CODE (UNCHANGED)
+// ================= NORMAL SYSTEM =================
 
 let lastRefresh=0;
 let firstLoad=true;
@@ -153,44 +117,27 @@ function copyText(t){
 }
 
 function openTG(){
-  window.location.href="tg://join?invite=wRZN39fdVcRkYTM9";
-  setTimeout(()=>{
-    window.open("https://t.me/+wRZN39fdVcRkYTM9","_blank");
-  },1000);
+ window.open("https://t.me/GODx_COBRA");
 }
 
 function loadStatus(){
  fetch("/status")
  .then(r=>r.json())
  .then(d=>{
+
   if(!d.on){
-   document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN PANEL UPDATE</h2>";
+   document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN UPDATE</h2>";
    return;
   }
 
   if(lastRefresh && d.refresh!==lastRefresh){
     lock=false;
     lastRefresh=d.refresh;
-
-    document.body.style.background = d.color || "#0f172a";
-    document.body.style.color = d.textColor || "#ffffff";
-
-    if(d.title){
-      document.getElementById("title").innerText = d.title;
-    }
-
     showMain();
     return;
   }
 
   lastRefresh=d.refresh;
-
-  document.body.style.background = d.color || "#0f172a";
-  document.body.style.color = d.textColor || "#ffffff";
-
-  if(d.title){
-    document.getElementById("title").innerText = d.title;
-  }
 
   if(firstLoad){
     showMain();
@@ -202,28 +149,16 @@ function loadStatus(){
 loadStatus();
 setInterval(loadStatus,3000);
 
-// बाकी सब SAME है नीचे...
-
+// ================= MAIN =================
 function showMain(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
  let options = plans.map(p=>`<option value="${p.type+p.time}|${p.price}">${p.type+p.time} - ₹${p.price}</option>`).join("");
 
  main.innerHTML=`
  <div class="card">
-   <h3>Select Game</h3>
-   <select><option>BGMI</option></select>
-
    <h3>Select Plan</h3>
    <select id="planSel">${options}</select>
-
-   <button class="buyBtn" onclick="goBuy()">𝗕𝗨𝗬 𝗞𝗘𝗬</button>
-
-   <div class="info">
-   ━━━━━━━━━━━━━━━━━━ <br>
-   ⚡ FAST DELIVERY <br>
-   🔐 SECURE ACCESS <br>
-   ━━━━━━━━━━━━━━━━━━
-   </div>
+   <button class="buyBtn" onclick="goBuy()">BUY KEY</button>
  </div>`;
  });
 }
@@ -233,27 +168,19 @@ function goBuy(){
  buy(val[0],val[1]);
 }
 
+// ================= BUY =================
 function buy(plan,price){
 
  if(lock) return;
 
- fetch("/settings")
- .then(r=>r.json())
- .then(s=>{
-  main.innerHTML=`
-  <div class="card">
-    <h3>PAYMENT</h3>
-    <p>Pay ₹${price}</p>
+ main.innerHTML=`
+ <div class="card">
+   <h3>PAYMENT</h3>
+   <p>Pay ₹${price}</p>
 
-    <div class="mono" onclick="copyText('${s.upi}')">${s.upi}</div>
-
-    <br>
-    <img src="${s.qr}" width="200">
-
-    <input id="utr" placeholder="ENTER UTR (12 digit)">
-    <button onclick="startProcess('${plan}','${price}')">VERIFY</button>
-  </div>`;
- });
+   <input id="utr" placeholder="ENTER UTR (12 digit)">
+   <button onclick="startProcess('${plan}','${price}')">VERIFY</button>
+ </div>`;
 }
 
 function startProcess(plan,price){
@@ -265,7 +192,7 @@ function startProcess(plan,price){
 
  if(!utrVal || utrVal.length!=12){
    lock=false;
-   return alert("Enter Valid 12 Digit UTR");
+   return alert("Enter Valid UTR");
  }
 
  document.body.innerHTML+=`
@@ -298,31 +225,27 @@ function startProcess(plan,price){
 
      if(f.status==="rejected"){
        pop.innerHTML=`
-       <div class="popup" style="border:2px solid red;box-shadow:0 0 20px red;">
-       <div style="font-size:40px;color:red;">✖</div>
+       <div class="popup">
        <h3>❌ PAYMENT REJECTED</h3>
-       <button class="darkBtn" onclick="window.location.href='/'">OK</button>
+       <button onclick="location.reload()">OK</button>
        </div>`;
      }
 
      if(f.status==="approved"){
-       let exp=new Date();
-       exp.setHours(exp.getHours()+12);
-
        pop.innerHTML=`
        <div class="popup">
 
        <div class="tick">✔</div>
 
-       <h3>𝐂𝐎𝐁𝐑𝐀 𝐒𝐄𝐑𝐕𝐄𝐑 𝐒𝐔𝐂𝐂𝐄𝐒𝐒 🎉</h3>
+       <h3>COBRA SERVER SUCCESS 🎉</h3>
 
-       <span class="mono" onclick="copyText('${f.key}')">KEY - ${f.key}</span>
-       <span class="mono">Expire: ${exp.toLocaleString()}</span>
-       <span class="mono">Kill limit 10-12 (LEGIT PLAY SAFE)</span>
+       <span class="mono" onclick="copyText('${f.key}')">
+       TAP KEY - ${f.key}
+       </span>
 
        <div class="btnRow">
-         <button class="tgBtn" onclick="openTG()">📩 PAID GROUP JOIN</button>
-         <button class="darkBtn" onclick="window.location.href='/'">NOT JOIN</button>
+         <button onclick="openTG()">JOIN</button>
+         <button onclick="location.reload()">OK</button>
        </div>
 
        </div>`;
@@ -330,10 +253,6 @@ function startProcess(plan,price){
    }
  });
  },2000);
-}
-
-function tg(){
- window.open("https://t.me/GODx_COBRA");
 }
 
 </script>
