@@ -7,12 +7,7 @@
 <title>COBRA ADMIN</title>
 
 <style>
-body{
-margin:0;
-background:#0f172a;
-color:#fff;
-font-family:Arial;
-}
+body{margin:0;background:#0f172a;color:#fff;font-family:Arial;}
 
 .login{
 display:flex;flex-direction:column;justify-content:center;align-items:center;
@@ -52,6 +47,28 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 .green{background:#22c55e}
 .red{background:#ef4444}
 .blue{background:#2563eb}
+
+/* POPUP */
+.popupOverlay{
+position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,0.7);
+display:flex;justify-content:center;align-items:center;
+z-index:999;
+}
+.popupBox{
+background:#020617;
+padding:20px;
+border-radius:16px;
+text-align:center;
+box-shadow:0 0 30px #22c55e;
+animation:pop .3s ease;
+}
+@keyframes pop{from{transform:scale(.7)}to{transform:scale(1)}}
+
+.tick{
+font-size:40px;
+color:#22c55e;
+}
 </style>
 
 </head>
@@ -121,7 +138,7 @@ function closeMenu(){
  overlay.classList.remove("active");
 }
 
-// ✅ FIX
+// STOP REQUEST LOOP
 let reqInt;
 function stopReq(){
  if(reqInt){
@@ -137,7 +154,7 @@ function home(){
  closeMenu();
 }
 
-// SETTINGS
+// ================= SETTINGS =================
 let selectedFile=null;
 
 function settingsUI(){
@@ -184,7 +201,7 @@ function saveSettings(){
  .then(()=>alert("UPDATED ✔"));
 }
 
-// THEME
+// ================= THEME =================
 function themeUI(){
  stopReq();
  main.innerHTML=`
@@ -204,7 +221,7 @@ function setTheme(bg,text){
  .then(()=>alert("THEME ✔"));
 }
 
-// PANEL CONTROL
+// ================= PANEL CONTROL =================
 function panelControlUI(){
  stopReq();
  fetch("/status").then(r=>r.json()).then(d=>{
@@ -228,7 +245,7 @@ function refreshPanel(){
  .then(()=>alert("REFRESHED ✔"));
 }
 
-// PLANS
+// ================= PLANS =================
 function plansUI(){
  stopReq();
  fetch("/plans").then(r=>r.json()).then(data=>{
@@ -260,7 +277,7 @@ function updatePlan(){
  });
 }
 
-// STOCK
+// ================= STOCK =================
 function stockUI(){
  stopReq();
  fetch("/plans").then(r=>r.json()).then(p=>{
@@ -302,7 +319,7 @@ function delStock(plan,index){
  }).then(()=>stockUI());
 }
 
-// REQUEST
+// ================= REQUEST =================
 function reqUI(){
  if(reqInt) clearInterval(reqInt);
 
@@ -312,10 +329,12 @@ function reqUI(){
    data.forEach(x=>{
     html+=`
     <div class="card">
-    ${x.plan} ₹${x.price}
-    <br>${x.utr}
-    <button class="green" onclick="approve('${x.user}')">YES</button>
-    <button class="red" onclick="reject('${x.user}')">NO</button>
+    <b>${x.plan}</b> ₹${x.price}
+    <br>UTR: ${x.utr}
+    <br>🕒 ${x.time || "No Time"}
+    <br><br>
+    <button class="green" onclick="approve('${x.user}')">✔ YES</button>
+    <button class="red" onclick="reject('${x.user}')">✖ NO</button>
     </div>`;
    });
    main.innerHTML=html||"NO REQUEST";
@@ -330,7 +349,19 @@ function reqUI(){
 function approve(u){
  fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
  .then(r=>r.json()).then(d=>{
-  alert("KEY: "+d.key);
+
+  let pop=document.createElement("div");
+  pop.className="popupOverlay";
+  pop.innerHTML=`
+  <div class="popupBox">
+   <div class="tick">✔</div>
+   <h3>KEY SENT SUCCESS</h3>
+   <p style="font-family:monospace">${d.key}</p>
+   <button onclick="this.closest('.popupOverlay').remove()">OK</button>
+  </div>`;
+
+  document.body.appendChild(pop);
+
   reqUI();
  });
 }
