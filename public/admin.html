@@ -136,134 +136,159 @@ function home(){
  closeMenu();
 }
 
-// ================= SETTINGS =================
-let selectedFile=null;
-
-function settingsUI(){
- fetch("/settings").then(r=>r.json()).then(d=>{
-  main.innerHTML=`
-  <div class="card">
-
-  <h3>UPI ID</h3>
-  <input id="upi" value="${d.upi || ""}">
-
-  <h3>Panel Title</h3>
-  <input id="title" value="${d.title || ""}">
-
-  <h3>Theme Color</h3>
-  <input id="color" type="color" value="${d.color || "#22c55e"}">
-
-  <h3>Text Color</h3>
-  <input id="textColor" type="color" value="${d.textColor || "#ffffff"}">
-
-  <h3>UPLOAD QR CODE</h3>
-  <input type="file" accept="image/*" onchange="selectQR(event)">
-  <br><br>
-  ${d.qr ? `<img src="${d.qr}" width="120">` : ""}
-
-  <button class="green" onclick="saveSettings()">UPDATE</button>
-
-  </div>`;
-  closeMenu();
+// ================= PLANS =================
+function plansUI(){
+ fetch("/plans").then(r=>r.json()).then(data=>{
+ let options="";
+ data.forEach((x,i)=>{
+  options+=`<option value="${i}">${x.type}${x.time} - ₹${x.price}</option>`;
  });
-}
 
-function selectQR(e){
- selectedFile = e.target.files[0];
-}
-
-function saveSettings(){
- fetch("/settings",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-    upi:upi.value,
-    color:color.value,
-    title:title.value,
-    textColor:textColor.value
-  })
- })
- .then(()=>{
-  if(selectedFile){
-    let fd=new FormData();
-    fd.append("qr",selectedFile);
-    return fetch("/uploadQR",{method:"POST",body:fd});
-  }
- })
- .then(()=>{
-  return fetch("/refresh",{method:"POST"});
- })
- .then(()=>{
-  alert("UPDATED LIVE ✔");
- });
-}
-
-// ================= THEME =================
-function themeUI(){
  main.innerHTML=`
  <div class="card">
- <h3>Theme Presets</h3>
-
- <button onclick="setTheme('#020617','#00ffcc')">🟢 COBRA</button>
- <button onclick="setTheme('#0f172a','#ffffff')">⚫ DARK</button>
- <button onclick="setTheme('#ffffff','#000000')">⚪ LIGHT</button>
-
+ <select id="planSelect">${options}</select>
+ <input id="newTime" placeholder="Time">
+ <input id="newPrice" placeholder="Price">
+ <button onclick="updatePlan()">UPDATE</button>
+ <div id="msg"></div>
  </div>`;
  closeMenu();
+ });
 }
 
-function setTheme(bg,text){
- fetch("/settings",{
+function updatePlan(){
+ fetch("/plans").then(r=>r.json()).then(data=>{
+ let i=planSelect.value;
+ data[i].time=newTime.value||data[i].time;
+ data[i].price=newPrice.value||data[i].price;
+
+ fetch("/savePlans",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify(data)
+ }).then(()=>msg.innerHTML="UPDATED ✔");
+ });
+}
+
+// ================= STOCK =================
+let activeIndex=null;
+
+function stockUI(){
+ fetch("/plans").then(r=>r.json()).then(p=>{
+ fetch("/stock").then(r=>r.json()).then(s=>{
+
+ let html=`
+ <div class="card">
+ <select id="planSel">${p.map(x=>`<option>${x.type+x.time}</option>`)}</select>
+ <input id="key" placeholder="ENTER KEY">
+ <button onclick="addStock()">ADD</button>
+ </div>`;
+
+ p.forEach((x,i)=>{
+ let plan=(x.type+x.time).trim();   // ✅ FIX
+ let arr=s[plan]||[];
+
+ html+=`<div class="card" onclick="toggleKeys(${i})"><b>${plan} (${arr.length})</b></div>
+ <div id="keys_${i}" style="display:none" class="card">`;
+
+ arr.forEach((k,index)=>{
+  html+=`${k}
+  <button onclick="delStock('${plan}',${index});event.stopPropagation()">❌</button><br>`;
+ });
+
+ html+=`</div>`;
+ });
+
+ main.innerHTML=html;
+ });
+ });
+}
+
+function toggleKeys(i){
+ if(activeIndex===i){
+  document.getElementById("keys_"+i).style.display="none";
+  activeIndex=null;
+  return;
+ }
+ if(activeIndex!==null){
+  document.getElementById("keys_"+activeIndex).style.display="none";
+ }
+ document.getElementById("keys_"+i).style.display="block";
+ activeIndex=i;
+}
+
+// ✅ FIXED ADD STOCK
+function addStock(){
+ fetch("/addStock",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify({
-    color:bg,
-    textColor:text
+   plan: planSel.options[planSel.selectedIndex].text.trim(),
+   key:key.value
   })
- })
- .then(()=>{
-   return fetch("/refresh",{method:"POST"});
- })
- .then(()=>{
-   alert("THEME UPDATED ✔");
+ }).then(()=>{
+  key.value="";
+  stockUI();
  });
 }
 
-// ================= PANEL CONTROL =================
-function panelControlUI(){
- fetch("/status").then(r=>r.json()).then(d=>{
-  main.innerHTML=`
-  <div class="card">
-    <h3>Panel Control</h3>
+function delStock(plan,index){
+ fetch("/deleteStock",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({plan,index})
+ }).then(stockUI);
+}
 
-    <button onclick="toggleSystem()">
-      ${d.on ? "TURN OFF PANEL" : "TURN ON PANEL"}
-    </button>
+// ================= REQUEST =================
+let reqInterval;
 
-    <button class="blue" onclick="refreshPanel()">REFRESH PANEL</button>
+function reqUI(){
+ if(reqInterval) clearInterval(reqInterval);
 
-  </div>`;
-  closeMenu();
+ function load(){
+  if(!document.getElementById("main")) return;
+
+  fetch("/requests").then(r=>r.json()).then(data=>{
+   let html="";
+
+   data.forEach(x=>{
+   html+=`
+   <div class="card">
+   <b>${x.plan}</b> - ₹${x.price||"?"}
+   <br>UTR: ${x.utr}
+   <br>Time: ${x.time}
+   <button class="green" onclick="approve('${x.user}')">YES</button>
+   <button class="red" onclick="reject('${x.user}')">NO</button>
+   </div>`;
+   });
+
+   main.innerHTML=html||"No Requests";
+  });
+ }
+
+ load();
+ reqInterval=setInterval(load,3000);
+}
+
+function approve(u){
+ fetch("/approve",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({user:u})
+ }).then(r=>r.json()).then(d=>{
+  alert("KEY: "+d.key);
+  reqUI();
  });
 }
 
-function toggleSystem(){
- fetch("/toggle",{method:"POST"})
- .then(()=>{
-   return fetch("/refresh",{method:"POST"}); // ✅ AUTO REFRESH
- })
- .then(()=>{
-   panelControlUI();
- });
+function reject(u){
+ fetch("/reject",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({user:u})
+ }).then(reqUI);
 }
-
-function refreshPanel(){
- fetch("/refresh",{method:"POST"})
- .then(()=>alert("Customer Panel Refreshed ✔"));
-}
-
-// ================= बाकी SAME =================
-// (Plans / Stock / Request unchanged)
 
 </script>
 
