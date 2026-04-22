@@ -9,18 +9,18 @@ app.use(express.static("public"));
 
 const DB="./data.json";
 
-// ================= FOLDER =================
+// ===== FOLDER =====
 if(!fs.existsSync("public")) fs.mkdirSync("public");
 if(!fs.existsSync("public/uploads")) fs.mkdirSync("public/uploads",{recursive:true});
 
-// ================= MULTER =================
+// ===== MULTER =====
 const storage=multer.diskStorage({
  destination:(req,file,cb)=>cb(null,"public/uploads"),
  filename:(req,file,cb)=>cb(null,Date.now()+"_"+file.originalname)
 });
 const upload=multer({storage});
 
-// ================= CREATE DB =================
+// ===== INIT DB =====
 if(!fs.existsSync(DB)){
  fs.writeFileSync(DB,JSON.stringify({
   systemOn:true,
@@ -59,7 +59,7 @@ if(!fs.existsSync(DB)){
  },null,2));
 }
 
-// ================= LOAD =================
+// ===== LOAD =====
 function db(){
  let d={};
  try{ d=JSON.parse(fs.readFileSync(DB)); }catch(e){ d={}; }
@@ -88,7 +88,7 @@ function save(d){
  fs.writeFileSync(DB,JSON.stringify(d,null,2));
 }
 
-// ================= ROUTES =================
+// ===== ROUTES =====
 
 // HOME
 app.get("/",(req,res)=>{
@@ -131,7 +131,7 @@ app.post("/refresh",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= SETTINGS =================
+// SETTINGS
 app.get("/settings",(req,res)=>res.json(db()));
 
 app.post("/settings",(req,res)=>{
@@ -142,7 +142,7 @@ app.post("/settings",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= QR =================
+// QR
 app.post("/uploadQR",upload.single("qr"),(req,res)=>{
  let d=db();
  if(req.file){
@@ -153,7 +153,7 @@ app.post("/uploadQR",upload.single("qr"),(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= PLANS =================
+// PLANS
 app.get("/plans",(req,res)=>res.json(db().plans));
 
 app.post("/savePlans",(req,res)=>{
@@ -164,13 +164,13 @@ app.post("/savePlans",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= BUY SYSTEM =================
+// ================= BUY FINAL =================
 app.post("/buy",(req,res)=>{
  let d=db();
  let user=req.body.user;
  let now=Date.now();
 
- // ===== SPAM CHECK =====
+ // ===== SPAM =====
  if(!d.spam[user]) d.spam[user]={count:0,time:0};
 
  if(d.spam[user].time > now){
@@ -180,7 +180,7 @@ app.post("/buy",(req,res)=>{
   });
  }
 
- // ===== APPROVED RETURN =====
+ // ===== APPROVED CHECK WITH EXPIRE =====
  let approved=d.history.find(x=>
   x.utr===req.body.utr &&
   x.plan===req.body.plan &&
@@ -188,20 +188,31 @@ app.post("/buy",(req,res)=>{
  );
 
  if(approved){
-  if(approved.claimed){
-   return res.json({ok:true});
+
+  let created=new Date(approved.time).getTime();
+  let expireTime=12*60*60*1000;
+
+  // ❌ not expired
+  if(now - created < expireTime){
+
+   if(approved.claimed){
+    return res.json({used:true});
+   }
+
+   approved.claimed=true;
+   approved.claimTime=new Date().toLocaleString();
+   save(d);
+
+   return res.json({
+    ok:true,
+    key:approved.key,
+    direct:true
+   });
+
+  }else{
+   // 🔥 EXPIRED → remove old
+   d.history=d.history.filter(x=>x!==approved);
   }
-
-  approved.claimed=true;
-  approved.claimTime=new Date().toLocaleString();
-
-  save(d);
-
-  return res.json({
-   ok:true,
-   key:approved.key,
-   direct:true
-  });
  }
 
  // ===== WRONG PLAN =====
@@ -210,10 +221,8 @@ app.post("/buy",(req,res)=>{
   return res.json({wrongPlan:true});
  }
 
- // ===== DUPLICATE =====
- if(d.requests.find(x=>x.utr===req.body.utr)){
-  d.spam[user].count++;
- }else{
+ // ===== NEW REQUEST =====
+ if(!d.requests.find(x=>x.utr===req.body.utr)){
   d.requests.push({
    user:req.body.user,
    plan:req.body.plan,
@@ -221,9 +230,11 @@ app.post("/buy",(req,res)=>{
    utr:req.body.utr,
    time:new Date().toLocaleString()
   });
+ }else{
+  d.spam[user].count++;
  }
 
- // ===== SPAM LIMIT =====
+ // ===== BLOCK =====
  if(d.spam[user].count>=3){
   d.spam[user].time=now + (5*60*1000);
   d.spam[user].count=0;
@@ -240,10 +251,10 @@ app.post("/buy",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= REQUEST =================
+// REQUEST
 app.get("/requests",(req,res)=>res.json(db().requests));
 
-// ================= APPROVE =================
+// APPROVE
 app.post("/approve",(req,res)=>{
  let d=db();
  let r=d.requests.find(x=>x.user===req.body.user);
@@ -253,7 +264,7 @@ app.post("/approve",(req,res)=>{
  let key="NO STOCK";
 
  if(d.stock[r.plan]?.length){
-  key=d.stock[r.plan].shift(); // 🔥 REMOVE KEY
+  key=d.stock[r.plan].shift(); // 🔥 REMOVE
  }
 
  d.history.unshift({
@@ -270,21 +281,19 @@ app.post("/approve",(req,res)=>{
  res.json({key});
 });
 
-// ================= REJECT =================
+// REJECT
 app.post("/reject",(req,res)=>{
  let d=db();
  d.requests=d.requests.filter(x=>x.user!==req.body.user);
-
  d.refresh=Date.now();
  save(d);
-
  res.json({ok:true});
 });
 
-// ================= HISTORY =================
+// HISTORY
 app.get("/history",(req,res)=>res.json(db().history));
 
-// ================= STOCK =================
+// STOCK
 app.get("/stock",(req,res)=>res.json(db().stock));
 
 app.post("/addStock",(req,res)=>{
@@ -310,7 +319,7 @@ app.post("/deleteStock",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= TRIAL =================
+// TRIAL
 app.get("/trial",(req,res)=>res.json(db().trial));
 
 app.post("/trialToggle",(req,res)=>{
@@ -336,9 +345,9 @@ app.post("/trialUpdate",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= START =================
+// START
 const PORT=process.env.PORT||3000;
 
 app.listen(PORT,()=>{
- console.log("🔥 SERVER RUNNING ON "+PORT);
+ console.log("🔥 FINAL SERVER RUNNING "+PORT);
 });
