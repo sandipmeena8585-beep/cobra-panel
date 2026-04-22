@@ -7,20 +7,55 @@
 <title>COBRA ADMIN</title>
 
 <style>
-body{margin:0;background:#0f172a;color:#fff;font-family:Arial;-webkit-tap-highlight-color: transparent;}
-.login{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);}
-.login input,.login button{width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;}
+body{
+margin:0;
+background:#0f172a;
+color:#fff;
+font-family:Arial;
+-webkit-tap-highlight-color: transparent;
+}
+
+.login{
+ display:flex;flex-direction:column;justify-content:center;align-items:center;
+ height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);
+}
+.login input,.login button{
+ width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;
+}
 .login button{background:#000;color:#fff}
-.top{display:flex;align-items:center;gap:10px;padding:12px;background:#020617;position:fixed;width:100%;top:0;}
+
+.top{
+ display:flex;align-items:center;gap:10px;padding:12px;
+ background:#020617;position:fixed;width:100%;top:0;
+}
+
 .title{font-weight:bold;}
-.menuIcon{font-size:22px;cursor:pointer;}
-.sidebar{position:fixed;left:-250px;width:250px;height:100%;background:#1e293b;transition:.3s;padding-top:60px;}
+
+.menuIcon{
+ font-size:22px;
+ cursor:pointer;
+}
+
+.sidebar{
+ position:fixed;left:-250px;width:250px;height:100%;
+ background:#1e293b;transition:.3s;padding-top:60px;
+}
 .sidebar.active{left:0}
-.sidebar div{padding:12px;margin:8px;background:#334155;border-radius:8px;}
-.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;}
+.sidebar div{
+ padding:12px;margin:8px;background:#334155;border-radius:8px;
+}
+
+.overlay{
+ position:fixed;
+ top:0;left:0;width:100%;height:100%;
+ background:rgba(0,0,0,0.5);
+ display:none;
+}
 .overlay.active{display:block}
+
 .content{margin-top:60px;padding:10px}
 .card{background:#1e293b;padding:15px;margin:10px 0;border-radius:10px}
+
 button{padding:10px;border:none;border-radius:6px;margin:5px}
 .green{background:#22c55e}
 .red{background:#ef4444}
@@ -89,13 +124,13 @@ function toggleMenu(){
  sidebar.classList.toggle("active");
  overlay.classList.toggle("active");
 }
+
 function closeMenu(){
  sidebar.classList.remove("active");
  overlay.classList.remove("active");
 }
 
-// 🔥 REQUEST CONTROL FLAG
-let reqInterval;
+// CONTROL FLAG (request refresh only)
 let isRequestPage=false;
 
 // HOME
@@ -105,7 +140,7 @@ function home(){
  closeMenu();
 }
 
-// SETTINGS
+// ================= SETTINGS =================
 let selectedFile=null;
 
 function settingsUI(){
@@ -113,81 +148,75 @@ function settingsUI(){
  fetch("/settings").then(r=>r.json()).then(d=>{
   main.innerHTML=`
   <div class="card">
+
   <h3>UPI ID</h3>
-  <input id="upi" value="${d.upi||""}">
+  <input id="upi" value="${d.upi || ""}">
+
   <h3>Panel Title</h3>
-  <input id="title" value="${d.title||""}">
+  <input id="title" value="${d.title || ""}">
+
   <h3>Theme Color</h3>
-  <input id="color" type="color" value="${d.color||"#22c55e"}">
+  <input id="color" type="color" value="${d.color || "#22c55e"}">
+
   <h3>Text Color</h3>
-  <input id="textColor" type="color" value="${d.textColor||"#ffffff"}">
-  <h3>UPLOAD QR</h3>
-  <input type="file" onchange="selectQR(event)">
-  ${d.qr?`<img src="${d.qr}" width="120">`:""}
+  <input id="textColor" type="color" value="${d.textColor || "#ffffff"}">
+
+  <h3>UPLOAD QR CODE</h3>
+  <input type="file" accept="image/*" onchange="selectQR(event)">
+  <br><br>
+  ${d.qr ? `<img src="${d.qr}" width="120">` : ""}
+
   <button class="green" onclick="saveSettings()">UPDATE</button>
+
   </div>`;
   closeMenu();
  });
 }
 
-function selectQR(e){selectedFile=e.target.files[0];}
+function selectQR(e){
+ selectedFile = e.target.files[0];
+}
 
 function saveSettings(){
- fetch("/settings",{method:"POST",headers:{"Content-Type":"application/json"},
- body:JSON.stringify({upi:upi.value,color:color.value,title:title.value,textColor:textColor.value})})
+ fetch("/settings",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+    upi:upi.value,
+    color:color.value,
+    title:title.value,
+    textColor:textColor.value
+  })
+ })
  .then(()=>{
   if(selectedFile){
-   let fd=new FormData();
-   fd.append("qr",selectedFile);
-   return fetch("/uploadQR",{method:"POST",body:fd});
+    let fd=new FormData();
+    fd.append("qr",selectedFile);
+    return fetch("/uploadQR",{method:"POST",body:fd});
   }
- }).then(()=>{
+ })
+ .then(()=>{
   fetch("/refresh",{method:"POST"});
-  alert("UPDATED ✔");
+  alert("UPDATED LIVE ✔");
  });
 }
 
-// THEME
-function themeUI(){
- isRequestPage=false;
- main.innerHTML=`<div class="card">
- <button onclick="setTheme('#020617','#00ffcc')">COBRA</button>
- <button onclick="setTheme('#0f172a','#fff')">DARK</button>
- </div>`;
- closeMenu();
-}
-
-function setTheme(bg,text){
- fetch("/settings",{method:"POST",headers:{"Content-Type":"application/json"},
- body:JSON.stringify({color:bg,textColor:text})})
- .then(()=>fetch("/refresh",{method:"POST"}));
-}
-
-// PANEL
-function panelControlUI(){
- isRequestPage=false;
- fetch("/status").then(r=>r.json()).then(d=>{
- main.innerHTML=`<div class="card">
- <button onclick="toggleSystem()">${d.on?"OFF":"ON"}</button>
- </div>`;
- closeMenu();
- });
-}
-
-function toggleSystem(){
- fetch("/toggle",{method:"POST"}).then(()=>panelControlUI());
-}
-
-// PLANS
+// ================= PLANS =================
 function plansUI(){
  isRequestPage=false;
  fetch("/plans").then(r=>r.json()).then(data=>{
- let opt=data.map((x,i)=>`<option value="${i}">${x.time}</option>`).join("");
- main.innerHTML=`<div class="card">
- <select id="planSelect">${opt}</select>
- <input id="newTime">
- <input id="newPrice">
+ let options="";
+ data.forEach((x,i)=>{
+  options+=`<option value="${i}">${x.type}${x.time} - ₹${x.price}</option>`;
+ });
+
+ main.innerHTML=`
+ <div class="card">
+ <select id="planSelect">${options}</select>
+ <input id="newTime" placeholder="Time">
+ <input id="newPrice" placeholder="Price">
  <button onclick="updatePlan()">UPDATE</button>
+ <div id="msg"></div>
  </div>`;
  closeMenu();
  });
@@ -198,25 +227,88 @@ function updatePlan(){
  let i=planSelect.value;
  data[i].time=newTime.value||data[i].time;
  data[i].price=newPrice.value||data[i].price;
- fetch("/savePlans",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+
+ fetch("/savePlans",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify(data)
+ }).then(()=>msg.innerHTML="UPDATED ✔");
  });
 }
 
-// STOCK
+// ================= STOCK =================
+let activeIndex=null;
+
 function stockUI(){
  isRequestPage=false;
  fetch("/plans").then(r=>r.json()).then(p=>{
  fetch("/stock").then(r=>r.json()).then(s=>{
- let html=`<div class="card">
+
+ let html=`
+ <div class="card">
  <select id="planSel">${p.map(x=>`<option>${x.type+x.time}</option>`)}</select>
- <input id="key">
- <button onclick="addStock()">ADD</button></div>`;
+ <input id="key" placeholder="ENTER KEY">
+ <button onclick="addStock()">ADD</button>
+ </div>`;
+
+ p.forEach((x,i)=>{
+ let plan=x.type+x.time;
+ let arr=s[plan]||[];
+
+ html+=`<div class="card" onclick="toggleKeys(${i})"><b>${plan}</b></div>
+ <div id="keys_${i}" style="display:none" class="card">`;
+
+ arr.forEach((k,index)=>{
+  html+=`${k}
+  <button onclick="delStock('${plan}',${index});event.stopPropagation()">❌</button><br>`;
+ });
+
+ html+=`</div>`;
+ });
+
  main.innerHTML=html;
  });
  });
 }
 
-// ================= REQUEST (FIXED) =================
+function toggleKeys(i){
+ if(activeIndex===i){
+  document.getElementById("keys_"+i).style.display="none";
+  activeIndex=null;
+  return;
+ }
+ if(activeIndex!==null){
+  document.getElementById("keys_"+activeIndex).style.display="none";
+ }
+ document.getElementById("keys_"+i).style.display="block";
+ activeIndex=i;
+}
+
+function addStock(){
+ fetch("/addStock",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+   plan:planSel.value,
+   key:key.value
+  })
+ }).then(()=>{
+  key.value="";
+  stockUI();
+ });
+}
+
+function delStock(plan,index){
+ fetch("/deleteStock",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({plan,index})
+ }).then(stockUI);
+}
+
+// ================= REQUEST =================
+let reqInterval;
+
 function reqUI(){
 
  isRequestPage=true;
@@ -236,6 +328,7 @@ function reqUI(){
    <b>${x.plan}</b> - ₹${x.price||"?"}
    <br>UTR: ${x.utr}
    <br>Time: ${x.time}
+
    <button class="green" onclick="approve('${x.user}')">YES</button>
    <button class="red" onclick="reject('${x.user}')">NO</button>
    </div>`;
@@ -249,18 +342,28 @@ function reqUI(){
  reqInterval=setInterval(load,3000);
 }
 
-// APPROVE / REJECT
 function approve(u){
- fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
- .then(r=>r.json()).then(d=>{
+ fetch("/approve",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({user:u})
+ }).then(r=>r.json()).then(d=>{
   alert("KEY: "+d.key);
   reqUI();
  });
 }
 
 function reject(u){
- fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
- .then(reqUI);
+ fetch("/reject",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({user:u})
+ }).then(reqUI);
+}
+
+function toggleSystem(){
+ fetch("/toggle",{method:"POST"})
+ .then(()=>panelControlUI());
 }
 
 </script>
