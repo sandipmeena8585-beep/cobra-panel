@@ -5,7 +5,7 @@
 <title>COBRA SERVER PANEL</title>
 
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center}
+body{margin:0;font-family:Arial;background:#0f172a;color:#fff;text-align:center}
 
 .top{padding:15px;font-size:20px;color:#22c55e}
 
@@ -20,28 +20,28 @@ input,select{padding:10px;width:90%;margin:8px;border:none;border-radius:6px}
 .mono{font-family:monospace;display:block;margin:8px 0}
 
 .overlay{
- position:fixed;top:0;left:0;width:100%;height:100%;
- display:flex;justify-content:center;align-items:center;
- backdrop-filter:blur(8px);
- z-index:999;
+position:fixed;top:0;left:0;width:100%;height:100%;
+display:flex;justify-content:center;align-items:center;
+backdrop-filter:blur(8px);
+z-index:999;
 }
 
 .popup{
- background:#020617;
- padding:20px;
- border-radius:16px;
- width:85%;
- max-width:320px;
- text-align:center;
+background:#020617;
+padding:20px;
+border-radius:16px;
+width:85%;
+max-width:320px;
+text-align:center;
 }
 
 .loader{
- border:4px solid #111;
- border-top:4px solid #22c55e;
- border-radius:50%;
- width:40px;height:40px;
- margin:10px auto;
- animation:spin 1s linear infinite;
+border:4px solid #111;
+border-top:4px solid #22c55e;
+border-radius:50%;
+width:40px;height:40px;
+margin:10px auto;
+animation:spin 1s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -60,6 +60,7 @@ input,select{padding:10px;width:90%;margin:8px;border:none;border-radius:6px}
 
 let last=0;
 let lock=false;
+let shown=false;
 
 // ================= LOAD =================
 function load(){
@@ -86,26 +87,17 @@ function load(){
    showMain();
   }
 
-  // TRIAL CHECK
+  // TRIAL LOCK
   fetch("/trial").then(r=>r.json()).then(t=>{
    if(t.on){
     document.body.innerHTML+=`
     <div class="overlay">
      <div class="popup">
-
       <h3>${t.title}</h3>
-
-      <span class="mono" onclick="copyText('${t.key}')">
-      KEY - ${t.key}
-      </span>
-
+      <span class="mono" onclick="copy('${t.key}')">KEY - ${t.key}</span>
       <span class="mono">${t.kill}</span>
       <span class="mono">${t.expire}</span>
-
-      <button onclick="window.open('${t.telegram}','_blank')">
-      JOIN TELEGRAM
-      </button>
-
+      <button onclick="window.open('${t.telegram}','_blank')">JOIN TELEGRAM</button>
      </div>
     </div>`;
    }
@@ -113,7 +105,6 @@ function load(){
 
  });
 }
-
 setInterval(load,3000);
 load();
 
@@ -142,12 +133,12 @@ function showMain(){
  });
 }
 
+// ================= BUY =================
 function goBuy(){
  let v=planSel.value.split("|");
  buy(v[0],v[1]);
 }
 
-// ================= BUY =================
 function buy(plan,price){
 
  fetch("/settings").then(r=>r.json()).then(s=>{
@@ -156,7 +147,7 @@ function buy(plan,price){
 
    <h3>PAY ₹${price}</h3>
 
-   <span class="mono" onclick="copyText('${s.upi}')">${s.upi}</span>
+   <span class="mono" onclick="copy('${s.upi}')">${s.upi}</span>
 
    <img src="${s.qr}" width="200">
 
@@ -180,6 +171,10 @@ function verify(plan,price){
   lock=false;
   return alert("Enter valid UTR");
  }
+
+ // SAVE UTR
+ localStorage.setItem("utr",u);
+ localStorage.setItem("plan",plan);
 
  // LOADER
  document.body.innerHTML+=`
@@ -208,8 +203,9 @@ function verify(plan,price){
    location.reload();
   }
 
-  if(d.wrongPlan){
-   alert("Wrong Plan");
+  if(d.used){
+   alert("UTR already used");
+   localStorage.clear();
    location.reload();
   }
 
@@ -219,25 +215,34 @@ function verify(plan,price){
 
  });
 
- // CHECK LOOP
+ checkLoop(u,plan);
+}
+
+// ================= AUTO CHECK =================
+function checkLoop(u,plan){
+
  let chk=setInterval(()=>{
-  fetch("/history")
-  .then(r=>r.json())
-  .then(h=>{
-   let f=h.find(x=>x.utr===u);
+ fetch("/history")
+ .then(r=>r.json())
+ .then(h=>{
 
-   if(f){
-    clearInterval(chk);
+  let f=h.find(x=>x.utr===u && x.plan===plan);
 
-    if(f.status==="rejected"){
-     showReject();
-    }
+  if(f && !shown){
+   shown=true;
+   clearInterval(chk);
 
-    if(f.status==="approved"){
-     showSuccess(f.key);
-    }
+   if(f.status==="approved"){
+    showSuccess(f.key);
    }
-  });
+
+   if(f.status==="rejected"){
+    showReject();
+   }
+
+  }
+
+ });
  },2000);
 }
 
@@ -252,19 +257,19 @@ function showSuccess(key){
 
   <h3>COBRA SERVER 🎉</h3>
 
-  <span class="mono" onclick="copyText('${key}')">
-   KEY - ${key}
-  </span>
+  <span class="mono" onclick="copy('${key}')">KEY - ${key}</span>
 
   <span class="mono">Expire: ${exp.toLocaleString()}</span>
   <span class="mono">Kill limit 10-12 LEGIT PLAY SAFE</span>
 
   <div class="btnRow">
-   <button class="joinBtn" onclick="joinTG()">JOIN</button>
-   <button class="noBtn" onclick="location.reload()">NOT JOIN</button>
+   <button class="joinBtn" onclick="join()">JOIN</button>
+   <button class="noBtn" onclick="reset()">NOT JOIN</button>
   </div>
 
  </div>`;
+
+ navigator.vibrate?.(200);
 }
 
 // ================= REJECT =================
@@ -272,21 +277,34 @@ function showReject(){
  pop.innerHTML=`
  <div class="popup">
   <h3>❌ PAYMENT REJECTED</h3>
-  <button onclick="location.reload()">OK</button>
+  <button onclick="reset()">OK</button>
  </div>`;
 }
 
 // ================= UTILS =================
-function copyText(t){
+function copy(t){
  navigator.clipboard.writeText(t);
- alert("Copied");
+ alert("Copied ✔");
 }
 
-function joinTG(){
+function join(){
  window.location.href="tg://join?invite=wRZN39fdVcRkYTM9";
  setTimeout(()=>{
   window.open("https://t.me/+wRZN39fdVcRkYTM9","_blank");
  },1000);
+}
+
+function reset(){
+ localStorage.clear();
+ location.reload();
+}
+
+// ================= AUTO RETURN =================
+let oldUTR=localStorage.getItem("utr");
+let oldPlan=localStorage.getItem("plan");
+
+if(oldUTR && oldPlan){
+ checkLoop(oldUTR,oldPlan);
 }
 
 </script>
