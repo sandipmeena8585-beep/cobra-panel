@@ -18,13 +18,9 @@ body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center
  margin-top:10px;font-size:16px;
 }
 
-button{padding:12px;border:none;border-radius:6px;margin:5px}
-.darkBtn{background:#111;color:#fff}
-.tgBtn{background:#0088cc;color:#fff}
+button{padding:10px;border:none;border-radius:6px;margin:5px}
 
-input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
-
-.mono{font-family:monospace;display:block;margin:8px 0}
+.mono{font-family:monospace;display:block;margin:8px 0;user-select:all}
 
 .overlay{
  position:fixed;top:0;left:0;width:100%;height:100%;
@@ -48,61 +44,58 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.tick{font-size:42px;color:#22c55e;}
-</style>
+.tick{font-size:40px;color:#22c55e}
 
+.btnRow{display:flex;justify-content:space-between;margin-top:10px}
+
+</style>
 </head>
 
 <body>
 
-<div class="top" id="title">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
+<div class="top" id="title">COBRA SERVER PANEL</div>
 
 <div id="main"></div>
 
 <script>
 
-// ===== COPY =====
+// ================= COPY =================
 function copyText(t){
  navigator.clipboard.writeText(t);
  alert("Copied ✔");
 }
 
-// ===== TELEGRAM =====
+// ================= TELEGRAM =================
 function openTG(url){
- window.open(url,"_blank");
+ window.open(url || "https://t.me/GODx_COBRA","_blank");
 }
 
-// ===== TRIAL POPUP =====
-function checkTrial(){
- fetch("/trial").then(r=>r.json()).then(t=>{
-
- if(!t || !t.on) return;
+// ================= TRIAL POPUP =================
+fetch("/trial").then(r=>r.json()).then(t=>{
+ if(!t.on) return;
 
  document.body.innerHTML+=`
  <div class="overlay">
  <div class="popup">
 
- <h3>${t.title || "COBRA TRIAL"}</h3>
+ <h3>${t.title}</h3>
 
  <span class="mono" onclick="copyText('${t.key}')">
- KEY - ${t.key}
+ TAP KEY - ${t.key}
  </span>
 
  <span class="mono">${t.kill}</span>
  <span class="mono">Expire: ${t.expire}</span>
 
- <button class="tgBtn" onclick="openTG('${t.telegram}')">
- 📢 JOIN TELEGRAM
- </button>
+ <button onclick="openTG('${t.telegram}')">JOIN TELEGRAM</button>
+ <br><br>
+ <button onclick="this.closest('.overlay').remove()">OK</button>
 
  </div>
- </div>
- `;
+ </div>`;
+});
 
- });
-}
-
-// ===== LOAD STATUS =====
+// ================= LIVE STATUS =================
 let last=0;
 
 function load(){
@@ -114,16 +107,17 @@ function load(){
 
   if(last!==d.refresh){
     last=d.refresh;
-    showPlans();
+    show();
   }
 
  });
 }
 
 setInterval(load,2000);
+load();
 
-// ===== SHOW PLANS =====
-function showPlans(){
+// ================= SHOW PLANS =================
+function show(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
   main.innerHTML=plans.map(p=>`
    <div class="card">
@@ -135,35 +129,34 @@ function showPlans(){
  });
 }
 
-// ===== BUY =====
+// ================= BUY =================
 function buy(plan,price){
 
  fetch("/settings").then(r=>r.json()).then(s=>{
 
   main.innerHTML=`
   <div class="card">
+    <h3>PAY ₹${price}</h3>
 
-  <h3>PAY ₹${price}</h3>
+    <div class="mono" onclick="copyText('${s.upi}')">${s.upi}</div>
 
-  <div class="mono" onclick="copyText('${s.upi}')">${s.upi}</div>
+    <br>
+    <img src="${s.qr}" width="200">
 
-  <img src="${s.qr}" width="200">
-
-  <input id="utr" placeholder="ENTER UTR (12 digit)">
-
-  <button onclick="verify('${plan}','${price}')">VERIFY</button>
-
+    <input id="utr" placeholder="ENTER UTR (12 digit)">
+    <button onclick="verify('${plan}','${price}')">VERIFY</button>
   </div>`;
+
  });
 }
 
-// ===== VERIFY =====
+// ================= VERIFY =================
 function verify(plan,price){
 
- let u=utr.value;
+ let utrVal=utr.value;
 
- if(!u || u.length!=12){
-  return alert("Enter Valid UTR");
+ if(!utrVal || utrVal.length!=12){
+  return alert("Enter Valid 12 Digit UTR");
  }
 
  // loader popup
@@ -183,42 +176,43 @@ function verify(plan,price){
    user:"USER_"+Date.now(),
    plan:plan,
    price:price,
-   utr:u
+   utr:utrVal
   })
  });
 
  // check result
  let chk=setInterval(()=>{
-  fetch("/history")
-  .then(r=>r.json())
-  .then(h=>{
+ fetch("/history")
+ .then(r=>r.json())
+ .then(h=>{
 
-   let f=h.find(x=>x.utr===u);
+  let f=h.find(x=>x.utr===utrVal);
 
-   if(f){
-    clearInterval(chk);
+  if(f){
+   clearInterval(chk);
 
-    // REJECT
-    if(f.status==="rejected"){
-     pop.innerHTML=`
-     <div class="popup">
-      <h3 style="color:red">❌ PAYMENT REJECTED</h3>
-      <button onclick="location.reload()">OK</button>
-     </div>`;
-    }
+   // ❌ rejected
+   if(f.status==="rejected"){
+    pop.innerHTML=`
+    <div class="popup" style="box-shadow:0 0 20px red;">
+     <div style="font-size:40px;color:red;">✖</div>
+     <h3>PAYMENT REJECTED</h3>
+     <button onclick="location.reload()">OK</button>
+    </div>`;
+   }
 
-    // SUCCESS (OLD STYLE)
-    if(f.status==="approved"){
+   // ✅ success
+   if(f.status==="approved"){
 
-     let exp=new Date();
-     exp.setHours(exp.getHours()+12);
+    let exp=new Date();
+    exp.setHours(exp.getHours()+12);
 
-     pop.innerHTML=`
-     <div class="popup">
+    pop.innerHTML=`
+    <div class="popup">
 
      <div class="tick">✔</div>
 
-     <h3>𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗦𝗨𝗖𝗖𝗘𝗦𝗦 🎉</h3>
+     <h3>COBRA SERVER SUCCESS 🎉</h3>
 
      <span class="mono" onclick="copyText('${f.key}')">
      TAP KEY - ${f.key}
@@ -227,25 +221,19 @@ function verify(plan,price){
      <span class="mono">Expire: ${exp.toLocaleString()}</span>
      <span class="mono">Kill limit 10-12 (LEGIT PLAY SAFE)</span>
 
-     <button class="tgBtn" onclick="openTG('https://t.me/GODx_COBRA')">
-     📩 PAID GROUP JOIN
-     </button>
+     <div class="btnRow">
+       <button onclick="openTG()">JOIN GROUP</button>
+       <button onclick="location.reload()">NOT JOIN</button>
+     </div>
 
-     <button class="darkBtn" onclick="location.reload()">NOT JOIN</button>
-
-     </div>`;
-    }
-
+    </div>`;
    }
 
-  });
+  }
+
+ });
  },2000);
-
 }
-
-// INIT
-checkTrial();
-load();
 
 </script>
 
