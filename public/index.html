@@ -66,7 +66,7 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ===== PREMIUM POPUP ADD ===== */
+/* PREMIUM */
 .popup{animation:popScale .35s ease;}
 @keyframes popScale{from{transform:scale(0.7);opacity:0}to{transform:scale(1);opacity:1}}
 
@@ -92,7 +92,7 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 
 <body>
 
-<div class="top" id="title">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗟</div>
+<div class="top" id="title">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
 
 <div id="main"></div>
 
@@ -113,7 +113,6 @@ function loadStatus(){
  fetch("/status")
  .then(r=>r.json())
  .then(d=>{
-
   if(!d.on){
    document.body.innerHTML="<h2>⚠️ PLEASE WAIT ADMIN PANEL UPDATE</h2>";
    return;
@@ -147,7 +146,6 @@ function loadStatus(){
     showMain();
     firstLoad=false;
   }
-
  });
 }
 
@@ -262,15 +260,16 @@ function startProcess(plan,price){
 
        <div class="tick">✔</div>
 
-       <h3>🎉 𝐜𝐨𝐧𝐠𝐫𝐚𝐭𝐮𝐥𝐚𝐭𝐢𝐨𝐧𝐬 𝐜𝐡𝐨𝐢𝐜𝐞 𝐂𝐎𝐁𝐑𝐀 𝐒𝐄𝐑𝐕𝐄𝐑</h3>
+       <h3>🎉 𝐜𝐨𝐧𝐠𝐫𝐚𝐭𝐮𝐥𝐚𝐭𝐢𝐨𝐧𝐬 𝐂𝐎𝐁𝐑𝐀 𝐒𝐄𝐑𝐕𝐄𝐑</h3>
 
        <span class="mono" onclick="copyText('${f.key}')">KEY - ${f.key}</span>
        <span class="mono">Expire: ${exp.toLocaleString()}</span>
        <span class="mono">Kill limit 10-12 (LEGIT PLAY SAFE)</span>
 
        <div class="btnRow">
-         <button class="tgBtn" onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">📩 PAID GROUP JOIN</button>
-         <button class="darkBtn" onclick="location.reload()">NOT JOIN</button>
+         <!-- ✅ ONLY CHANGE -->
+         <button class="tgBtn" onclick="location.href='https://t.me/+wRZN39fdVcRkYTM9'">📩 PAID GROUP JOIN</button>
+         <button class="darkBtn" onclick="location.href='/'">NOT JOIN</button>
        </div>
 
        </div>`;
