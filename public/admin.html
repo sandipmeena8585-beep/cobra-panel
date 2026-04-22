@@ -118,15 +118,26 @@ sidebar.classList.remove("active");
 overlay.classList.remove("active");
 }
 
+// ================= COMMON FIX =================
+let reqInt=null;
+function stopReq(){
+if(reqInt){
+clearInterval(reqInt);
+reqInt=null;
+}
+}
+
 // HOME
 function home(){
+stopReq();
 main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
 closeMenu();
 }
 
-// ================= SETTINGS (OLD + QR FIX) =================
+// ================= SETTINGS =================
 let file;
 function settingsUI(){
+stopReq();
 fetch("/settings").then(r=>r.json()).then(d=>{
 main.innerHTML=`
 <div class="card">
@@ -173,8 +184,9 @@ return fetch("/uploadQR",{method:"POST",body:fd});
 .then(()=>alert("UPDATED ✔"));
 }
 
-// ================= PLANS (FIXED UI) =================
+// ================= PLANS =================
 function plansUI(){
+stopReq();
 fetch("/plans").then(r=>r.json()).then(data=>{
 main.innerHTML=`
 <div class="card">
@@ -202,12 +214,13 @@ fetch("/savePlans",{method:"POST",headers:{"Content-Type":"application/json"},bo
 });
 }
 
-// ================= STOCK (FIXED SELECT) =================
+// ================= STOCK =================
 function stockUI(){
+stopReq();
 fetch("/plans").then(r=>r.json()).then(p=>{
 main.innerHTML=`
 <div class="card">
-<select id="planSel">${p.map(x=>`<option>${x.type+x.time}</option>`)}</select>
+<select id="planSel">${p.map(x=>`<option>${x.time}</option>`)}</select>
 <input id="key" placeholder="KEY">
 <button onclick="addStock()">ADD</button>
 </div>`;
@@ -217,14 +230,13 @@ closeMenu();
 
 function addStock(){
 fetch("/addStock",{method:"POST",headers:{"Content-Type":"application/json"},
-body:JSON.stringify({plan:planSel.value.trim(),key:key.value})
+body:JSON.stringify({plan:planSel.value,key:key.value})
 }).then(()=>alert("STOCK ADDED ✔"));
 }
 
-// ================= REQUEST (TIME + AUTO REFRESH) =================
-let reqInt;
+// ================= REQUEST =================
 function reqUI(){
-if(reqInt) clearInterval(reqInt);
+stopReq();
 
 function load(){
 fetch("/requests").then(r=>r.json()).then(data=>{
@@ -247,6 +259,7 @@ closeMenu();
 
 // ================= PANEL CONTROL =================
 function panelControlUI(){
+stopReq();
 fetch("/status").then(r=>r.json()).then(d=>{
 main.innerHTML=`
 <div class="card">
@@ -257,11 +270,19 @@ main.innerHTML=`
 closeMenu();
 }
 
-function toggleSystem(){fetch("/toggle",{method:"POST"});}
-function refreshNow(){fetch("/refresh",{method:"POST"}).then(()=>alert("REFRESH ✔"));}
+function toggleSystem(){
+fetch("/toggle",{method:"POST"})
+.then(()=>panelControlUI());
+}
+
+function refreshNow(){
+fetch("/refresh",{method:"POST"})
+.then(()=>alert("REFRESH ✔"));
+}
 
 // ================= THEME =================
 function themeUI(){
+stopReq();
 main.innerHTML=`
 <div class="card">
 <button onclick="setTheme('#020617','#00ffcc')">COBRA</button>
@@ -277,8 +298,9 @@ body:JSON.stringify({color:bg,textColor:text})
 }).then(()=>alert("THEME ✔"));
 }
 
-// ================= TRIAL =================
+// ================= TRIAL (FIXED) =================
 function trialUI(){
+stopReq();
 fetch("/trial").then(r=>r.json()).then(t=>{
 main.innerHTML=`
 <div class="card">
@@ -293,10 +315,10 @@ ${t.on?'TURN OFF':'TURN ON'}
 <input id="t_url" value="${t.telegram}">
 
 <h4>TIME</h4>
-<input id="t_time" placeholder="HH:MM">
+<input id="t_time" value="${t.time||""}">
 
 <h4>DATE</h4>
-<input id="t_date" placeholder="DD/MM/YYYY">
+<input id="t_date" value="${t.date||""}">
 
 <button onclick="saveTrial()" class="blue">UPDATE</button>
 
@@ -305,28 +327,32 @@ ${t.on?'TURN OFF':'TURN ON'}
 closeMenu();
 }
 
-function toggleTrial(){fetch("/trialToggle",{method:"POST"});}
+function toggleTrial(){
+fetch("/trialToggle",{method:"POST"})
+.then(()=>trialUI());
+}
 
 function saveTrial(){
-let exp=t_date.value+" "+t_time.value;
-
 fetch("/trialUpdate",{method:"POST",headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
 title:t_title.value,
 key:t_key.value,
 kill:t_kill.value,
 telegram:t_url.value,
-expire:exp
+date:t_date.value,
+time:t_time.value
 })
 }).then(()=>alert("TRIAL UPDATED ✔"));
 }
 
 // ================= REQUEST ACTION =================
 function approve(u){
-fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})});
+fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
+.then(()=>reqUI());
 }
 function reject(u){
-fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})});
+fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
+.then(()=>reqUI());
 }
 
 </script>
