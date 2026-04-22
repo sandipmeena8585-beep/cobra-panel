@@ -30,7 +30,6 @@ if(!fs.existsSync(DB)){
   textColor:"#ffffff",
   title:"COBRA SERVER PANEL",
 
-  // 🔥 TRIAL SYSTEM
   trial:{
    on:false,
    title:"COBRA SERVER TRIAL",
@@ -62,16 +61,13 @@ if(!fs.existsSync(DB)){
 // ================= LOAD =================
 function db(){
  let d={};
- try{
-  d=JSON.parse(fs.readFileSync(DB));
- }catch(e){ d={}; }
+ try{ d=JSON.parse(fs.readFileSync(DB)); }catch(e){ d={}; }
 
  if(!d.stock) d.stock={};
  if(!d.requests) d.requests=[];
  if(!d.history) d.history=[];
  if(!d.refresh) d.refresh=0;
 
- // trial safety
  if(!d.trial){
   d.trial={
    on:false,
@@ -118,7 +114,7 @@ app.get("/status",(req,res)=>{
  });
 });
 
-// TOGGLE PANEL
+// TOGGLE
 app.post("/toggle",(req,res)=>{
  let d=db();
  d.systemOn=!d.systemOn;
@@ -207,12 +203,12 @@ app.post("/buy",(req,res)=>{
  res.json({ok:true});
 });
 
-// REQUEST
+// ================= REQUEST =================
 app.get("/requests",(req,res)=>{
  res.json(db().requests);
 });
 
-// APPROVE
+// ================= APPROVE (🔥 SAFE STOCK) =================
 app.post("/approve",(req,res)=>{
  let d=db();
  let r=d.requests.find(x=>x.user===req.body.user);
@@ -220,8 +216,9 @@ app.post("/approve",(req,res)=>{
  if(!r) return res.json({});
 
  let key="NO STOCK";
+
  if(d.stock[r.plan]?.length){
-  key=d.stock[r.plan].shift();
+  key=d.stock[r.plan][0]; // 🔥 NO DELETE
  }
 
  d.history.unshift({...r,key,status:"approved"});
@@ -283,14 +280,11 @@ app.post("/deleteStock",(req,res)=>{
  res.json({ok:true});
 });
 
-// ================= 🔥 TRIAL =================
-
-// GET
+// ================= TRIAL =================
 app.get("/trial",(req,res)=>{
  res.json(db().trial);
 });
 
-// TOGGLE
 app.post("/trialToggle",(req,res)=>{
  let d=db();
  d.trial.on=!d.trial.on;
@@ -299,7 +293,6 @@ app.post("/trialToggle",(req,res)=>{
  res.json({on:d.trial.on});
 });
 
-// UPDATE
 app.post("/trialUpdate",(req,res)=>{
  let d=db();
 
