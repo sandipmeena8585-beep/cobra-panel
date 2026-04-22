@@ -6,37 +6,18 @@
 
 <style>
 body{margin:0;background:#0f172a;color:#fff;font-family:Arial;}
-
-.login{
-display:flex;flex-direction:column;justify-content:center;align-items:center;
-height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);
-}
-.login input,.login button{
-width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;
-}
+.login{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);}
+.login input,.login button{width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;}
 .login button{background:#000;color:#fff}
 
-.top{
-display:flex;align-items:center;gap:10px;padding:12px;
-background:#020617;position:fixed;width:100%;top:0;
-}
-
+.top{display:flex;align-items:center;gap:10px;padding:12px;background:#020617;position:fixed;width:100%;top:0;}
 .menuIcon{font-size:22px;cursor:pointer;}
 
-.sidebar{
-position:fixed;left:-250px;width:250px;height:100%;
-background:#1e293b;transition:.3s;padding-top:60px;
-}
+.sidebar{position:fixed;left:-250px;width:250px;height:100%;background:#1e293b;transition:.3s;padding-top:60px;}
 .sidebar.active{left:0}
+.sidebar div{padding:12px;margin:8px;background:#334155;border-radius:8px;}
 
-.sidebar div{
-padding:12px;margin:8px;background:#334155;border-radius:8px;
-}
-
-.overlay{
-position:fixed;top:0;left:0;width:100%;height:100%;
-background:rgba(0,0,0,0.5);display:none;
-}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;}
 .overlay.active{display:block}
 
 .content{margin-top:60px;padding:10px}
@@ -82,12 +63,11 @@ input,select{padding:10px;width:90%;margin:6px;border:none;border-radius:6px}
 </div>
 
 <div class="content" id="main"></div>
-
 </div>
 
 <script>
 
-// LOGIN
+// LOGIN FIX
 function login(){
 if(u.value==="COBRA SERVER" && p.value==="SAMI9166"){
 localStorage.setItem("admin","1");
@@ -101,7 +81,12 @@ panel.style.display="block";
 home();
 }
 
-if(localStorage.getItem("admin")=="1") start();
+// 🔥 refresh fix
+window.onload=()=>{
+if(localStorage.getItem("admin")==="1"){
+start();
+}
+}
 
 function logout(){
 localStorage.removeItem("admin");
@@ -118,13 +103,9 @@ sidebar.classList.remove("active");
 overlay.classList.remove("active");
 }
 
-// ================= COMMON FIX =================
-let reqInt=null;
+let reqInt;
 function stopReq(){
-if(reqInt){
-clearInterval(reqInt);
-reqInt=null;
-}
+if(reqInt){clearInterval(reqInt);reqInt=null;}
 }
 
 // HOME
@@ -214,16 +195,35 @@ fetch("/savePlans",{method:"POST",headers:{"Content-Type":"application/json"},bo
 });
 }
 
-// ================= STOCK =================
+// ================= STOCK FULL =================
 function stockUI(){
 stopReq();
-fetch("/plans").then(r=>r.json()).then(p=>{
-main.innerHTML=`
+
+Promise.all([
+fetch("/plans").then(r=>r.json()),
+fetch("/stock").then(r=>r.json())
+]).then(([plans,stock])=>{
+
+let html=`
 <div class="card">
-<select id="planSel">${p.map(x=>`<option>${x.time}</option>`)}</select>
+<select id="planSel">${plans.map(x=>`<option>${x.time}</option>`)}</select>
 <input id="key" placeholder="KEY">
-<button onclick="addStock()">ADD</button>
+<button class="green" onclick="addStock()">ADD</button>
+</div>
+`;
+
+plans.forEach(p=>{
+let name=p.time;
+let arr=stock[name]||[];
+
+html+=`
+<div class="card">
+<b>${name} (${arr.length})</b><br>
+${arr.map((k,i)=>`${k} <button onclick="delStock('${name}',${i})">❌</button><br>`).join("")}
 </div>`;
+});
+
+main.innerHTML=html;
 });
 closeMenu();
 }
@@ -231,7 +231,13 @@ closeMenu();
 function addStock(){
 fetch("/addStock",{method:"POST",headers:{"Content-Type":"application/json"},
 body:JSON.stringify({plan:planSel.value,key:key.value})
-}).then(()=>alert("STOCK ADDED ✔"));
+}).then(()=>{alert("ADDED ✔");stockUI();});
+}
+
+function delStock(plan,i){
+fetch("/deleteStock",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({plan,index:i})
+}).then(()=>stockUI());
 }
 
 // ================= REQUEST =================
@@ -271,13 +277,11 @@ closeMenu();
 }
 
 function toggleSystem(){
-fetch("/toggle",{method:"POST"})
-.then(()=>panelControlUI());
+fetch("/toggle",{method:"POST"}).then(()=>panelControlUI());
 }
 
 function refreshNow(){
-fetch("/refresh",{method:"POST"})
-.then(()=>alert("REFRESH ✔"));
+fetch("/refresh",{method:"POST"}).then(()=>alert("REFRESH ✔"));
 }
 
 // ================= THEME =================
@@ -298,27 +302,26 @@ body:JSON.stringify({color:bg,textColor:text})
 }).then(()=>alert("THEME ✔"));
 }
 
-// ================= TRIAL (FIXED) =================
+// ================= TRIAL =================
 function trialUI(){
 stopReq();
+
 fetch("/trial").then(r=>r.json()).then(t=>{
 main.innerHTML=`
 <div class="card">
 
-<button onclick="toggleTrial()" class="${t.on?'red':'green'}">
-${t.on?'TURN OFF':'TURN ON'}
-</button>
+<button onclick="toggleTrial()" class="${t.on?'red':'green'}">${t.on?'TURN OFF':'TURN ON'}</button>
 
 <input id="t_title" value="${t.title}">
 <input id="t_key" value="${t.key}">
 <input id="t_kill" value="${t.kill}">
 <input id="t_url" value="${t.telegram}">
 
-<h4>TIME</h4>
-<input id="t_time" value="${t.time||""}">
-
 <h4>DATE</h4>
 <input id="t_date" value="${t.date||""}">
+
+<h4>TIME</h4>
+<input id="t_time" value="${t.time||""}">
 
 <button onclick="saveTrial()" class="blue">UPDATE</button>
 
@@ -328,8 +331,7 @@ closeMenu();
 }
 
 function toggleTrial(){
-fetch("/trialToggle",{method:"POST"})
-.then(()=>trialUI());
+fetch("/trialToggle",{method:"POST"}).then(()=>trialUI());
 }
 
 function saveTrial(){
@@ -342,17 +344,15 @@ telegram:t_url.value,
 date:t_date.value,
 time:t_time.value
 })
-}).then(()=>alert("TRIAL UPDATED ✔"));
+}).then(()=>alert("UPDATED ✔"));
 }
 
-// ================= REQUEST ACTION =================
+// REQUEST ACTION
 function approve(u){
-fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
-.then(()=>reqUI());
+fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})}).then(()=>reqUI());
 }
 function reject(u){
-fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
-.then(()=>reqUI());
+fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})}).then(()=>reqUI());
 }
 
 </script>
