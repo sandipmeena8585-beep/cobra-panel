@@ -196,20 +196,20 @@ app.post("/savePlans",(req,res)=>{
 app.post("/buy",(req,res)=>{
  let d=db();
 
- // 🔥 ONLY CHANGE START
  let approved = d.history.find(x=>x.utr===req.body.utr && x.status==="approved");
 
+ // ✅ CLAIM TRACK
  if(approved){
   approved.claimed = true;
-  approved.claimTime = new Date().toLocaleString();
+  approved.claimTime = new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"});
   save(d);
   return res.json({ok:true});
  }
 
+ // ✅ DUPLICATE BLOCK
  if(d.requests.find(x=>x.utr===req.body.utr)){
   return res.json({ok:true});
  }
- // 🔥 ONLY CHANGE END
 
  d.requests.push({
   user:req.body.user,
@@ -246,7 +246,8 @@ app.post("/approve",(req,res)=>{
   ...r,
   key:key,
   status:"approved",
-  time:new Date().toLocaleString()
+  claimed:false, // ✅ ADD
+  time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
  });
 
  d.requests=d.requests.filter(x=>x.user!==r.user);
@@ -264,7 +265,7 @@ app.post("/reject",(req,res)=>{
   user:r?.user,
   utr:r?.utr,
   status:"rejected",
-  time:new Date().toLocaleString()
+  time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
  });
 
  d.requests=d.requests.filter(x=>x.user!==req.body.user);
@@ -276,6 +277,18 @@ app.post("/reject",(req,res)=>{
 // HISTORY
 app.get("/history",(req,res)=>{
  res.json(db().history);
+});
+
+// ✅ ADMIN HISTORY VIEW (CLAIM STATUS)
+app.get("/historyAdmin",(req,res)=>{
+ let d=db();
+
+ let data=d.history.map(x=>({
+  ...x,
+  claimedStatus: x.claimed ? "✔ CLAIMED" : "❌ NOT CLAIMED"
+ }));
+
+ res.json(data);
 });
 
 // ================= STOCK =================
