@@ -9,18 +9,18 @@ app.use(express.static("public"));
 
 const DB="./data.json";
 
-// folders
+// ================= FOLDER =================
 if(!fs.existsSync("public")) fs.mkdirSync("public");
 if(!fs.existsSync("public/uploads")) fs.mkdirSync("public/uploads",{recursive:true});
 
-// upload
+// ================= MULTER =================
 const storage=multer.diskStorage({
  destination:(req,file,cb)=>cb(null,"public/uploads"),
  filename:(req,file,cb)=>cb(null,Date.now()+"_"+file.originalname)
 });
 const upload=multer({storage});
 
-// create db
+// ================= CREATE DB =================
 if(!fs.existsSync(DB)){
  fs.writeFileSync(DB,JSON.stringify({
   systemOn:true,
@@ -30,48 +30,56 @@ if(!fs.existsSync(DB)){
   textColor:"#ffffff",
   title:"COBRA SERVER PANEL",
 
-  // 🔥 TRIAL ADD
+  // 🔥 TRIAL SYSTEM
   trial:{
    on:false,
-   title:"FREE TRIAL 🎁",
+   title:"COBRA SERVER TRIAL",
    key:"TRIAL-KEY-123",
-   kill:"Kill limit 10-12 (LEGIT PLAY SAFE)",
-   telegram:"https://t.me/GODx_COBRA"
+   kill:"Kill limit 10-12 LEGIT PLAY SAFE",
+   telegram:"https://t.me/GODx_COBRA",
+   expire:"Not Set"
   },
 
   plans:[
-   {type:"",time:"1D",price:"100"},
-   {type:"",time:"7D",price:"400"}
+   {type:"",time:"5H",price:"50"},
+   {type:"",time:"1D",price:"120"},
+   {type:"",time:"3D",price:"200"},
+   {type:"",time:"7D",price:"400"},
+   {type:"",time:"15D",price:"600"},
+   {type:"",time:"30D",price:"1000"},
+   {type:"",time:"60D",price:"1200"},
+   {type:"",time:"FULL",price:"1400"}
   ],
+
   stock:{},
   requests:[],
   history:[],
   refresh:0
+
  },null,2));
 }
 
-// LOAD
+// ================= LOAD =================
 function db(){
  let d={};
  try{
   d=JSON.parse(fs.readFileSync(DB));
- }catch(e){
-  d={};
- }
+ }catch(e){ d={}; }
 
  if(!d.stock) d.stock={};
  if(!d.requests) d.requests=[];
  if(!d.history) d.history=[];
  if(!d.refresh) d.refresh=0;
 
- // 🔥 TRIAL SAFETY
+ // trial safety
  if(!d.trial){
   d.trial={
    on:false,
-   title:"FREE TRIAL 🎁",
+   title:"COBRA SERVER TRIAL",
    key:"TRIAL-KEY-123",
-   kill:"Kill limit 10-12 (LEGIT PLAY SAFE)",
-   telegram:"https://t.me/GODx_COBRA"
+   kill:"Kill limit 10-12 LEGIT PLAY SAFE",
+   telegram:"https://t.me/GODx_COBRA",
+   expire:"Not Set"
   };
  }
 
@@ -82,22 +90,35 @@ function save(d){
  fs.writeFileSync(DB,JSON.stringify(d,null,2));
 }
 
-// ROUTES
+// ================= ROUTES =================
+
+// CUSTOMER
 app.get("/",(req,res)=>{
- let d=db();
- if(!d.systemOn) return res.send("<h2>⚠️ WAIT ADMIN</h2>");
+ const d=db();
+ if(!d.systemOn){
+  return res.send("<h2>⚠️ PLEASE WAIT ADMIN UPDATE</h2>");
+ }
  res.sendFile(path.join(__dirname,"public/index.html"));
 });
 
+// ADMIN
 app.get("/admin",(req,res)=>{
  res.sendFile(path.join(__dirname,"public/admin.html"));
 });
 
+// STATUS
 app.get("/status",(req,res)=>{
- let d=db();
- res.json(d);
+ const d=db();
+ res.json({
+  on:d.systemOn,
+  refresh:d.refresh,
+  color:d.color,
+  textColor:d.textColor,
+  title:d.title
+ });
 });
 
+// TOGGLE PANEL
 app.post("/toggle",(req,res)=>{
  let d=db();
  d.systemOn=!d.systemOn;
@@ -106,6 +127,7 @@ app.post("/toggle",(req,res)=>{
  res.json({on:d.systemOn});
 });
 
+// REFRESH
 app.post("/refresh",(req,res)=>{
  let d=db();
  d.refresh=Date.now();
@@ -113,29 +135,49 @@ app.post("/refresh",(req,res)=>{
  res.json({ok:true});
 });
 
-// SETTINGS
-app.get("/settings",(req,res)=>res.json(db()));
+// ================= SETTINGS =================
+app.get("/settings",(req,res)=>{
+ let d=db();
+ res.json({
+  upi:d.upi,
+  qr:d.qr,
+  color:d.color,
+  textColor:d.textColor,
+  title:d.title
+ });
+});
 
 app.post("/settings",(req,res)=>{
  let d=db();
- Object.assign(d,req.body);
+
+ if(req.body.upi!==undefined) d.upi=req.body.upi;
+ if(req.body.color!==undefined) d.color=req.body.color;
+ if(req.body.textColor!==undefined) d.textColor=req.body.textColor;
+ if(req.body.title!==undefined) d.title=req.body.title;
+
  d.refresh=Date.now();
  save(d);
+
  res.json({ok:true});
 });
 
+// ================= QR =================
 app.post("/uploadQR",upload.single("qr"),(req,res)=>{
  let d=db();
+
  if(req.file){
   d.qr="/uploads/"+req.file.filename;
   d.refresh=Date.now();
   save(d);
  }
+
  res.json({ok:true});
 });
 
-// PLANS
-app.get("/plans",(req,res)=>res.json(db().plans));
+// ================= PLANS =================
+app.get("/plans",(req,res)=>{
+ res.json(db().plans);
+});
 
 app.post("/savePlans",(req,res)=>{
  let d=db();
@@ -145,37 +187,19 @@ app.post("/savePlans",(req,res)=>{
  res.json({ok:true});
 });
 
-// STOCK
-app.get("/stock",(req,res)=>res.json(db().stock));
-
-app.post("/addStock",(req,res)=>{
- let d=db();
- let {plan,key}=req.body;
- if(!d.stock[plan]) d.stock[plan]=[];
- d.stock[plan].push(key);
- d.refresh=Date.now();
- save(d);
- res.json({ok:true});
-});
-
-app.post("/deleteStock",(req,res)=>{
- let d=db();
- let {plan,index}=req.body;
- d.stock[plan]?.splice(index,1);
- d.refresh=Date.now();
- save(d);
- res.json({ok:true});
-});
-
-// BUY
+// ================= BUY =================
 app.post("/buy",(req,res)=>{
  let d=db();
 
- let exist=d.history.find(x=>x.utr===req.body.utr);
- if(exist) return res.json({ok:true});
+ if(d.history.find(x=>x.utr===req.body.utr)){
+  return res.json({ok:true});
+ }
 
  d.requests.push({
-  ...req.body,
+  user:req.body.user,
+  plan:req.body.plan,
+  price:req.body.price,
+  utr:req.body.utr,
   time:new Date().toLocaleString()
  });
 
@@ -184,24 +208,21 @@ app.post("/buy",(req,res)=>{
 });
 
 // REQUEST
-app.get("/requests",(req,res)=>res.json(db().requests));
+app.get("/requests",(req,res)=>{
+ res.json(db().requests);
+});
 
 // APPROVE
 app.post("/approve",(req,res)=>{
  let d=db();
  let r=d.requests.find(x=>x.user===req.body.user);
+
  if(!r) return res.json({});
 
- if(r.done) return res.json({key:"ALREADY USED"});
-
- let plan=r.plan;
  let key="NO STOCK";
-
- if(d.stock[plan]?.length>0){
-  key=d.stock[plan].shift();
+ if(d.stock[r.plan]?.length){
+  key=d.stock[r.plan].shift();
  }
-
- r.done=true;
 
  d.history.unshift({...r,key,status:"approved"});
  d.requests=d.requests.filter(x=>x.user!==r.user);
@@ -216,15 +237,53 @@ app.post("/approve",(req,res)=>{
 app.post("/reject",(req,res)=>{
  let d=db();
  d.requests=d.requests.filter(x=>x.user!==req.body.user);
+
  d.refresh=Date.now();
  save(d);
+
  res.json({ok:true});
 });
 
-app.get("/history",(req,res)=>res.json(db().history));
+// HISTORY
+app.get("/history",(req,res)=>{
+ res.json(db().history);
+});
 
+// ================= STOCK =================
+app.get("/stock",(req,res)=>{
+ res.json(db().stock);
+});
 
-// ================= 🔥 TRIAL ROUTES =================
+app.post("/addStock",(req,res)=>{
+ let d=db();
+
+ let plan=req.body.plan;
+ let key=req.body.key;
+
+ if(!d.stock[plan]) d.stock[plan]=[];
+
+ d.stock[plan].push(key);
+
+ d.refresh=Date.now();
+ save(d);
+
+ res.json({ok:true});
+});
+
+app.post("/deleteStock",(req,res)=>{
+ let d=db();
+
+ if(d.stock[req.body.plan]){
+  d.stock[req.body.plan].splice(req.body.index,1);
+ }
+
+ d.refresh=Date.now();
+ save(d);
+
+ res.json({ok:true});
+});
+
+// ================= 🔥 TRIAL =================
 
 // GET
 app.get("/trial",(req,res)=>{
@@ -244,10 +303,11 @@ app.post("/trialToggle",(req,res)=>{
 app.post("/trialUpdate",(req,res)=>{
  let d=db();
 
- d.trial.title=req.body.title;
- d.trial.key=req.body.key;
- d.trial.kill=req.body.kill;
- d.trial.telegram=req.body.telegram;
+ if(req.body.title!==undefined) d.trial.title=req.body.title;
+ if(req.body.key!==undefined) d.trial.key=req.body.key;
+ if(req.body.kill!==undefined) d.trial.kill=req.body.kill;
+ if(req.body.telegram!==undefined) d.trial.telegram=req.body.telegram;
+ if(req.body.expire!==undefined) d.trial.expire=req.body.expire;
 
  d.refresh=Date.now();
  save(d);
@@ -255,6 +315,9 @@ app.post("/trialUpdate",(req,res)=>{
  res.json({ok:true});
 });
 
+// ================= START =================
+const PORT=process.env.PORT||3000;
 
-// START
-app.listen(3000,()=>console.log("🔥 RUNNING"));
+app.listen(PORT,()=>{
+ console.log("🔥 SERVER RUNNING ON "+PORT);
+});
