@@ -2,68 +2,120 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-<title>COBRA SERVER PANEL</title>
+<title>COBRA PANEL</title>
 
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:#fff;text-align:center}
+body{
+ margin:0;
+ font-family:Arial;
+ color:#fff;
+ text-align:center;
 
-.top{padding:15px;font-size:20px;color:#22c55e}
+ background:url("cobra.png") no-repeat center center fixed;
+ background-size:cover;
+}
 
-.card{background:#1e293b;margin:10px;padding:15px;border-radius:12px}
+.top{
+ padding:15px;
+ font-size:20px;
+ font-weight:bold;
+ color:#22c55e;
+ text-shadow:0 0 10px #22c55e;
+}
 
-button{padding:12px;border:none;border-radius:6px;margin:5px}
+.card{
+ background:rgba(30,41,59,0.85);
+ margin:10px;
+ padding:15px;
+ border-radius:12px;
+ backdrop-filter:blur(6px);
+}
+
+button{
+ padding:12px;
+ border:none;
+ border-radius:6px;
+ margin:5px;
+}
 
 .buyBtn{background:#22c55e;color:#fff;width:90%}
 
-input,select{padding:10px;width:90%;margin:8px;border:none;border-radius:6px}
+input,select{
+ padding:10px;
+ width:90%;
+ margin:8px;
+ border:none;
+ border-radius:6px;
+}
 
 .mono{font-family:monospace;display:block;margin:8px 0}
 
 .overlay{
-position:fixed;top:0;left:0;width:100%;height:100%;
-display:flex;justify-content:center;align-items:center;
-backdrop-filter:blur(8px);
-background:rgba(0,0,0,0.6);
-z-index:999;
+ position:fixed;
+ top:0;left:0;
+ width:100%;height:100%;
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ backdrop-filter:blur(10px);
+ background:rgba(0,0,0,0.7);
+ z-index:999;
 }
 
 .popup{
-background:#020617;
-padding:20px;
-border-radius:16px;
-width:85%;
-max-width:320px;
-text-align:center;
+ background:#020617;
+ padding:20px;
+ border-radius:16px;
+ width:85%;
+ max-width:320px;
+ text-align:center;
 }
 
 .loader{
-border:4px solid #111;
-border-top:4px solid #22c55e;
-border-radius:50%;
-width:40px;height:40px;
-margin:10px auto;
-animation:spin 1s linear infinite;
+ border:4px solid #111;
+ border-top:4px solid #22c55e;
+ border-radius:50%;
+ width:40px;height:40px;
+ margin:10px auto;
+ animation:spin 1s linear infinite;
 }
-@keyframes spin{to{transform:rotate(360deg)}}
 
-.btnRow{display:flex;justify-content:space-between}
-.joinBtn{background:#0088cc;color:#fff;width:48%}
-.noBtn{background:#111;color:#fff;width:48%}
+@keyframes spin{
+ to{transform:rotate(360deg)}
+}
+
+.btnRow{
+ display:flex;
+ justify-content:space-between;
+}
+
+.joinBtn{
+ background:#0088cc;
+ color:#fff;
+ width:48%;
+}
+
+.noBtn{
+ background:#111;
+ color:#fff;
+ width:48%;
+}
 </style>
 </head>
 
 <body>
 
-<div class="top" id="title">COBRA SERVER PANEL</div>
+<!-- 🔥 TITLE -->
+<div class="top">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
+
 <div id="main"></div>
 
 <script>
 
-let last=0;
 let lock=false;
 let shown=false;
 
-// ================= OVERLAY SYSTEM =================
+// ===== OVERLAY =====
 function showOverlay(html){
  let old=document.getElementById("overlayBox");
  if(old) old.remove();
@@ -81,11 +133,10 @@ function removeOverlay(){
  if(o) o.remove();
 }
 
-// ================= LOAD =================
+// ===== LOAD =====
 function load(){
  fetch("/status").then(r=>r.json()).then(d=>{
 
-  // ADMIN OFF
   if(!d.on){
    showOverlay(`
     <div class="popup">
@@ -98,37 +149,28 @@ function load(){
    removeOverlay();
   }
 
-  document.body.style.background=d.color;
-  document.body.style.color=d.textColor;
-  title.innerText=d.title;
-
-  if(last!==d.refresh){
-   last=d.refresh;
-   showMain();
-  }
-
   // TRIAL
   fetch("/trial").then(r=>r.json()).then(t=>{
    if(t.on){
     showOverlay(`
      <div class="popup">
       <h3>${t.title}</h3>
-      <span class="mono" onclick="copy('${t.key}')">KEY - ${t.key}</span>
+      <span class="mono">${t.key}</span>
       <span class="mono">${t.kill}</span>
-      <span class="mono">${t.expire}</span>
-      <button onclick="window.open('${t.telegram}','_blank')">JOIN TELEGRAM</button>
+      <button onclick="window.open('${t.telegram}')">JOIN TELEGRAM</button>
      </div>
     `);
    }
   });
 
+  showMain();
+
  });
 }
 
-setInterval(load,3000);
 load();
 
-// ================= MAIN =================
+// ===== MAIN =====
 function showMain(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
   main.innerHTML=`
@@ -144,16 +186,11 @@ function showMain(){
 
    <button class="buyBtn" onclick="goBuy()">BUY KEY</button>
 
-   <div style="margin-top:10px;font-size:14px">
-   ⚡ FAST DELIVERY<br>
-   🔐 SECURE ACCESS
-   </div>
-
   </div>`;
  });
 }
 
-// ================= BUY =================
+// ===== BUY =====
 function goBuy(){
  let v=planSel.value.split("|");
  buy(v[0],v[1]);
@@ -165,9 +202,12 @@ function buy(plan,price){
   main.innerHTML=`
   <div class="card">
 
-   <h3>PAY ₹${price}</h3>
+   <!-- 🔥 VERIFY TITLE -->
+   <h2>𝗩𝗘𝗥𝗜𝗙𝗬 𝗣𝗔𝗬𝗠𝗘𝗡𝗧 ✅</h2>
 
-   <span class="mono" onclick="copy('${s.upi}')">${s.upi}</span>
+   <p>Pay ₹${price}</p>
+
+   <span class="mono">${s.upi}</span>
 
    <img src="${s.qr}" width="200">
 
@@ -179,7 +219,7 @@ function buy(plan,price){
  });
 }
 
-// ================= VERIFY =================
+// ===== VERIFY =====
 function verify(plan,price){
 
  if(lock) return;
@@ -189,17 +229,14 @@ function verify(plan,price){
 
  if(!u || u.length!=12){
   lock=false;
-  return alert("Enter valid UTR");
+  return alert("Invalid UTR");
  }
 
- localStorage.setItem("utr",u);
- localStorage.setItem("plan",plan);
-
  showOverlay(`
-  <div class="popup">
-   <div class="loader"></div>
-   <p>Please wait admin verify</p>
-  </div>
+ <div class="popup">
+  <div class="loader"></div>
+  <p>Please wait admin verify</p>
+ </div>
  `);
 
  fetch("/buy",{
@@ -211,49 +248,29 @@ function verify(plan,price){
    price:price,
    utr:u
   })
- })
- .then(r=>r.json())
- .then(d=>{
-
-  if(d.blocked){
-   alert("BLOCKED "+d.time+" sec");
-   reset();
-  }
-
-  if(d.used){
-   alert("UTR already used");
-   reset();
-  }
-
-  if(d.direct){
-   showSuccess(d.key);
-  }
-
  });
 
- checkLoop(u,plan);
+ check(u,plan);
 }
 
-// ================= AUTO CHECK =================
-function checkLoop(u,plan){
+// ===== CHECK =====
+function check(u,plan){
 
- let chk=setInterval(()=>{
- fetch("/history")
- .then(r=>r.json())
- .then(h=>{
+ let t=setInterval(()=>{
+ fetch("/history").then(r=>r.json()).then(h=>{
 
   let f=h.find(x=>x.utr===u && x.plan===plan);
 
   if(f && !shown){
    shown=true;
-   clearInterval(chk);
+   clearInterval(t);
 
    if(f.status==="approved"){
-    showSuccess(f.key);
+    success(f.key);
    }
 
    if(f.status==="rejected"){
-    showReject();
+    reject();
    }
 
   }
@@ -262,67 +279,33 @@ function checkLoop(u,plan){
  },2000);
 }
 
-// ================= SUCCESS =================
-function showSuccess(key){
-
- let exp=new Date();
- exp.setHours(exp.getHours()+12);
-
+// ===== SUCCESS =====
+function success(key){
  showOverlay(`
  <div class="popup">
 
   <h3>COBRA SERVER 🎉</h3>
 
-  <span class="mono" onclick="copy('${key}')">KEY - ${key}</span>
-
-  <span class="mono">Expire: ${exp.toLocaleString()}</span>
-  <span class="mono">Kill limit 10-12 LEGIT PLAY SAFE</span>
+  <span class="mono">${key}</span>
+  <span class="mono">Kill limit 10-12</span>
 
   <div class="btnRow">
-   <button class="joinBtn" onclick="join()">JOIN</button>
-   <button class="noBtn" onclick="reset()">NOT JOIN</button>
+   <button class="joinBtn" onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">JOIN</button>
+   <button class="noBtn" onclick="location.reload()">OK</button>
   </div>
 
  </div>
  `);
-
- navigator.vibrate?.(200);
 }
 
-// ================= REJECT =================
-function showReject(){
+// ===== REJECT =====
+function reject(){
  showOverlay(`
  <div class="popup">
   <h3>❌ PAYMENT REJECTED</h3>
-  <button onclick="reset()">OK</button>
+  <button onclick="location.reload()">OK</button>
  </div>
  `);
-}
-
-// ================= UTILS =================
-function copy(t){
- navigator.clipboard.writeText(t);
- alert("Copied ✔");
-}
-
-function join(){
- window.location.href="tg://join?invite=wRZN39fdVcRkYTM9";
- setTimeout(()=>{
-  window.open("https://t.me/+wRZN39fdVcRkYTM9","_blank");
- },1000);
-}
-
-function reset(){
- localStorage.clear();
- location.reload();
-}
-
-// ================= AUTO RETURN =================
-let oldUTR=localStorage.getItem("utr");
-let oldPlan=localStorage.getItem("plan");
-
-if(oldUTR && oldPlan){
- checkLoop(oldUTR,oldPlan);
 }
 
 </script>
