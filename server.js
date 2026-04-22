@@ -9,7 +9,7 @@ app.use(express.static("public"));
 
 const DB="./data.json";
 
-// ================= UPLOAD FOLDER =================
+// ================= FOLDER =================
 if(!fs.existsSync("public")){
  fs.mkdirSync("public");
 }
@@ -47,48 +47,29 @@ if(!fs.existsSync(DB)){
   stock:{},
   requests:[],
   history:[],
-  refresh:0
+  refresh:0,
+  qrTime:0
  },null,2));
 }
 
 // ================= LOAD =================
 function db(){
- let data={};
-
+ let d={};
  try{
-  data=JSON.parse(fs.readFileSync(DB));
+  d=JSON.parse(fs.readFileSync(DB));
  }catch(e){
-  data={
-   systemOn:true,
-   upi:"godxcobra@axl",
-   qr:"",
-   color:"#22c55e",
-   textColor:"#ffffff",
-   title:"COBRA SERVER PANEL",
-   plans:[
-    {type:"",time:"5H",price:"50"},
-    {type:"",time:"1D",price:"100"},
-    {type:"",time:"3D",price:"200"},
-    {type:"",time:"7D",price:"400"},
-    {type:"",time:"15D",price:"600"},
-    {type:"",time:"30D",price:"1000"},
-    {type:"",time:"60D",price:"1200"},
-    {type:"",time:"FULL",price:"1400"}
-   ],
-   stock:{},
-   requests:[],
-   history:[],
-   refresh:0
-  };
+  d={};
  }
 
- if(!data.stock) data.stock={};
- if(!data.refresh) data.refresh=0;
- if(!data.color) data.color="#22c55e";
- if(!data.textColor) data.textColor="#ffffff";
- if(!data.title) data.title="COBRA SERVER PANEL";
+ if(!d.stock) d.stock={};
+ if(!d.requests) d.requests=[];
+ if(!d.history) d.history=[];
+ if(!d.refresh) d.refresh=0;
+ if(!d.color) d.color="#22c55e";
+ if(!d.textColor) d.textColor="#ffffff";
+ if(!d.title) d.title="COBRA SERVER PANEL";
 
- return data;
+ return d;
 }
 
 function save(d){
@@ -127,6 +108,7 @@ app.get("/status",(req,res)=>{
 app.post("/toggle",(req,res)=>{
  let d=db();
  d.systemOn=!d.systemOn;
+ d.refresh=Date.now(); // ✅ FIX
  save(d);
  res.json({on:d.systemOn});
 });
@@ -148,18 +130,19 @@ app.post("/settings",(req,res)=>{
  if(req.body.textColor!==undefined) d.textColor=req.body.textColor;
  if(req.body.title!==undefined) d.title=req.body.title;
 
- d.refresh=Date.now();
+ d.refresh=Date.now(); // ✅ LIVE UPDATE
  save(d);
 
  res.json({ok:true});
 });
 
-// QR UPLOAD
+// ================= QR =================
 app.post("/uploadQR",upload.single("qr"),(req,res)=>{
  let d=db();
 
  if(req.file){
   d.qr="/uploads/"+req.file.filename;
+  d.qrTime=Date.now(); // ✅ HOLD QR
   d.refresh=Date.now();
   save(d);
  }
@@ -196,17 +179,15 @@ app.post("/savePlans",(req,res)=>{
 app.post("/buy",(req,res)=>{
  let d=db();
 
- let approved = d.history.find(x=>x.utr===req.body.utr && x.status==="approved");
+ let approved=d.history.find(x=>x.utr===req.body.utr && x.status==="approved");
 
- // ✅ CLAIM TRACK
  if(approved){
-  approved.claimed = true;
-  approved.claimTime = new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"});
+  approved.claimed=true;
+  approved.claimTime=new Date().toLocaleString();
   save(d);
   return res.json({ok:true});
  }
 
- // ✅ DUPLICATE BLOCK
  if(d.requests.find(x=>x.utr===req.body.utr)){
   return res.json({ok:true});
  }
@@ -246,49 +227,41 @@ app.post("/approve",(req,res)=>{
   ...r,
   key:key,
   status:"approved",
-  claimed:false, // ✅ ADD
-  time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
+  time:new Date().toLocaleString()
  });
 
  d.requests=d.requests.filter(x=>x.user!==r.user);
 
+ d.refresh=Date.now(); // ✅ LIVE
  save(d);
+
  res.json({key});
 });
 
 // REJECT
 app.post("/reject",(req,res)=>{
  let d=db();
+
  let r=d.requests.find(x=>x.user===req.body.user);
 
  d.history.unshift({
   user:r?.user,
   utr:r?.utr,
   status:"rejected",
-  time:new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})
+  time:new Date().toLocaleString()
  });
 
  d.requests=d.requests.filter(x=>x.user!==req.body.user);
 
+ d.refresh=Date.now(); // ✅ LIVE
  save(d);
+
  res.json({ok:true});
 });
 
 // HISTORY
 app.get("/history",(req,res)=>{
  res.json(db().history);
-});
-
-// ✅ ADMIN HISTORY VIEW (CLAIM STATUS)
-app.get("/historyAdmin",(req,res)=>{
- let d=db();
-
- let data=d.history.map(x=>({
-  ...x,
-  claimedStatus: x.claimed ? "✔ CLAIMED" : "❌ NOT CLAIMED"
- }));
-
- res.json(data);
 });
 
 // ================= STOCK =================
@@ -308,7 +281,9 @@ app.post("/addStock",(req,res)=>{
 
  d.stock[plan].push(key);
 
+ d.refresh=Date.now(); // ✅ LIVE
  save(d);
+
  res.json({ok:true});
 });
 
@@ -319,12 +294,14 @@ app.post("/deleteStock",(req,res)=>{
   d.stock[req.body.plan].splice(req.body.index,1);
  }
 
+ d.refresh=Date.now(); // ✅ LIVE
  save(d);
+
  res.json({ok:true});
 });
 
 // ================= START =================
-const PORT = process.env.PORT || 3000;
+const PORT=process.env.PORT||3000;
 
 app.listen(PORT,()=>{
  console.log("🔥 SERVER RUNNING ON "+PORT);
