@@ -356,7 +356,7 @@ function reqUI(){
 
  function load(){
 
-  if(!main.innerHTML.includes("UTR")) return;
+  if(!document.getElementById("main")) return;
 
   fetch("/requests").then(r=>r.json()).then(data=>{
    let html="";
