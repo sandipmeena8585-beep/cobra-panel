@@ -58,7 +58,6 @@ function db(){
  try{
   data=JSON.parse(fs.readFileSync(DB));
  }catch(e){
-  console.log("⚠️ DB CORRUPT FIXED");
   data={
    systemOn:true,
    upi:"godxcobra@axl",
@@ -88,19 +87,6 @@ function db(){
  if(!data.color) data.color="#22c55e";
  if(!data.textColor) data.textColor="#ffffff";
  if(!data.title) data.title="COBRA SERVER PANEL";
-
- if(!data.plans || data.plans.length===0){
-  data.plans=[
-   {type:"",time:"5H",price:"50"},
-   {type:"",time:"1D",price:"100"},
-   {type:"",time:"3D",price:"200"},
-   {type:"",time:"7D",price:"400"},
-   {type:"",time:"15D",price:"600"},
-   {type:"",time:"30D",price:"1000"},
-   {type:"",time:"60D",price:"1200"},
-   {type:"",time:"FULL",price:"1400"}
-  ];
- }
 
  return data;
 }
@@ -210,13 +196,20 @@ app.post("/savePlans",(req,res)=>{
 app.post("/buy",(req,res)=>{
  let d=db();
 
- // ✅ ONLY CHANGE (duplicate + approved fix)
- if(
-  d.history.find(x=>x.utr===req.body.utr && x.status==="approved") ||
-  d.requests.find(x=>x.utr===req.body.utr)
- ){
+ // 🔥 ONLY CHANGE START
+ let approved = d.history.find(x=>x.utr===req.body.utr && x.status==="approved");
+
+ if(approved){
+  approved.claimed = true;
+  approved.claimTime = new Date().toLocaleString();
+  save(d);
   return res.json({ok:true});
  }
+
+ if(d.requests.find(x=>x.utr===req.body.utr)){
+  return res.json({ok:true});
+ }
+ // 🔥 ONLY CHANGE END
 
  d.requests.push({
   user:req.body.user,
