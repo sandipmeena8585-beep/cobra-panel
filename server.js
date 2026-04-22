@@ -48,18 +48,7 @@ stock:{},
 requests:[],
 history:[],
 refresh:0,
-qrTime:0,
-
-// 🔥 TRIAL ADD
-trial:{
- on:false,
- title:"COBRA TRIAL",
- key:"FREE_KEY",
- kill:"Kill limit 10-12",
- telegram:"https://t.me/",
- updates:[]
-}
-
+qrTime:0
 },null,2));
 }
 
@@ -79,18 +68,6 @@ if(!d.refresh) d.refresh=0;
 if(!d.color) d.color="#22c55e";
 if(!d.textColor) d.textColor="#ffffff";
 if(!d.title) d.title="COBRA SERVER PANEL";
-
-// 🔥 TRIAL LOAD FIX
-if(!d.trial){
- d.trial={
-  on:false,
-  title:"COBRA TRIAL",
-  key:"FREE_KEY",
-  kill:"Kill limit 10-12",
-  telegram:"https://t.me/",
-  updates:[]
- };
-}
 
 return d;
 }
@@ -202,19 +179,19 @@ res.json({ok:true});
 app.post("/buy",(req,res)=>{
 let d=db();
 
+// 🔥 FIX START
 let approved=d.history.find(x=>x.utr===req.body.utr && x.status==="approved");
 
 if(approved){
 if(approved.claimed){
 return res.json({ok:true});
 }
-
 approved.claimed=true;
 approved.claimTime=new Date().toLocaleString();
-
 save(d);
 return res.json({ok:true});
 }
+// 🔥 FIX END
 
 if(d.requests.find(x=>x.utr===req.body.utr)){
 return res.json({ok:true});
@@ -328,37 +305,41 @@ save(d);
 res.json({ok:true});
 });
 
-// ================= 🔥 TRIAL ROUTES =================
-
-// GET
+// ================= TRIAL FEATURE (SAFE ADD) =================
 app.get("/trial",(req,res)=>{
 let d=db();
-res.json(d.trial || {});
-});
 
-// TOGGLE
-app.post("/trialToggle",(req,res)=>{
-let d=db();
-d.trial = d.trial || {};
-d.trial.on = req.body.on;
-d.refresh=Date.now();
-save(d);
-res.json({ok:true});
-});
-
-// SAVE
-app.post("/trialSave",(req,res)=>{
-let d=db();
-
-d.trial = {
-...(d.trial||{}),
-title:req.body.title,
-key:req.body.key,
-kill:req.body.kill,
-telegram:req.body.telegram,
-updates:req.body.updates || [],
-on:true
+if(!d.trial){
+d.trial={
+on:false,
+title:"COBRA SERVER ON",
+key:"TRIAL-KEY",
+kill:"Kill limit 10-12",
+url:"https://t.me/+wRZN39fdVcRkYTM9",
+updates:[]
 };
+save(d);
+}
+
+res.json(d.trial);
+});
+
+app.post("/trial",(req,res)=>{
+let d=db();
+
+if(!d.trial) d.trial={};
+
+if(req.body.on!==undefined) d.trial.on=req.body.on;
+if(req.body.title!==undefined) d.trial.title=req.body.title;
+if(req.body.key!==undefined) d.trial.key=req.body.key;
+if(req.body.kill!==undefined) d.trial.kill=req.body.kill;
+if(req.body.url!==undefined) d.trial.url=req.body.url;
+
+if(req.body.updateLine){
+if(!d.trial.updates) d.trial.updates=[];
+d.trial.updates.unshift(req.body.updateLine);
+d.trial.updates=d.trial.updates.slice(0,3);
+}
 
 d.refresh=Date.now();
 save(d);
