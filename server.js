@@ -29,6 +29,16 @@ if(!fs.existsSync(DB)){
   color:"#22c55e",
   textColor:"#ffffff",
   title:"COBRA SERVER PANEL",
+
+  // 🔥 TRIAL ADD
+  trial:{
+   on:false,
+   title:"FREE TRIAL 🎁",
+   keyText:"TRIAL-KEY",
+   kill:"10-12",
+   expire:"1 HOUR"
+  },
+
   plans:[
    {type:"",time:"1D",price:"100"},
    {type:"",time:"7D",price:"400"}
@@ -54,11 +64,19 @@ app.get("/admin",(req,res)=>{
  res.sendFile(path.join(__dirname,"public/admin.html"));
 });
 
+// STATUS
 app.get("/status",(req,res)=>{
  let d=db();
- res.json(d);
+ res.json({
+  on:d.systemOn,
+  refresh:d.refresh,
+  color:d.color,
+  textColor:d.textColor,
+  title:d.title
+ });
 });
 
+// TOGGLE
 app.post("/toggle",(req,res)=>{
  let d=db();
  d.systemOn=!d.systemOn;
@@ -67,6 +85,7 @@ app.post("/toggle",(req,res)=>{
  res.json({on:d.systemOn});
 });
 
+// REFRESH
 app.post("/refresh",(req,res)=>{
  let d=db();
  d.refresh=Date.now();
@@ -75,7 +94,16 @@ app.post("/refresh",(req,res)=>{
 });
 
 // SETTINGS
-app.get("/settings",(req,res)=>res.json(db()));
+app.get("/settings",(req,res)=>{
+ let d=db();
+ res.json({
+  upi:d.upi,
+  qr:d.qr,
+  color:d.color,
+  textColor:d.textColor,
+  title:d.title
+ });
+});
 
 app.post("/settings",(req,res)=>{
  let d=db();
@@ -85,6 +113,7 @@ app.post("/settings",(req,res)=>{
  res.json({ok:true});
 });
 
+// QR
 app.post("/uploadQR",upload.single("qr"),(req,res)=>{
  let d=db();
  if(req.file){
@@ -95,7 +124,46 @@ app.post("/uploadQR",upload.single("qr"),(req,res)=>{
  res.json({ok:true});
 });
 
-// PLANS
+// ================= TRIAL ROUTES =================
+
+// GET
+app.get("/trialSettings",(req,res)=>{
+ let d=db();
+ res.json(d.trial || {});
+});
+
+// UPDATE
+app.post("/trialSettings",(req,res)=>{
+ let d=db();
+
+ if(!d.trial){
+  d.trial={on:false};
+ }
+
+ d.trial.title=req.body.title;
+ d.trial.keyText=req.body.keyText;
+ d.trial.kill=req.body.kill;
+ d.trial.expire=req.body.expire;
+
+ save(d);
+ res.json({ok:true});
+});
+
+// TOGGLE
+app.post("/toggleTrial",(req,res)=>{
+ let d=db();
+
+ if(!d.trial){
+  d.trial={on:false};
+ }
+
+ d.trial.on=!d.trial.on;
+
+ save(d);
+ res.json({on:d.trial.on});
+});
+
+// ================= PLANS =================
 app.get("/plans",(req,res)=>res.json(db().plans));
 
 app.post("/savePlans",(req,res)=>{
@@ -106,14 +174,16 @@ app.post("/savePlans",(req,res)=>{
  res.json({ok:true});
 });
 
-// STOCK
+// ================= STOCK =================
 app.get("/stock",(req,res)=>res.json(db().stock));
 
 app.post("/addStock",(req,res)=>{
  let d=db();
  let {plan,key}=req.body;
+
  if(!d.stock[plan]) d.stock[plan]=[];
  d.stock[plan].push(key);
+
  d.refresh=Date.now();
  save(d);
  res.json({ok:true});
@@ -122,13 +192,15 @@ app.post("/addStock",(req,res)=>{
 app.post("/deleteStock",(req,res)=>{
  let d=db();
  let {plan,index}=req.body;
+
  d.stock[plan]?.splice(index,1);
+
  d.refresh=Date.now();
  save(d);
  res.json({ok:true});
 });
 
-// BUY
+// ================= BUY =================
 app.post("/buy",(req,res)=>{
  let d=db();
 
@@ -144,13 +216,14 @@ app.post("/buy",(req,res)=>{
  res.json({ok:true});
 });
 
-// REQUEST
+// ================= REQUEST =================
 app.get("/requests",(req,res)=>res.json(db().requests));
 
-// APPROVE (FIX DUPLICATE KEY)
+// ================= APPROVE =================
 app.post("/approve",(req,res)=>{
  let d=db();
  let r=d.requests.find(x=>x.user===req.body.user);
+
  if(!r) return res.json({});
 
  if(r.done) return res.json({key:"ALREADY USED"});
@@ -162,7 +235,7 @@ app.post("/approve",(req,res)=>{
   key=d.stock[plan].shift();
  }
 
- r.done=true; // 🔥 FIX
+ r.done=true;
 
  d.history.unshift({...r,key,status:"approved"});
  d.requests=d.requests.filter(x=>x.user!==r.user);
@@ -173,7 +246,7 @@ app.post("/approve",(req,res)=>{
  res.json({key});
 });
 
-// REJECT
+// ================= REJECT =================
 app.post("/reject",(req,res)=>{
  let d=db();
  d.requests=d.requests.filter(x=>x.user!==req.body.user);
@@ -182,6 +255,8 @@ app.post("/reject",(req,res)=>{
  res.json({ok:true});
 });
 
+// ================= HISTORY =================
 app.get("/history",(req,res)=>res.json(db().history));
 
-app.listen(3000,()=>console.log("🔥 RUNNING"));
+// START
+app.listen(3000,()=>console.log("🔥 RUNNING ON 3000"));
