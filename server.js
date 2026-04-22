@@ -30,42 +30,62 @@ if(!fs.existsSync(DB)){
   textColor:"#ffffff",
   title:"COBRA SERVER PANEL",
 
-  // 🔥 UPDATED PLANS
-  plans:[
-   {type:"",time:"5H",price:"50"},
-   {type:"",time:"1 DAY",price:"120"},
-   {type:"",time:"3 DAY",price:"200"},
-   {type:"",time:"7 DAY",price:"400"},
-   {type:"",time:"15 DAY",price:"600"},
-   {type:"",time:"30 DAY",price:"1000"},
-   {type:"",time:"60 DAY",price:"1200"},
-   {type:"",time:"FULL SESSION",price:"1400"}
-  ],
+  // 🔥 TRIAL ADD
+  trial:{
+   on:false,
+   title:"FREE TRIAL 🎁",
+   key:"TRIAL-KEY-123",
+   kill:"Kill limit 10-12 (LEGIT PLAY SAFE)",
+   telegram:"https://t.me/GODx_COBRA"
+  },
 
+  plans:[
+   {type:"",time:"1D",price:"100"},
+   {type:"",time:"7D",price:"400"}
+  ],
   stock:{},
   requests:[],
   history:[],
-  refresh:0,
-
-  trial:{
-   on:false,
-   title:"FREE TRIAL",
-   key:"TRIAL-KEY-123",
-   kill:"Kill limit 10",
-   telegram:"https://t.me/GODx_COBRA",
-   updates:["Welcome Trial","Play Safe"]
-  }
-
+  refresh:0
  },null,2));
 }
 
-function db(){ return JSON.parse(fs.readFileSync(DB)); }
-function save(d){ fs.writeFileSync(DB,JSON.stringify(d,null,2)); }
+// LOAD
+function db(){
+ let d={};
+ try{
+  d=JSON.parse(fs.readFileSync(DB));
+ }catch(e){
+  d={};
+ }
+
+ if(!d.stock) d.stock={};
+ if(!d.requests) d.requests=[];
+ if(!d.history) d.history=[];
+ if(!d.refresh) d.refresh=0;
+
+ // 🔥 TRIAL SAFETY
+ if(!d.trial){
+  d.trial={
+   on:false,
+   title:"FREE TRIAL 🎁",
+   key:"TRIAL-KEY-123",
+   kill:"Kill limit 10-12 (LEGIT PLAY SAFE)",
+   telegram:"https://t.me/GODx_COBRA"
+  };
+ }
+
+ return d;
+}
+
+function save(d){
+ fs.writeFileSync(DB,JSON.stringify(d,null,2));
+}
 
 // ROUTES
 app.get("/",(req,res)=>{
  let d=db();
- if(!d.systemOn) return res.send("<h2>⚠️ PLEASE WAIT ADMIN</h2>");
+ if(!d.systemOn) return res.send("<h2>⚠️ WAIT ADMIN</h2>");
  res.sendFile(path.join(__dirname,"public/index.html"));
 });
 
@@ -74,7 +94,8 @@ app.get("/admin",(req,res)=>{
 });
 
 app.get("/status",(req,res)=>{
- res.json(db());
+ let d=db();
+ res.json(d);
 });
 
 app.post("/toggle",(req,res)=>{
@@ -103,7 +124,6 @@ app.post("/settings",(req,res)=>{
  res.json({ok:true});
 });
 
-// QR
 app.post("/uploadQR",upload.single("qr"),(req,res)=>{
  let d=db();
  if(req.file){
@@ -172,12 +192,16 @@ app.post("/approve",(req,res)=>{
  let r=d.requests.find(x=>x.user===req.body.user);
  if(!r) return res.json({});
 
+ if(r.done) return res.json({key:"ALREADY USED"});
+
  let plan=r.plan;
  let key="NO STOCK";
 
  if(d.stock[plan]?.length>0){
   key=d.stock[plan].shift();
  }
+
+ r.done=true;
 
  d.history.unshift({...r,key,status:"approved"});
  d.requests=d.requests.filter(x=>x.user!==r.user);
@@ -199,11 +223,15 @@ app.post("/reject",(req,res)=>{
 
 app.get("/history",(req,res)=>res.json(db().history));
 
-// TRIAL
+
+// ================= 🔥 TRIAL ROUTES =================
+
+// GET
 app.get("/trial",(req,res)=>{
- res.json(db().trial || {});
+ res.json(db().trial);
 });
 
+// TOGGLE
 app.post("/trialToggle",(req,res)=>{
  let d=db();
  d.trial.on=!d.trial.on;
@@ -212,13 +240,21 @@ app.post("/trialToggle",(req,res)=>{
  res.json({on:d.trial.on});
 });
 
-app.post("/trialSave",(req,res)=>{
+// UPDATE
+app.post("/trialUpdate",(req,res)=>{
  let d=db();
- d.trial={...d.trial,...req.body};
+
+ d.trial.title=req.body.title;
+ d.trial.key=req.body.key;
+ d.trial.kill=req.body.kill;
+ d.trial.telegram=req.body.telegram;
+
  d.refresh=Date.now();
  save(d);
+
  res.json({ok:true});
 });
 
+
 // START
-app.listen(3000,()=>console.log("🔥 SERVER RUNNING"));
+app.listen(3000,()=>console.log("🔥 RUNNING"));
