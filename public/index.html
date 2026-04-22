@@ -7,7 +7,7 @@
 <title>COBRA SERVER PANEL</title>
 
 <style>
-/* (तुम्हारा पूरा CSS SAME है — untouched) */
+/* 🔥 SAME CSS (NO CHANGE) */
 body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center;-webkit-tap-highlight-color:transparent}
 
 .top{padding:15px;font-size:20px;font-weight:bold;color:#22c55e;animation:glow 1.5s infinite alternate;}
@@ -101,16 +101,12 @@ input,select{padding:10px;width:80%;margin:10px;border-radius:6px;border:none}
 
 <script>
 
-let lastRefresh=0;
-let firstLoad=true;
-let lock=false;
-
-// 🔥 ================= TRIAL ADD =================
+// ================= 🔥 TRIAL ADD (ONLY THIS PART NEW) =================
 fetch("/trial").then(r=>r.json()).then(t=>{
 
- if(!t || t.on!==true) return;
+ if(!t || !t.on) return;
 
- document.body.innerHTML+=`
+ document.body.innerHTML += `
  <div class="overlay">
  <div class="popup">
 
@@ -129,9 +125,7 @@ fetch("/trial").then(r=>r.json()).then(t=>{
  <br><br>
 
  ${t.updates.map(x=>`
-   <div>
-   <a href="${x}" target="_blank" style="color:#38bdf8">${x}</a>
-   </div>
+   <div style="color:#38bdf8">${x}</div>
  `).join("")}
 
  <br>
@@ -144,14 +138,19 @@ fetch("/trial").then(r=>r.json()).then(t=>{
  </div>
  `;
 });
-// 🔥 ================= END =================
+// ================= END =================
+
+
+// 🔥 BELOW YOUR FULL ORIGINAL CODE (UNCHANGED)
+
+let lastRefresh=0;
+let firstLoad=true;
+let lock=false;
 
 function copyText(t){
  navigator.clipboard.writeText(t);
  alert("Copied ✔");
 }
-
-// (बाकी पूरा code SAME नीचे untouched है)
 
 function openTG(){
   window.location.href="tg://join?invite=wRZN39fdVcRkYTM9";
@@ -203,9 +202,140 @@ function loadStatus(){
 loadStatus();
 setInterval(loadStatus,3000);
 
-// (बाकी पूरा code unchanged है...)
+// बाकी सब SAME है नीचे...
+
+function showMain(){
+ fetch("/plans").then(r=>r.json()).then(plans=>{
+ let options = plans.map(p=>`<option value="${p.type+p.time}|${p.price}">${p.type+p.time} - ₹${p.price}</option>`).join("");
+
+ main.innerHTML=`
+ <div class="card">
+   <h3>Select Game</h3>
+   <select><option>BGMI</option></select>
+
+   <h3>Select Plan</h3>
+   <select id="planSel">${options}</select>
+
+   <button class="buyBtn" onclick="goBuy()">𝗕𝗨𝗬 𝗞𝗘𝗬</button>
+
+   <div class="info">
+   ━━━━━━━━━━━━━━━━━━ <br>
+   ⚡ FAST DELIVERY <br>
+   🔐 SECURE ACCESS <br>
+   ━━━━━━━━━━━━━━━━━━
+   </div>
+ </div>`;
+ });
+}
+
+function goBuy(){
+ let val = planSel.value.split("|");
+ buy(val[0],val[1]);
+}
+
+function buy(plan,price){
+
+ if(lock) return;
+
+ fetch("/settings")
+ .then(r=>r.json())
+ .then(s=>{
+  main.innerHTML=`
+  <div class="card">
+    <h3>PAYMENT</h3>
+    <p>Pay ₹${price}</p>
+
+    <div class="mono" onclick="copyText('${s.upi}')">${s.upi}</div>
+
+    <br>
+    <img src="${s.qr}" width="200">
+
+    <input id="utr" placeholder="ENTER UTR (12 digit)">
+    <button onclick="startProcess('${plan}','${price}')">VERIFY</button>
+  </div>`;
+ });
+}
+
+function startProcess(plan,price){
+
+ if(lock) return;
+ lock=true;
+
+ let utrVal = utr.value;
+
+ if(!utrVal || utrVal.length!=12){
+   lock=false;
+   return alert("Enter Valid 12 Digit UTR");
+ }
+
+ document.body.innerHTML+=`
+ <div class="overlay" id="pop">
+  <div class="popup">
+   <div class="loader"></div>
+   <p>Please wait admin verify your request</p>
+  </div>
+ </div>`;
+
+ fetch("/buy",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+    user:"USER_"+Date.now(),
+    plan:plan,
+    price:price,
+    utr:utrVal
+  })
+ });
+
+ let chk=setInterval(()=>{
+ fetch("/history")
+ .then(r=>r.json())
+ .then(h=>{
+   let f=h.find(x=>x.utr===utrVal);
+
+   if(f){
+     clearInterval(chk);
+
+     if(f.status==="rejected"){
+       pop.innerHTML=`
+       <div class="popup" style="border:2px solid red;box-shadow:0 0 20px red;">
+       <div style="font-size:40px;color:red;">✖</div>
+       <h3>❌ PAYMENT REJECTED</h3>
+       <button class="darkBtn" onclick="window.location.href='/'">OK</button>
+       </div>`;
+     }
+
+     if(f.status==="approved"){
+       let exp=new Date();
+       exp.setHours(exp.getHours()+12);
+
+       pop.innerHTML=`
+       <div class="popup">
+
+       <div class="tick">✔</div>
+
+       <h3>𝐂𝐎𝐁𝐑𝐀 𝐒𝐄𝐑𝐕𝐄𝐑 𝐒𝐔𝐂𝐂𝐄𝐒𝐒 🎉</h3>
+
+       <span class="mono" onclick="copyText('${f.key}')">KEY - ${f.key}</span>
+       <span class="mono">Expire: ${exp.toLocaleString()}</span>
+       <span class="mono">Kill limit 10-12 (LEGIT PLAY SAFE)</span>
+
+       <div class="btnRow">
+         <button class="tgBtn" onclick="openTG()">📩 PAID GROUP JOIN</button>
+         <button class="darkBtn" onclick="window.location.href='/'">NOT JOIN</button>
+       </div>
+
+       </div>`;
+     }
+   }
+ });
+ },2000);
+}
+
+function tg(){
+ window.open("https://t.me/GODx_COBRA");
+}
 
 </script>
-
 </body>
 </html>
