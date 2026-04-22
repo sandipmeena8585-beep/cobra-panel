@@ -2,7 +2,7 @@
 <html>
 <head>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>COBRA ADMIN</title>
 
@@ -12,44 +12,34 @@ margin:0;
 background:#0f172a;
 color:#fff;
 font-family:Arial;
--webkit-tap-highlight-color: transparent;
 }
 
 .login{
- display:flex;flex-direction:column;justify-content:center;align-items:center;
- height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);
+display:flex;flex-direction:column;justify-content:center;align-items:center;
+height:100vh;background:linear-gradient(135deg,#0f766e,#22c55e);
 }
 .login input,.login button{
- width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;
+width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px;
 }
 .login button{background:#000;color:#fff}
 
 .top{
- display:flex;align-items:center;gap:10px;padding:12px;
- background:#020617;position:fixed;width:100%;top:0;
-}
-
-.title{font-weight:bold;}
-
-.menuIcon{
- font-size:22px;
- cursor:pointer;
+display:flex;align-items:center;gap:10px;padding:12px;
+background:#020617;position:fixed;width:100%;top:0;
 }
 
 .sidebar{
- position:fixed;left:-250px;width:250px;height:100%;
- background:#1e293b;transition:.3s;padding-top:60px;
+position:fixed;left:-250px;width:250px;height:100%;
+background:#1e293b;transition:.3s;padding-top:60px;
 }
 .sidebar.active{left:0}
 .sidebar div{
- padding:12px;margin:8px;background:#334155;border-radius:8px;
+padding:12px;margin:8px;background:#334155;border-radius:8px;
 }
 
 .overlay{
- position:fixed;
- top:0;left:0;width:100%;height:100%;
- background:rgba(0,0,0,0.5);
- display:none;
+position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,0.5);display:none;
 }
 .overlay.active{display:block}
 
@@ -75,8 +65,8 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 <div id="panel" style="display:none">
 
 <div class="top">
-<div class="menuIcon" onclick="toggleMenu()">☰</div>
-<div class="title">𝗖𝗢𝗕𝗥𝗔 𝗔𝗗𝗠𝗜𝗡</div>
+<div onclick="toggleMenu()">☰</div>
+<div>COBRA ADMIN</div>
 </div>
 
 <div id="overlay" class="overlay" onclick="closeMenu()"></div>
@@ -93,200 +83,219 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 </div>
 
 <div class="content" id="main"></div>
-
 </div>
 
 <script>
 
 // LOGIN
 function login(){
- if(u.value==="COBRA SERVER" && p.value==="SAMI9166"){
-  localStorage.setItem("admin","1");
-  start();
- }else alert("Wrong");
+if(u.value==="COBRA SERVER" && p.value==="SAMI9166"){
+localStorage.setItem("admin","1");
+start();
+}else alert("Wrong");
 }
 
 function start(){
- loginBox.style.display="none";
- panel.style.display="block";
- home();
+loginBox.style.display="none";
+panel.style.display="block";
+home();
 }
-
 if(localStorage.getItem("admin")=="1") start();
 
 function logout(){
- localStorage.removeItem("admin");
- location.reload();
+localStorage.removeItem("admin");
+location.reload();
 }
 
 // MENU
 function toggleMenu(){
- sidebar.classList.toggle("active");
- overlay.classList.toggle("active");
+sidebar.classList.toggle("active");
+overlay.classList.toggle("active");
 }
-
 function closeMenu(){
- sidebar.classList.remove("active");
- overlay.classList.remove("active");
+sidebar.classList.remove("active");
+overlay.classList.remove("active");
 }
 
 // HOME
 function home(){
- main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
- closeMenu();
+main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
+closeMenu();
 }
 
-// ================= PLANS (FIXED) =================
+// ================= PLANS =================
 function plansUI(){
- fetch("/plans").then(r=>r.json()).then(data=>{
- let options="";
- data.forEach((x,i)=>{
-  options+=`<option value="${i}">${x.type}${x.time} - ₹${x.price}</option>`;
- });
+fetch("/plans").then(r=>r.json()).then(data=>{
+let options="";
+data.forEach((x,i)=>{
+options+=`<option value="${i}">${x.type}${x.time} - ₹${x.price}</option>`;
+});
 
- main.innerHTML=`
- <div class="card">
- <select id="planSelect">${options}</select>
- <input id="newTime" placeholder="Time">
- <input id="newPrice" placeholder="Price">
- <button onclick="updatePlan()">UPDATE</button>
- <div id="msg"></div>
- </div>`;
- closeMenu();
- });
+main.innerHTML=`
+<div class="card">
+<select id="planSelect">${options}</select>
+<input id="newTime" placeholder="Time">
+<input id="newPrice" placeholder="Price">
+<button onclick="updatePlan()">UPDATE</button>
+<div id="msg"></div>
+</div>`;
+closeMenu();
+});
 }
 
 function updatePlan(){
- fetch("/plans").then(r=>r.json()).then(data=>{
- let i=planSelect.value;
+fetch("/plans").then(r=>r.json()).then(data=>{
+let i=planSelect.value;
+data[i].time=newTime.value||data[i].time;
+data[i].price=newPrice.value||data[i].price;
 
- data[i].time=newTime.value||data[i].time;
- data[i].price=newPrice.value||data[i].price;
-
- fetch("/savePlans",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify(data)
- }).then(()=>{
-  msg.innerHTML="UPDATED ✔";
-  fetch("/refresh",{method:"POST"}); // 🔥 LIVE UPDATE FIX
- });
- });
+fetch("/savePlans",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(data)
+}).then(()=>{
+msg.innerHTML="UPDATED ✔";
+fetch("/refresh",{method:"POST"});
+});
+});
 }
 
 // ================= STOCK =================
-let activeIndex=null;
-
 function stockUI(){
- fetch("/plans").then(r=>r.json()).then(p=>{
- fetch("/stock").then(r=>r.json()).then(s=>{
+fetch("/plans").then(r=>r.json()).then(p=>{
+fetch("/stock").then(r=>r.json()).then(s=>{
 
- let html=`
- <div class="card">
- <select id="planSel">${p.map(x=>`<option>${x.type+x.time}</option>`)}</select>
- <input id="key" placeholder="ENTER KEY">
- <button onclick="addStock()">ADD</button>
- </div>`;
+let html=`
+<div class="card">
+<select id="planSel">${p.map(x=>`<option>${x.type+x.time}</option>`)}</select>
+<input id="key" placeholder="KEY">
+<button onclick="addStock()">ADD</button>
+</div>`;
 
- p.forEach((x,i)=>{
- let plan=(x.type+x.time).trim();
- let arr=s[plan]||[];
+p.forEach(x=>{
+let plan=(x.type+x.time).trim();
+let arr=s[plan]||[];
 
- html+=`<div class="card" onclick="toggleKeys(${i})"><b>${plan} (${arr.length})</b></div>
- <div id="keys_${i}" style="display:none" class="card">`;
+html+=`<div class="card"><b>${plan} (${arr.length})</b><br>`;
+arr.forEach((k,i)=>{
+html+=`${k} <button onclick="delStock('${plan}',${i})">❌</button><br>`;
+});
+html+=`</div>`;
+});
 
- arr.forEach((k,index)=>{
-  html+=`${k}
-  <button onclick="delStock('${plan}',${index});event.stopPropagation()">❌</button><br>`;
- });
-
- html+=`</div>`;
- });
-
- main.innerHTML=html;
- });
- });
-}
-
-function toggleKeys(i){
- if(activeIndex===i){
-  document.getElementById("keys_"+i).style.display="none";
-  activeIndex=null;
-  return;
- }
- if(activeIndex!==null){
-  document.getElementById("keys_"+activeIndex).style.display="none";
- }
- document.getElementById("keys_"+i).style.display="block";
- activeIndex=i;
+main.innerHTML=html;
+});
+});
 }
 
 function addStock(){
- fetch("/addStock",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-   plan:planSel.options[planSel.selectedIndex].text.trim(),
-   key:key.value
-  })
- }).then(()=>{
-  key.value="";
-  stockUI();
- });
+fetch("/addStock",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+plan:planSel.options[planSel.selectedIndex].text.trim(),
+key:key.value
+})
+}).then(()=>stockUI());
 }
 
 function delStock(plan,index){
- fetch("/deleteStock",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({plan,index})
- }).then(stockUI);
+fetch("/deleteStock",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({plan,index})
+}).then(stockUI);
+}
+
+// ================= SETTINGS =================
+let file=null;
+function settingsUI(){
+fetch("/settings").then(r=>r.json()).then(d=>{
+main.innerHTML=`
+<div class="card">
+<input id="upi" value="${d.upi}">
+<input type="file" onchange="file=event.target.files[0]">
+<button onclick="saveSettings()">SAVE</button>
+</div>`;
+});
+}
+
+function saveSettings(){
+fetch("/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({upi:upi.value})})
+.then(()=>{
+if(file){
+let fd=new FormData();
+fd.append("qr",file);
+return fetch("/uploadQR",{method:"POST",body:fd});
+}
+})
+.then(()=>fetch("/refresh",{method:"POST"}));
 }
 
 // ================= REQUEST =================
-let reqInterval;
-
+let interval;
 function reqUI(){
- if(reqInterval) clearInterval(reqInterval);
+clearInterval(interval);
 
- function load(){
-  fetch("/requests").then(r=>r.json()).then(data=>{
-   let html="";
-   data.forEach(x=>{
-    html+=`
-    <div class="card">
-    <b>${x.plan}</b> - ₹${x.price||"?"}
-    <br>UTR: ${x.utr}
-    <br>Time: ${x.time}
-    <button class="green" onclick="approve('${x.user}')">YES</button>
-    <button class="red" onclick="reject('${x.user}')">NO</button>
-    </div>`;
-   });
-   main.innerHTML=html||"No Requests";
-  });
- }
-
- load();
- reqInterval=setInterval(load,3000);
+function load(){
+fetch("/requests").then(r=>r.json()).then(data=>{
+let html="";
+data.forEach(x=>{
+html+=`<div class="card">
+${x.plan} ₹${x.price}
+<br>${x.utr}
+<button onclick="approve('${x.user}')">YES</button>
+<button onclick="reject('${x.user}')">NO</button>
+</div>`;
+});
+main.innerHTML=html||"NO REQUEST";
+});
+}
+load();
+interval=setInterval(load,3000);
 }
 
 function approve(u){
- fetch("/approve",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({user:u})
- }).then(r=>r.json()).then(d=>{
-  alert("KEY: "+d.key);
-  reqUI();
- });
+fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
+.then(()=>reqUI());
 }
 
 function reject(u){
- fetch("/reject",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({user:u})
- }).then(reqUI);
+fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
+.then(()=>reqUI());
+}
+
+// ================= PANEL =================
+function panelControlUI(){
+fetch("/status").then(r=>r.json()).then(d=>{
+main.innerHTML=`
+<div class="card">
+<button onclick="toggleSystem()">${d.on?"OFF":"ON"}</button>
+<button onclick="refreshPanel()">REFRESH</button>
+</div>`;
+});
+}
+
+function toggleSystem(){
+fetch("/toggle",{method:"POST"}).then(()=>fetch("/refresh",{method:"POST"}));
+}
+
+function refreshPanel(){
+fetch("/refresh",{method:"POST"});
+}
+
+// ================= THEME =================
+function themeUI(){
+main.innerHTML=`
+<div class="card">
+<button onclick="setTheme('#020617','#00ffcc')">COBRA</button>
+<button onclick="setTheme('#0f172a','#ffffff')">DARK</button>
+</div>`;
+}
+
+function setTheme(bg,text){
+fetch("/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({color:bg,textColor:text})})
+.then(()=>fetch("/refresh",{method:"POST"}));
 }
 
 </script>
