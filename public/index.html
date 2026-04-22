@@ -1,37 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-
 <title>COBRA SERVER PANEL</title>
 
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:Arial;background:#0f172a;color:white;text-align:center}
 
-.top{padding:15px;font-size:20px;font-weight:bold;color:#22c55e}
+.top{padding:15px;font-size:20px;color:#22c55e}
 
 .card{background:#1e293b;margin:10px;padding:15px;border-radius:12px}
 
-.buyBtn{
- padding:14px;border:none;border-radius:8px;background:#22c55e;color:white;
- margin-top:10px;font-size:16px;
-}
+button{padding:12px;border:none;border-radius:6px;margin:5px}
 
-button{padding:10px;border:none;border-radius:6px;margin:5px}
+.buyBtn{background:#22c55e;color:#fff;width:90%}
 
-.mono{font-family:monospace;display:block;margin:8px 0;user-select:all}
+input,select{padding:10px;width:90%;margin:8px;border:none;border-radius:6px}
+
+.mono{font-family:monospace;display:block;margin:8px 0}
 
 .overlay{
  position:fixed;top:0;left:0;width:100%;height:100%;
- background:rgba(0,0,0,0.7);
  display:flex;justify-content:center;align-items:center;
+ backdrop-filter:blur(8px);
  z-index:999;
 }
 
 .popup{
- background:#020617;color:#fff;padding:20px;border-radius:16px;
- width:85%;max-width:320px;text-align:center;
+ background:#020617;
+ padding:20px;
+ border-radius:16px;
+ width:85%;
+ max-width:320px;
+ text-align:center;
 }
 
 .loader{
@@ -44,130 +45,150 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-.tick{font-size:40px;color:#22c55e}
-
-.btnRow{display:flex;justify-content:space-between;margin-top:10px}
-
+.btnRow{display:flex;justify-content:space-between}
+.joinBtn{background:#0088cc;color:#fff;width:48%}
+.noBtn{background:#111;color:#fff;width:48%}
 </style>
 </head>
 
 <body>
 
 <div class="top" id="title">COBRA SERVER PANEL</div>
-
 <div id="main"></div>
 
 <script>
 
-// ================= COPY =================
-function copyText(t){
- navigator.clipboard.writeText(t);
- alert("Copied ✔");
-}
-
-// ================= TELEGRAM =================
-function openTG(url){
- window.open(url || "https://t.me/GODx_COBRA","_blank");
-}
-
-// ================= TRIAL POPUP =================
-fetch("/trial").then(r=>r.json()).then(t=>{
- if(!t.on) return;
-
- document.body.innerHTML+=`
- <div class="overlay">
- <div class="popup">
-
- <h3>${t.title}</h3>
-
- <span class="mono" onclick="copyText('${t.key}')">
- TAP KEY - ${t.key}
- </span>
-
- <span class="mono">${t.kill}</span>
- <span class="mono">Expire: ${t.expire}</span>
-
- <button onclick="openTG('${t.telegram}')">JOIN TELEGRAM</button>
- <br><br>
- <button onclick="this.closest('.overlay').remove()">OK</button>
-
- </div>
- </div>`;
-});
-
-// ================= LIVE STATUS =================
 let last=0;
+let lock=false;
 
+// ================= LOAD =================
 function load(){
  fetch("/status").then(r=>r.json()).then(d=>{
+
+  // ADMIN OFF LOCK
+  if(!d.on){
+   document.body.innerHTML=`
+   <div class="overlay">
+    <div class="popup">
+     <h3>⚠️ PLEASE WAIT</h3>
+     <p>ADMIN UPDATE</p>
+    </div>
+   </div>`;
+   return;
+  }
 
   document.body.style.background=d.color;
   document.body.style.color=d.textColor;
   title.innerText=d.title;
 
   if(last!==d.refresh){
-    last=d.refresh;
-    show();
+   last=d.refresh;
+   showMain();
   }
+
+  // TRIAL CHECK
+  fetch("/trial").then(r=>r.json()).then(t=>{
+   if(t.on){
+    document.body.innerHTML+=`
+    <div class="overlay">
+     <div class="popup">
+
+      <h3>${t.title}</h3>
+
+      <span class="mono" onclick="copyText('${t.key}')">
+      KEY - ${t.key}
+      </span>
+
+      <span class="mono">${t.kill}</span>
+      <span class="mono">${t.expire}</span>
+
+      <button onclick="window.open('${t.telegram}','_blank')">
+      JOIN TELEGRAM
+      </button>
+
+     </div>
+    </div>`;
+   }
+  });
 
  });
 }
 
-setInterval(load,2000);
+setInterval(load,3000);
 load();
 
-// ================= SHOW PLANS =================
-function show(){
+// ================= MAIN =================
+function showMain(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
-  main.innerHTML=plans.map(p=>`
-   <div class="card">
-    ${p.time} - ₹${p.price}
-    <br>
-    <button class="buyBtn" onclick="buy('${p.time}','${p.price}')">BUY</button>
+  main.innerHTML=`
+  <div class="card">
+
+   <h3>Select Game</h3>
+   <select><option>BGMI</option></select>
+
+   <h3>Select Plan</h3>
+   <select id="planSel">
+    ${plans.map(p=>`<option value="${p.time}|${p.price}">${p.time} - ₹${p.price}</option>`)}
+   </select>
+
+   <button class="buyBtn" onclick="goBuy()">BUY KEY</button>
+
+   <div style="margin-top:10px;font-size:14px">
+   ⚡ FAST DELIVERY<br>
+   🔐 SECURE ACCESS
    </div>
-  `).join("");
+
+  </div>`;
  });
+}
+
+function goBuy(){
+ let v=planSel.value.split("|");
+ buy(v[0],v[1]);
 }
 
 // ================= BUY =================
 function buy(plan,price){
 
  fetch("/settings").then(r=>r.json()).then(s=>{
-
   main.innerHTML=`
   <div class="card">
-    <h3>PAY ₹${price}</h3>
 
-    <div class="mono" onclick="copyText('${s.upi}')">${s.upi}</div>
+   <h3>PAY ₹${price}</h3>
 
-    <br>
-    <img src="${s.qr}" width="200">
+   <span class="mono" onclick="copyText('${s.upi}')">${s.upi}</span>
 
-    <input id="utr" placeholder="ENTER UTR (12 digit)">
-    <button onclick="verify('${plan}','${price}')">VERIFY</button>
+   <img src="${s.qr}" width="200">
+
+   <input id="utr" placeholder="ENTER UTR (12 digit)">
+
+   <button onclick="verify('${plan}','${price}')">VERIFY</button>
+
   </div>`;
-
  });
 }
 
 // ================= VERIFY =================
 function verify(plan,price){
 
- let utrVal=utr.value;
+ if(lock) return;
+ lock=true;
 
- if(!utrVal || utrVal.length!=12){
-  return alert("Enter Valid 12 Digit UTR");
+ let u=utr.value;
+
+ if(!u || u.length!=12){
+  lock=false;
+  return alert("Enter valid UTR");
  }
 
- // loader popup
- let pop=document.createElement("div");
- pop.className="overlay";
- pop.innerHTML=`
- <div class="popup">
-  <div class="loader"></div>
-  <p>Please wait admin verify your request</p>
+ // LOADER
+ document.body.innerHTML+=`
+ <div class="overlay" id="pop">
+  <div class="popup">
+   <div class="loader"></div>
+   <p>Please wait admin verify</p>
+  </div>
  </div>`;
- document.body.appendChild(pop);
 
  fetch("/buy",{
   method:"POST",
@@ -176,63 +197,96 @@ function verify(plan,price){
    user:"USER_"+Date.now(),
    plan:plan,
    price:price,
-   utr:utrVal
+   utr:u
   })
- });
-
- // check result
- let chk=setInterval(()=>{
- fetch("/history")
+ })
  .then(r=>r.json())
- .then(h=>{
+ .then(d=>{
 
-  let f=h.find(x=>x.utr===utrVal);
+  if(d.blocked){
+   alert("BLOCKED "+d.time+" sec");
+   location.reload();
+  }
 
-  if(f){
-   clearInterval(chk);
+  if(d.wrongPlan){
+   alert("Wrong Plan");
+   location.reload();
+  }
 
-   // ❌ rejected
-   if(f.status==="rejected"){
-    pop.innerHTML=`
-    <div class="popup" style="box-shadow:0 0 20px red;">
-     <div style="font-size:40px;color:red;">✖</div>
-     <h3>PAYMENT REJECTED</h3>
-     <button onclick="location.reload()">OK</button>
-    </div>`;
-   }
-
-   // ✅ success
-   if(f.status==="approved"){
-
-    let exp=new Date();
-    exp.setHours(exp.getHours()+12);
-
-    pop.innerHTML=`
-    <div class="popup">
-
-     <div class="tick">✔</div>
-
-     <h3>COBRA SERVER SUCCESS 🎉</h3>
-
-     <span class="mono" onclick="copyText('${f.key}')">
-     TAP KEY - ${f.key}
-     </span>
-
-     <span class="mono">Expire: ${exp.toLocaleString()}</span>
-     <span class="mono">Kill limit 10-12 (LEGIT PLAY SAFE)</span>
-
-     <div class="btnRow">
-       <button onclick="openTG()">JOIN GROUP</button>
-       <button onclick="location.reload()">NOT JOIN</button>
-     </div>
-
-    </div>`;
-   }
-
+  if(d.direct){
+   showSuccess(d.key);
   }
 
  });
+
+ // CHECK LOOP
+ let chk=setInterval(()=>{
+  fetch("/history")
+  .then(r=>r.json())
+  .then(h=>{
+   let f=h.find(x=>x.utr===u);
+
+   if(f){
+    clearInterval(chk);
+
+    if(f.status==="rejected"){
+     showReject();
+    }
+
+    if(f.status==="approved"){
+     showSuccess(f.key);
+    }
+   }
+  });
  },2000);
+}
+
+// ================= SUCCESS =================
+function showSuccess(key){
+
+ let exp=new Date();
+ exp.setHours(exp.getHours()+12);
+
+ pop.innerHTML=`
+ <div class="popup">
+
+  <h3>COBRA SERVER 🎉</h3>
+
+  <span class="mono" onclick="copyText('${key}')">
+   KEY - ${key}
+  </span>
+
+  <span class="mono">Expire: ${exp.toLocaleString()}</span>
+  <span class="mono">Kill limit 10-12 LEGIT PLAY SAFE</span>
+
+  <div class="btnRow">
+   <button class="joinBtn" onclick="joinTG()">JOIN</button>
+   <button class="noBtn" onclick="location.reload()">NOT JOIN</button>
+  </div>
+
+ </div>`;
+}
+
+// ================= REJECT =================
+function showReject(){
+ pop.innerHTML=`
+ <div class="popup">
+  <h3>❌ PAYMENT REJECTED</h3>
+  <button onclick="location.reload()">OK</button>
+ </div>`;
+}
+
+// ================= UTILS =================
+function copyText(t){
+ navigator.clipboard.writeText(t);
+ alert("Copied");
+}
+
+function joinTG(){
+ window.location.href="tg://join?invite=wRZN39fdVcRkYTM9";
+ setTimeout(()=>{
+  window.open("https://t.me/+wRZN39fdVcRkYTM9","_blank");
+ },1000);
 }
 
 </script>
