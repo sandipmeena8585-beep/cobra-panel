@@ -121,16 +121,27 @@ function closeMenu(){
  overlay.classList.remove("active");
 }
 
+// ✅ FIX
+let reqInt;
+function stopReq(){
+ if(reqInt){
+  clearInterval(reqInt);
+  reqInt=null;
+ }
+}
+
 // HOME
 function home(){
+ stopReq();
  main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
  closeMenu();
 }
 
-// ================= SETTINGS =================
+// SETTINGS
 let selectedFile=null;
 
 function settingsUI(){
+ stopReq();
  fetch("/settings").then(r=>r.json()).then(d=>{
   main.innerHTML=`
   <div class="card">
@@ -159,15 +170,8 @@ function settingsUI(){
 }
 
 function saveSettings(){
- fetch("/settings",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-   upi:upi.value,
-   title:title.value,
-   color:color.value,
-   textColor:textColor.value
-  })
+ fetch("/settings",{method:"POST",headers:{"Content-Type":"application/json"},
+ body:JSON.stringify({upi:upi.value,title:title.value,color:color.value,textColor:textColor.value})
  })
  .then(()=>{
   if(selectedFile){
@@ -180,8 +184,9 @@ function saveSettings(){
  .then(()=>alert("UPDATED ✔"));
 }
 
-// ================= THEME =================
+// THEME
 function themeUI(){
+ stopReq();
  main.innerHTML=`
  <div class="card">
  <button onclick="setTheme('#020617','#00ffcc')">COBRA</button>
@@ -192,17 +197,16 @@ function themeUI(){
 }
 
 function setTheme(bg,text){
- fetch("/settings",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({color:bg,textColor:text})
+ fetch("/settings",{method:"POST",headers:{"Content-Type":"application/json"},
+ body:JSON.stringify({color:bg,textColor:text})
  })
  .then(()=>fetch("/refresh",{method:"POST"}))
  .then(()=>alert("THEME ✔"));
 }
 
-// ================= PANEL CONTROL =================
+// PANEL CONTROL
 function panelControlUI(){
+ stopReq();
  fetch("/status").then(r=>r.json()).then(d=>{
   main.innerHTML=`
   <div class="card">
@@ -224,8 +228,9 @@ function refreshPanel(){
  .then(()=>alert("REFRESHED ✔"));
 }
 
-// ================= PLANS =================
+// PLANS
 function plansUI(){
+ stopReq();
  fetch("/plans").then(r=>r.json()).then(data=>{
  let opt="";
  data.forEach((x,i)=>{
@@ -255,8 +260,9 @@ function updatePlan(){
  });
 }
 
-// ================= STOCK =================
+// STOCK
 function stockUI(){
+ stopReq();
  fetch("/plans").then(r=>r.json()).then(p=>{
  fetch("/stock").then(r=>r.json()).then(s=>{
 
@@ -285,24 +291,18 @@ function stockUI(){
 }
 
 function addStock(){
- fetch("/addStock",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-   plan:planSel.options[planSel.selectedIndex].text.trim(),
-   key:key.value
-  })
+ fetch("/addStock",{method:"POST",headers:{"Content-Type":"application/json"},
+ body:JSON.stringify({plan:planSel.options[planSel.selectedIndex].text.trim(),key:key.value})
  }).then(()=>stockUI());
 }
 
 function delStock(plan,index){
- fetch("/deleteStock",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan,index})})
- .then(()=>stockUI());
+ fetch("/deleteStock",{method:"POST",headers:{"Content-Type":"application/json"},
+ body:JSON.stringify({plan,index})
+ }).then(()=>stockUI());
 }
 
-// ================= REQUEST =================
-let reqInt;
-
+// REQUEST
 function reqUI(){
  if(reqInt) clearInterval(reqInt);
 
