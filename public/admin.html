@@ -95,7 +95,7 @@ color:#22c55e;
 <div onclick="plansUI()">PLANS</div>
 <div onclick="stockUI()">STOCK</div>
 <div onclick="settingsUI()">UPI / QR / COLOR</div>
-<div onclick="trialUI()">TRIAL</div> <!-- 🔥 ADD -->
+<div onclick="trialUI()">TRIAL SYSTEM</div>
 <div onclick="reqUI()">REQUEST</div>
 <div onclick="panelControlUI()">PANEL CONTROL</div>
 <div onclick="themeUI()">THEME</div>
@@ -139,26 +139,14 @@ function closeMenu(){
  overlay.classList.remove("active");
 }
 
-// STOP REQUEST LOOP
-let reqInt;
-function stopReq(){
- if(reqInt){
-  clearInterval(reqInt);
-  reqInt=null;
- }
-}
-
 // HOME
 function home(){
- stopReq();
- main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
+ main.innerHTML="<h2>🔥 SYSTEM LIVE RUNNING</h2>";
  closeMenu();
 }
 
-// ================= 🔥 TRIAL UI ADD =================
+// ================= 🔥 TRIAL SYSTEM =================
 function trialUI(){
- stopReq();
-
  fetch("/trial").then(r=>r.json()).then(t=>{
 
  main.innerHTML=`
@@ -166,7 +154,9 @@ function trialUI(){
 
  <h3>TRIAL CONTROL</h3>
 
- <button onclick="toggleTrial()">${t.on?"TURN OFF":"TURN ON"}</button>
+ <button onclick="toggleTrial()">
+ ${t.on ? "TURN OFF" : "TURN ON"}
+ </button>
 
  <input id="tTitle" value="${t.title||""}" placeholder="TITLE">
 
@@ -183,8 +173,6 @@ function trialUI(){
  <button class="green" onclick="saveTrial()">SAVE</button>
 
  </div>`;
-
- closeMenu();
  });
 }
 
@@ -194,9 +182,7 @@ function toggleTrial(){
    method:"POST",
    headers:{"Content-Type":"application/json"},
    body:JSON.stringify({on:!t.on})
-  })
-  .then(()=>fetch("/refresh",{method:"POST"}))
-  .then(()=>trialUI());
+  }).then(()=>alert("UPDATED ✔"));
  });
 }
 
@@ -211,15 +197,117 @@ function saveTrial(){
    telegram:tTele.value,
    updates:[u1.value,u2.value,u3.value]
   })
- })
- .then(()=>fetch("/refresh",{method:"POST"}))
- .then(()=>alert("TRIAL UPDATED ✔"));
+ }).then(()=>alert("TRIAL SAVED ✔"));
 }
 // ================= END =================
 
-// (बाकी पूरा code SAME नीचे untouched है)
+// SETTINGS
+function settingsUI(){
+ fetch("/settings").then(r=>r.json()).then(d=>{
+  main.innerHTML=`
+  <div class="card">
 
-... (बाकी पूरा code same जैसा तुमने दिया है, unchanged)
+  <h3>UPI</h3>
+  <input id="upi" value="${d.upi||""}">
+
+  <h3>Title</h3>
+  <input id="title" value="${d.title||""}">
+
+  <h3>Theme Color</h3>
+  <input id="color" type="color" value="${d.color||"#22c55e"}">
+
+  <h3>Text Color</h3>
+  <input id="textColor" type="color" value="${d.textColor||"#fff"}">
+
+  <button class="green" onclick="saveSettings()">UPDATE</button>
+
+  </div>`;
+ });
+}
+
+function saveSettings(){
+ fetch("/settings",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+    upi:upi.value,
+    title:title.value,
+    color:color.value,
+    textColor:textColor.value
+  })
+ }).then(()=>alert("UPDATED ✔"));
+}
+
+// REQUEST
+function reqUI(){
+ fetch("/requests").then(r=>r.json()).then(data=>{
+ let html="";
+ data.forEach(x=>{
+ html+=`
+ <div class="card">
+ <b>${x.plan}</b> ₹${x.price}
+ <br>UTR: ${x.utr}
+ <br><br>
+ <button class="green" onclick="approve('${x.user}')">YES</button>
+ <button class="red" onclick="reject('${x.user}')">NO</button>
+ </div>`;
+ });
+ main.innerHTML=html||"NO REQUEST";
+ });
+}
+
+function approve(u){
+ fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
+ .then(r=>r.json()).then(d=>{
+  alert("KEY: "+d.key);
+  reqUI();
+ });
+}
+
+function reject(u){
+ fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
+ .then(()=>reqUI());
+}
+
+// STOCK
+function stockUI(){
+ fetch("/stock").then(r=>r.json()).then(s=>{
+ let html=`
+ <div class="card">
+ <input id="plan" placeholder="PLAN">
+ <input id="key" placeholder="KEY">
+ <button onclick="addStock()">ADD</button>
+ </div>`;
+
+ Object.keys(s).forEach(p=>{
+ html+=`<div class="card"><b>${p}</b> (${s[p].length})</div>`;
+ });
+
+ main.innerHTML=html;
+ });
+}
+
+function addStock(){
+ fetch("/addStock",{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({plan:plan.value,key:key.value})
+ }).then(()=>stockUI());
+}
+
+// PANEL
+function panelControlUI(){
+ fetch("/status").then(r=>r.json()).then(d=>{
+  main.innerHTML=`
+  <div class="card">
+  <button onclick="toggleSystem()">${d.on?"TURN OFF":"TURN ON"}</button>
+  </div>`;
+ });
+}
+
+function toggleSystem(){
+ fetch("/toggle",{method:"POST"}).then(()=>panelControlUI());
+}
 
 </script>
 
