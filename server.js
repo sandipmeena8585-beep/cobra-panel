@@ -108,7 +108,7 @@ app.get("/status",(req,res)=>{
 app.post("/toggle",(req,res)=>{
  let d=db();
  d.systemOn=!d.systemOn;
- d.refresh=Date.now(); // ✅ FIX
+ d.refresh=Date.now();
  save(d);
  res.json({on:d.systemOn});
 });
@@ -130,7 +130,7 @@ app.post("/settings",(req,res)=>{
  if(req.body.textColor!==undefined) d.textColor=req.body.textColor;
  if(req.body.title!==undefined) d.title=req.body.title;
 
- d.refresh=Date.now(); // ✅ LIVE UPDATE
+ d.refresh=Date.now();
  save(d);
 
  res.json({ok:true});
@@ -142,7 +142,7 @@ app.post("/uploadQR",upload.single("qr"),(req,res)=>{
 
  if(req.file){
   d.qr="/uploads/"+req.file.filename;
-  d.qrTime=Date.now(); // ✅ HOLD QR
+  d.qrTime=Date.now();
   d.refresh=Date.now();
   save(d);
  }
@@ -179,14 +179,24 @@ app.post("/savePlans",(req,res)=>{
 app.post("/buy",(req,res)=>{
  let d=db();
 
+ // 🔥 FIX START (ONLY CHANGE)
  let approved=d.history.find(x=>x.utr===req.body.utr && x.status==="approved");
 
  if(approved){
+
+  // अगर पहले claim हो चुका
+  if(approved.claimed){
+   return res.json({ok:true}); // ❌ दुबारा key नहीं
+  }
+
+  // पहली बार claim
   approved.claimed=true;
   approved.claimTime=new Date().toLocaleString();
+
   save(d);
   return res.json({ok:true});
  }
+ // 🔥 FIX END
 
  if(d.requests.find(x=>x.utr===req.body.utr)){
   return res.json({ok:true});
@@ -232,7 +242,7 @@ app.post("/approve",(req,res)=>{
 
  d.requests=d.requests.filter(x=>x.user!==r.user);
 
- d.refresh=Date.now(); // ✅ LIVE
+ d.refresh=Date.now();
  save(d);
 
  res.json({key});
@@ -253,7 +263,7 @@ app.post("/reject",(req,res)=>{
 
  d.requests=d.requests.filter(x=>x.user!==req.body.user);
 
- d.refresh=Date.now(); // ✅ LIVE
+ d.refresh=Date.now();
  save(d);
 
  res.json({ok:true});
@@ -281,7 +291,7 @@ app.post("/addStock",(req,res)=>{
 
  d.stock[plan].push(key);
 
- d.refresh=Date.now(); // ✅ LIVE
+ d.refresh=Date.now();
  save(d);
 
  res.json({ok:true});
@@ -294,7 +304,7 @@ app.post("/deleteStock",(req,res)=>{
   d.stock[req.body.plan].splice(req.body.index,1);
  }
 
- d.refresh=Date.now(); // ✅ LIVE
+ d.refresh=Date.now();
  save(d);
 
  res.json({ok:true});
