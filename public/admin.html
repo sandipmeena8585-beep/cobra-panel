@@ -5,7 +5,7 @@
 <title>COBRA ADMIN</title>
 
 <style>
-body{margin:0;background:#0f172a;color:#fff;font-family:Arial;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#0f172a;color:#fff;font-family:Arial;}
 
 .login{
 display:flex;flex-direction:column;justify-content:center;align-items:center;
@@ -18,25 +18,24 @@ width:80%;max-width:300px;padding:12px;margin:10px;border:none;border-radius:6px
 
 .top{
 display:flex;align-items:center;gap:10px;padding:12px;
-background:#020617;position:fixed;width:100%;top:0;z-index:10;
+background:#020617;position:fixed;width:100%;top:0;
 }
 
 .menuIcon{font-size:22px;cursor:pointer;}
 
 .sidebar{
-position:fixed;left:-260px;width:250px;height:100%;
-background:#1e293b;transition:.25s;padding-top:60px;
-z-index:20;
+position:fixed;left:-250px;width:250px;height:100%;
+background:#1e293b;transition:.3s;padding-top:60px;
 }
 .sidebar.active{left:0}
 
 .sidebar div{
-padding:14px;margin:10px;background:#334155;border-radius:10px;
+padding:12px;margin:8px;background:#334155;border-radius:8px;
 }
 
 .overlay{
 position:fixed;top:0;left:0;width:100%;height:100%;
-background:rgba(0,0,0,0.5);display:none;z-index:15;
+background:rgba(0,0,0,0.5);display:none;
 }
 .overlay.active{display:block}
 
@@ -47,8 +46,8 @@ button{padding:10px;border:none;border-radius:6px;margin:5px}
 .green{background:#22c55e}
 .red{background:#ef4444}
 .blue{background:#2563eb}
-input,select{padding:10px;width:90%;margin:8px;border:none;border-radius:6px}
 
+input,select{padding:10px;width:90%;margin:6px;border:none;border-radius:6px}
 </style>
 </head>
 
@@ -90,239 +89,244 @@ input,select{padding:10px;width:90%;margin:8px;border:none;border-radius:6px}
 
 // LOGIN
 function login(){
- if(u.value==="COBRA SERVER" && p.value==="SAMI9166"){
-  localStorage.setItem("admin","1");
-  start();
- }else alert("Wrong");
+if(u.value==="COBRA SERVER" && p.value==="SAMI9166"){
+localStorage.setItem("admin","1");
+start();
+}else alert("Wrong");
 }
 
 function start(){
- loginBox.style.display="none";
- panel.style.display="block";
- home();
+loginBox.style.display="none";
+panel.style.display="block";
+home();
 }
 
 if(localStorage.getItem("admin")=="1") start();
 
 function logout(){
- localStorage.removeItem("admin");
- location.reload();
+localStorage.removeItem("admin");
+location.reload();
 }
 
 // MENU
 function toggleMenu(){
- sidebar.classList.toggle("active");
- overlay.classList.toggle("active");
+sidebar.classList.toggle("active");
+overlay.classList.toggle("active");
 }
 function closeMenu(){
- sidebar.classList.remove("active");
- overlay.classList.remove("active");
+sidebar.classList.remove("active");
+overlay.classList.remove("active");
 }
 
 // HOME
 function home(){
- main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
- closeMenu();
+main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
+closeMenu();
+}
+
+// ================= SETTINGS (OLD + QR FIX) =================
+let file;
+function settingsUI(){
+fetch("/settings").then(r=>r.json()).then(d=>{
+main.innerHTML=`
+<div class="card">
+
+<h3>UPI</h3>
+<input id="upi" value="${d.upi||""}">
+
+<h3>Title</h3>
+<input id="title" value="${d.title||""}">
+
+<h3>UI COLOR</h3>
+<input id="color" type="color" value="${d.color}">
+
+<h3>TEXT COLOR</h3>
+<input id="textColor" type="color" value="${d.textColor}">
+
+<h3>QR</h3>
+<input type="file" onchange="file=this.files[0]">
+${d.qr?`<br><img src="${d.qr}" width="100">`:""}
+
+<button class="green" onclick="saveSettings()">UPDATE</button>
+
+</div>`;
+});
+closeMenu();
+}
+
+function saveSettings(){
+fetch("/settings",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+upi:upi.value,
+title:title.value,
+color:color.value,
+textColor:textColor.value
+})
+})
+.then(()=>{
+if(file){
+let fd=new FormData();
+fd.append("qr",file);
+return fetch("/uploadQR",{method:"POST",body:fd});
+}
+})
+.then(()=>alert("UPDATED ✔"));
+}
+
+// ================= PLANS (FIXED UI) =================
+function plansUI(){
+fetch("/plans").then(r=>r.json()).then(data=>{
+main.innerHTML=`
+<div class="card">
+<select id="planIndex">
+${data.map((x,i)=>`<option value="${i}">${x.time} ₹${x.price}</option>`)}
+</select>
+
+<input id="newTime" placeholder="Time">
+<input id="newPrice" placeholder="Price">
+
+<button class="green" onclick="updatePlan()">UPDATE</button>
+</div>`;
+});
+closeMenu();
+}
+
+function updatePlan(){
+fetch("/plans").then(r=>r.json()).then(data=>{
+let i=planIndex.value;
+if(newTime.value) data[i].time=newTime.value;
+if(newPrice.value) data[i].price=newPrice.value;
+
+fetch("/savePlans",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)})
+.then(()=>alert("UPDATED ✔"));
+});
+}
+
+// ================= STOCK (FIXED SELECT) =================
+function stockUI(){
+fetch("/plans").then(r=>r.json()).then(p=>{
+main.innerHTML=`
+<div class="card">
+<select id="planSel">${p.map(x=>`<option>${x.type+x.time}</option>`)}</select>
+<input id="key" placeholder="KEY">
+<button onclick="addStock()">ADD</button>
+</div>`;
+});
+closeMenu();
+}
+
+function addStock(){
+fetch("/addStock",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({plan:planSel.value.trim(),key:key.value})
+}).then(()=>alert("STOCK ADDED ✔"));
+}
+
+// ================= REQUEST (TIME + AUTO REFRESH) =================
+let reqInt;
+function reqUI(){
+if(reqInt) clearInterval(reqInt);
+
+function load(){
+fetch("/requests").then(r=>r.json()).then(data=>{
+main.innerHTML=data.map(x=>`
+<div class="card">
+<b>${x.plan}</b> ₹${x.price}
+<br>UTR: ${x.utr}
+<br>🕒 ${x.time}
+<br>
+<button class="green" onclick="approve('${x.user}')">YES</button>
+<button class="red" onclick="reject('${x.user}')">NO</button>
+</div>`).join("") || "NO REQUEST";
+});
+}
+
+load();
+reqInt=setInterval(load,3000);
+closeMenu();
 }
 
 // ================= PANEL CONTROL =================
 function panelControlUI(){
- fetch("/status").then(r=>r.json()).then(d=>{
- main.innerHTML=`
- <div class="card">
- <h3>PANEL CONTROL</h3>
- <button onclick="toggleSystem()" class="${d.on?'red':'green'}">
- ${d.on?'TURN OFF':'TURN ON'}
- </button>
- </div>`;
- });
- closeMenu();
+fetch("/status").then(r=>r.json()).then(d=>{
+main.innerHTML=`
+<div class="card">
+<button onclick="toggleSystem()" class="${d.on?'red':'green'}">${d.on?'TURN OFF':'TURN ON'}</button>
+<button class="blue" onclick="refreshNow()">REFRESH</button>
+</div>`;
+});
+closeMenu();
 }
 
-function toggleSystem(){
- fetch("/toggle",{method:"POST"})
- .then(()=>panelControlUI());
-}
-
-// ================= SETTINGS =================
-function settingsUI(){
- fetch("/settings").then(r=>r.json()).then(d=>{
- main.innerHTML=`
- <div class="card">
-
- <h3>UPI</h3>
- <input id="upi" value="${d.upi||""}">
-
- <h3>Title</h3>
- <input id="title" value="${d.title||""}">
-
- <h3>Theme</h3>
- <input id="color" type="color" value="${d.color}">
- <input id="textColor" type="color" value="${d.textColor}">
-
- <button class="green" onclick="saveSettings()">UPDATE</button>
-
- </div>`;
- });
- closeMenu();
-}
-
-function saveSettings(){
- fetch("/settings",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-   upi:upi.value,
-   title:title.value,
-   color:color.value,
-   textColor:textColor.value
-  })
- }).then(()=>alert("UPDATED ✔"));
-}
+function toggleSystem(){fetch("/toggle",{method:"POST"});}
+function refreshNow(){fetch("/refresh",{method:"POST"}).then(()=>alert("REFRESH ✔"));}
 
 // ================= THEME =================
 function themeUI(){
- main.innerHTML=`
- <div class="card">
- <button onclick="setTheme('#020617','#00ffcc')">COBRA</button>
- <button onclick="setTheme('#0f172a','#ffffff')">DARK</button>
- <button onclick="setTheme('#ffffff','#000000')">LIGHT</button>
- </div>`;
- closeMenu();
+main.innerHTML=`
+<div class="card">
+<button onclick="setTheme('#020617','#00ffcc')">COBRA</button>
+<button onclick="setTheme('#0f172a','#ffffff')">DARK</button>
+<button onclick="setTheme('#ffffff','#000000')">LIGHT</button>
+</div>`;
+closeMenu();
 }
 
 function setTheme(bg,text){
- fetch("/settings",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({color:bg,textColor:text})
- }).then(()=>alert("THEME ✔"));
-}
-
-// ================= PLANS =================
-function plansUI(){
- fetch("/plans").then(r=>r.json()).then(data=>{
- let html="";
- data.forEach((x,i)=>{
- html+=`
- <div class="card">
- ${x.time} - ₹${x.price}
- <button onclick="editPlan(${i})">EDIT</button>
- </div>`;
- });
-
- main.innerHTML=html;
- });
- closeMenu();
-}
-
-function editPlan(i){
- let t=prompt("Time");
- let p=prompt("Price");
-
- fetch("/plans").then(r=>r.json()).then(d=>{
- if(t) d[i].time=t;
- if(p) d[i].price=p;
-
- fetch("/savePlans",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify(d)
- }).then(()=>plansUI());
- });
-}
-
-// ================= STOCK =================
-function stockUI(){
- fetch("/stock").then(r=>r.json()).then(s=>{
- main.innerHTML=`
- <div class="card">
- <input id="plan" placeholder="Plan">
- <input id="key" placeholder="Key">
- <button onclick="addStock()">ADD</button>
- </div>`;
- });
- closeMenu();
-}
-
-function addStock(){
- fetch("/addStock",{
- method:"POST",
- headers:{"Content-Type":"application/json"},
- body:JSON.stringify({plan:plan.value,key:key.value})
- }).then(()=>alert("ADDED ✔"));
-}
-
-// ================= REQUEST =================
-function reqUI(){
- fetch("/requests").then(r=>r.json()).then(data=>{
- let html="";
- data.forEach(x=>{
- html+=`
- <div class="card">
- ${x.plan} ₹${x.price}<br>${x.utr}
- <br>
- <button onclick="approve('${x.user}')">YES</button>
- <button onclick="reject('${x.user}')">NO</button>
- </div>`;
- });
- main.innerHTML=html||"NO REQUEST";
- });
- closeMenu();
-}
-
-function approve(u){
- fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
- .then(()=>reqUI());
-}
-
-function reject(u){
- fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})})
- .then(()=>reqUI());
+fetch("/settings",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({color:bg,textColor:text})
+}).then(()=>alert("THEME ✔"));
 }
 
 // ================= TRIAL =================
 function trialUI(){
- fetch("/trial").then(r=>r.json()).then(t=>{
- main.innerHTML=`
- <div class="card">
+fetch("/trial").then(r=>r.json()).then(t=>{
+main.innerHTML=`
+<div class="card">
 
- <h3>TRIAL CONTROL</h3>
+<button onclick="toggleTrial()" class="${t.on?'red':'green'}">
+${t.on?'TURN OFF':'TURN ON'}
+</button>
 
- <button onclick="toggleTrial()" class="${t.on?'red':'green'}">
- ${t.on?'TURN OFF':'TURN ON'}
- </button>
+<input id="t_title" value="${t.title}">
+<input id="t_key" value="${t.key}">
+<input id="t_kill" value="${t.kill}">
+<input id="t_url" value="${t.telegram}">
 
- <input id="t_title" value="${t.title}">
- <input id="t_key" value="${t.key}">
- <input id="t_kill" value="${t.kill}">
- <input id="t_url" value="${t.telegram}">
- <input id="t_expire" value="${t.expire}">
+<h4>TIME</h4>
+<input id="t_time" placeholder="HH:MM">
 
- <button onclick="saveTrial()" class="blue">UPDATE</button>
+<h4>DATE</h4>
+<input id="t_date" placeholder="DD/MM/YYYY">
 
- </div>`;
- });
- closeMenu();
+<button onclick="saveTrial()" class="blue">UPDATE</button>
+
+</div>`;
+});
+closeMenu();
 }
 
-function toggleTrial(){
- fetch("/trialToggle",{method:"POST"})
- .then(()=>trialUI());
-}
+function toggleTrial(){fetch("/trialToggle",{method:"POST"});}
 
 function saveTrial(){
- fetch("/trialUpdate",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-   title:t_title.value,
-   key:t_key.value,
-   kill:t_kill.value,
-   telegram:t_url.value,
-   expire:t_expire.value
-  })
- }).then(()=>alert("TRIAL UPDATED ✔"));
+let exp=t_date.value+" "+t_time.value;
+
+fetch("/trialUpdate",{method:"POST",headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+title:t_title.value,
+key:t_key.value,
+kill:t_kill.value,
+telegram:t_url.value,
+expire:exp
+})
+}).then(()=>alert("TRIAL UPDATED ✔"));
+}
+
+// ================= REQUEST ACTION =================
+function approve(u){
+fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})});
+}
+function reject(u){
+fetch("/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:u})});
 }
 
 </script>
