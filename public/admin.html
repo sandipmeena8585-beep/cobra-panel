@@ -200,13 +200,10 @@ function saveSettings(){
 function themeUI(){
  main.innerHTML=`
  <div class="card">
-
  <h3>Theme Presets</h3>
-
  <button onclick="setTheme('#020617','#00ffcc')">🟢 COBRA</button>
  <button onclick="setTheme('#0f172a','#ffffff')">⚫ DARK</button>
  <button onclick="setTheme('#ffffff','#000000')">⚪ LIGHT</button>
-
  </div>`;
  closeMenu();
 }
@@ -350,7 +347,7 @@ function delStock(plan,index){
 
 // ================= REQUEST =================
 
-// ✅ ONLY CHANGE (AUTO REFRESH)
+// ✅ ONLY CHANGE (SMART AUTO REFRESH)
 let reqInterval;
 
 function reqUI(){
@@ -358,6 +355,9 @@ function reqUI(){
  if(reqInterval) clearInterval(reqInterval);
 
  function load(){
+
+  if(!main.innerHTML.includes("UTR")) return;
+
   fetch("/requests").then(r=>r.json()).then(data=>{
    let html="";
 
