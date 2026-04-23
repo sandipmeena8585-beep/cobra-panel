@@ -10,20 +10,53 @@ body{
  font-family:Arial;
  color:#fff;
  text-align:center;
-
- /* 🔥 OLD BACKGROUND */
  background:url("/cobra.png") no-repeat center center fixed;
  background-size:cover;
 }
 
-.top{
- padding:15px;
- font-size:20px;
+/* 🔥 TOP BAR */
+.topbar{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ padding:12px;
  font-weight:bold;
  color:#22c55e;
  text-shadow:0 0 10px #22c55e;
 }
 
+.menuBtn{
+ font-size:22px;
+ background:#2563eb;
+ padding:8px 14px;
+ border-radius:10px;
+ cursor:pointer;
+}
+
+/* 🔥 MENU */
+.menuBox{
+ position:fixed;
+ top:60px;
+ right:10px;
+ width:220px;
+ background:#fff;
+ color:#000;
+ border-radius:12px;
+ overflow:hidden;
+ display:none;
+ z-index:9999;
+}
+
+.menuBox div{
+ padding:12px;
+ border-bottom:1px solid #ddd;
+}
+
+.menuBox div:hover{
+ background:#f1f1f1;
+}
+
+/* UI */
 .card{
  background:rgba(30,41,59,0.85);
  margin:10px;
@@ -55,6 +88,7 @@ input,select{
  margin:10px 0;
 }
 
+/* POPUP */
 .overlay{
  position:fixed;
  top:0;left:0;
@@ -67,7 +101,6 @@ input,select{
  z-index:999;
 }
 
-/* POPUP */
 .popup{
  background:#0b1220;
  padding:28px;
@@ -84,7 +117,7 @@ input,select{
  to{transform:scale(1);opacity:1}
 }
 
-/* 🔥 ROUND LOGO */
+/* ROUND LOGO */
 .logo{
  width:90px;
  height:90px;
@@ -156,21 +189,42 @@ input,select{
 
 <body>
 
-<div class="top">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
+<!-- 🔥 TOP -->
+<div class="topbar">
+ <div>𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
+ <div class="menuBtn" onclick="toggleMenu()">☰</div>
+</div>
+
+<!-- 🔥 MENU -->
+<div id="menuBox" class="menuBox">
+ <div onclick="closeMenu()">Home</div>
+ <div onclick="closeMenu()">Contact</div>
+ <div onclick="closeMenu()">Privacy Policy</div>
+ <div onclick="closeMenu()">Refund Policy</div>
+ <div onclick="closeMenu()">Terms & Conditions</div>
+</div>
+
 <div id="main"></div>
 
 <script>
 
+function toggleMenu(){
+ let m=document.getElementById("menuBox");
+ m.style.display = (m.style.display==="block") ? "none" : "block";
+}
+
+function closeMenu(){
+ document.getElementById("menuBox").style.display="none";
+}
+
 let lock=false;
 let shown=false;
 
-// COPY KEY
 function copyKey(t){
  navigator.clipboard.writeText(t);
  alert("KEY COPIED ✔");
 }
 
-// OVERLAY
 function showOverlay(html){
  let old=document.getElementById("overlayBox");
  if(old) old.remove();
@@ -199,7 +253,6 @@ function load(){
    removeOverlay();
   }
 
-  // TRIAL POPUP
   fetch("/trial").then(r=>r.json()).then(t=>{
    if(t.on){
     showOverlay(`
@@ -230,7 +283,6 @@ function load(){
   });
 
   showMain();
-
  });
 }
 
