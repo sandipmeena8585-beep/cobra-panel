@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>COBRA PANEL</title>
 
 <style>
@@ -10,53 +10,33 @@ body{
  font-family:Arial;
  color:#fff;
  text-align:center;
+
+ /* 🔥 OLD BACKGROUND */
  background:url("/cobra.png") no-repeat center center fixed;
  background-size:cover;
 }
 
-/* TOP */
-.topbar{
- display:flex;
- justify-content:space-between;
- align-items:center;
- padding:12px;
+.top{
+ padding:15px;
+ font-size:20px;
  font-weight:bold;
  color:#22c55e;
+ text-shadow:0 0 10px #22c55e;
 }
 
-.menuBtn{
- font-size:22px;
- background:#2563eb;
- padding:8px 14px;
- border-radius:10px;
- cursor:pointer;
-}
-
-/* MENU */
-.menuBox{
- position:fixed;
- top:60px;
- right:10px;
- width:220px;
- background:#fff;
- color:#000;
- border-radius:12px;
- display:none;
- z-index:9999;
-}
-
-.menuBox div{
- padding:12px;
- border-bottom:1px solid #ddd;
- cursor:pointer;
-}
-
-/* CARD */
 .card{
  background:rgba(30,41,59,0.85);
  margin:10px;
  padding:15px;
  border-radius:12px;
+ backdrop-filter:blur(6px);
+}
+
+button{
+ padding:12px;
+ border:none;
+ border-radius:6px;
+ margin:5px;
 }
 
 .buyBtn{background:#22c55e;color:#fff;width:90%}
@@ -65,66 +45,126 @@ input,select{
  padding:10px;
  width:90%;
  margin:8px;
- border-radius:6px;
  border:none;
+ border-radius:6px;
 }
 
-.mono{font-family:monospace}
+.mono{
+ font-family:monospace;
+ display:block;
+ margin:10px 0;
+}
 
-/* POPUP */
 .overlay{
  position:fixed;
- top:0;left:0;width:100%;height:100%;
- display:flex;justify-content:center;align-items:center;
- backdrop-filter:blur(10px);
+ top:0;left:0;
+ width:100%;height:100%;
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ backdrop-filter:blur(12px);
  background:rgba(0,0,0,0.7);
+ z-index:999;
 }
 
+/* POPUP */
 .popup{
  background:#0b1220;
- padding:25px;
- border-radius:15px;
- width:90%;
- max-width:320px;
+ padding:28px;
+ border-radius:20px;
+ width:88%;
+ max-width:340px;
+ text-align:center;
+ box-shadow:0 0 30px #22c55e;
+ animation:pop .3s ease;
 }
 
-/* LOGO */
+@keyframes pop{
+ from{transform:scale(0.8);opacity:0}
+ to{transform:scale(1);opacity:1}
+}
+
+/* 🔥 ROUND LOGO */
 .logo{
  width:90px;
  height:90px;
  border-radius:50%;
  object-fit:cover;
+ margin-bottom:10px;
+ box-shadow:0 0 15px #22c55e;
+}
+
+.line{
+ height:2px;
+ background:#22c55e;
+ margin:12px 0;
+ position:relative;
+}
+.line::after{
+ content:"";
+ width:8px;height:8px;
+ background:#22c55e;
+ border-radius:50%;
+ position:absolute;
+ left:50%;
+ top:-3px;
+ transform:translateX(-50%);
+}
+
+.bigBtn{
+ width:100%;
+ padding:14px;
+ border:none;
+ border-radius:12px;
+ background:#0088cc;
+ color:#fff;
+ font-size:16px;
+ margin-top:15px;
+}
+
+.loader{
+ border:4px solid #111;
+ border-top:4px solid #22c55e;
+ border-radius:50%;
+ width:40px;height:40px;
+ margin:10px auto;
+ animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+ to{transform:rotate(360deg)}
+}
+
+.btnRow{
+ display:flex;
+ justify-content:space-between;
+}
+
+.joinBtn{
+ background:#0088cc;
+ color:#fff;
+ width:48%;
+}
+
+.noBtn{
+ background:#111;
+ color:#fff;
+ width:48%;
 }
 </style>
 </head>
 
 <body>
 
-<!-- TOP -->
-<div class="topbar">
- <div>𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗘𝗟</div>
- <div class="menuBtn" onclick="toggleMenu()">☰</div>
-</div>
-
-<!-- MENU -->
-<div id="menuBox" class="menuBox">
- <div onclick="location.href='/'">Home</div>
- <div onclick="location.href='/contact.html'">Contact</div>
- <div onclick="location.href='/refund.html'">Refund Policy</div>
- <div onclick="location.href='/terms.html'">Terms & Conditions</div>
-</div>
-
+<div class="top">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
 <div id="main"></div>
 
 <script>
 
-// MENU
-function toggleMenu(){
- let m=document.getElementById("menuBox");
- m.style.display = (m.style.display==="block") ? "none" : "block";
-}
+let lock=false;
+let shown=false;
 
-// COPY
+// COPY KEY
 function copyKey(t){
  navigator.clipboard.writeText(t);
  alert("KEY COPIED ✔");
@@ -134,11 +174,18 @@ function copyKey(t){
 function showOverlay(html){
  let old=document.getElementById("overlayBox");
  if(old) old.remove();
+
  let div=document.createElement("div");
  div.id="overlayBox";
  div.className="overlay";
  div.innerHTML=html;
+
  document.body.appendChild(div);
+}
+
+function removeOverlay(){
+ let o=document.getElementById("overlayBox");
+ if(o) o.remove();
 }
 
 // LOAD
@@ -148,25 +195,45 @@ function load(){
   if(!d.on){
    showOverlay(`<div class="popup"><h3>⚠️ PLEASE WAIT</h3><p>ADMIN UPDATE</p></div>`);
    return;
+  }else{
+   removeOverlay();
   }
 
+  // TRIAL POPUP
   fetch("/trial").then(r=>r.json()).then(t=>{
    if(t.on){
     showOverlay(`
      <div class="popup">
+
       <img src="/cobra-logo.png" class="logo">
-      <h3>${t.title}</h3>
-      <span class="mono" onclick="copyKey('${t.key}')">KEY - ${t.key}</span>
+
+      <h2>${t.title}</h2>
+
+      <div class="line"></div>
+
+      <span class="mono"
+       style="cursor:pointer;background:#000;padding:10px;border-radius:8px"
+       onclick="copyKey('${t.key}')">
+       KEY - ${t.key}
+      </span>
+
       <span class="mono">${t.kill}</span>
-      <button onclick="window.open('${t.telegram}')">JOIN TELEGRAM</button>
+
+      <button class="bigBtn"
+       onclick="window.open('${t.telegram}','_blank')">
+       🚀 JOIN TELEGRAM
+      </button>
+
      </div>
     `);
    }
   });
 
   showMain();
+
  });
 }
+
 load();
 
 // MAIN
@@ -174,6 +241,7 @@ function showMain(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
   main.innerHTML=`
   <div class="card">
+
    <h3>Select Game</h3>
    <select><option>BGMI</option></select>
 
@@ -183,6 +251,7 @@ function showMain(){
    </select>
 
    <button class="buyBtn" onclick="goBuy()">BUY KEY</button>
+
   </div>`;
  });
 }
@@ -197,28 +266,51 @@ function buy(plan,price){
  fetch("/settings").then(r=>r.json()).then(s=>{
   main.innerHTML=`
   <div class="card">
-   <h2>VERIFY PAYMENT</h2>
+
+   <h2>𝗩𝗘𝗥𝗜𝗙𝗬 𝗣𝗔𝗬𝗠𝗘𝗡𝗧 ✅</h2>
+
    <p>Pay ₹${price}</p>
+
    <span class="mono">${s.upi}</span>
+
    <img src="${s.qr}" width="200">
-   <input id="utr" placeholder="ENTER UTR">
+
+   <input id="utr" placeholder="ENTER UTR (12 digit)">
+
    <button onclick="verify('${plan}','${price}')">VERIFY</button>
+
   </div>`;
  });
 }
 
 // VERIFY
 function verify(plan,price){
+
+ if(lock) return;
+ lock=true;
+
  let u=utr.value;
 
- showOverlay(`<div class="popup"><p>Processing...</p></div>`);
+ if(!u || u.length!=12){
+  lock=false;
+  return alert("Invalid UTR");
+ }
+
+ showOverlay(`
+ <div class="popup">
+  <div class="loader"></div>
+  <p>Please wait admin verify</p>
+ </div>
+ `);
 
  fetch("/buy",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify({
    user:"USER_"+Date.now(),
-   plan,price,utr:u
+   plan:plan,
+   price:price,
+   utr:u
   })
  });
 
@@ -227,14 +319,26 @@ function verify(plan,price){
 
 // CHECK
 function check(u,plan){
+
  let t=setInterval(()=>{
  fetch("/history").then(r=>r.json()).then(h=>{
+
   let f=h.find(x=>x.utr===u && x.plan===plan);
-  if(f){
+
+  if(f && !shown){
+   shown=true;
    clearInterval(t);
-   if(f.status==="approved") success(f.key);
-   if(f.status==="rejected") reject();
+
+   if(f.status==="approved"){
+    success(f.key);
+   }
+
+   if(f.status==="rejected"){
+    reject();
+   }
+
   }
+
  });
  },2000);
 }
@@ -243,9 +347,17 @@ function check(u,plan){
 function success(key){
  showOverlay(`
  <div class="popup">
-  <h3>SUCCESS</h3>
+
+  <h3>COBRA SERVER 🎉</h3>
+
   <span class="mono">${key}</span>
-  <button onclick="location.reload()">OK</button>
+  <span class="mono">Kill limit 10-12</span>
+
+  <div class="btnRow">
+   <button class="joinBtn" onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">JOIN</button>
+   <button class="noBtn" onclick="location.reload()">OK</button>
+  </div>
+
  </div>
  `);
 }
@@ -254,7 +366,7 @@ function success(key){
 function reject(){
  showOverlay(`
  <div class="popup">
-  <h3>PAYMENT REJECTED</h3>
+  <h3>❌ PAYMENT REJECTED</h3>
   <button onclick="location.reload()">OK</button>
  </div>
  `);
