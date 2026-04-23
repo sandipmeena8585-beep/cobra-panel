@@ -111,7 +111,70 @@ if(reqInt){clearInterval(reqInt);reqInt=null;}
 // HOME
 function home(){
 stopReq();
-main.innerHTML="<h2>LIVE CONTROL RUNNING</h2>";
+
+Promise.all([
+fetch("/history").then(r=>r.json()),
+fetch("/stock").then(r=>r.json()),
+fetch("/requests").then(r=>r.json()),
+fetch("/status").then(r=>r.json())
+]).then(([h,stock,req,st])=>{
+
+let totalSales=h.length;
+let approved=h.filter(x=>x.status==="approved").length;
+let revenue=h.reduce((a,b)=>a+Number(b.price||0),0);
+
+let stockCount=0;
+Object.values(stock).forEach(arr=>stockCount+=arr.length);
+
+main.innerHTML=`
+
+<div class="card">
+<h2>📊 ADMIN DASHBOARD</h2>
+</div>
+
+<div class="card">
+<b>Total Sales:</b> ${totalSales}<br>
+<b>Approved:</b> ${approved}
+</div>
+
+<div class="card">
+<b>Stock:</b> ${stockCount}<br>
+<b>Requests:</b> ${req.length}
+</div>
+
+<div class="card">
+<b>System:</b> ${st.on ? "🟢 ON" : "🔴 OFF"}
+</div>
+
+<div class="card">
+<b>Today Revenue:</b> ₹${revenue}
+</div>
+
+<div class="card">
+<h3>⚡ QUICK ACTION</h3>
+<button class="green" onclick="plansUI()">Plans</button>
+<button class="blue" onclick="stockUI()">Stock</button>
+<button class="red" onclick="reqUI()">Requests</button>
+</div>
+
+<div class="card">
+<h3>📦 STOCK SUMMARY</h3>
+${
+Object.keys(stock).map(p=>`${p} : ${stock[p].length}`).join("<br>")
+}
+</div>
+
+<div class="card">
+<h3>🔥 LIVE ACTIVITY</h3>
+${
+h.slice(0,5).map(x=>`${x.user} → ${x.plan}`).join("<br>")
+}
+</div>
+
+`;
+
+});
+
 closeMenu();
 }
 
