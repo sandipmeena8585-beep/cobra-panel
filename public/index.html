@@ -10,7 +10,9 @@ body{
  font-family:Arial;
  color:#fff;
  text-align:center;
- background:url("/cobra-logo.png") no-repeat center center fixed;
+
+ /* 🔥 OLD BACKGROUND */
+ background:url("/cobra.png") no-repeat center center fixed;
  background-size:cover;
 }
 
@@ -65,7 +67,7 @@ input,select{
  z-index:999;
 }
 
-/* PREMIUM POPUP */
+/* POPUP */
 .popup{
  background:#0b1220;
  padding:28px;
@@ -74,7 +76,6 @@ input,select{
  max-width:340px;
  text-align:center;
  box-shadow:0 0 30px #22c55e;
- position:relative;
  animation:pop .3s ease;
 }
 
@@ -83,18 +84,14 @@ input,select{
  to{transform:scale(1);opacity:1}
 }
 
-.closeBtn{
- position:absolute;
- top:10px;
- right:12px;
- font-size:20px;
- cursor:pointer;
- opacity:.6;
-}
-
+/* 🔥 ROUND LOGO */
 .logo{
  width:90px;
+ height:90px;
+ border-radius:50%;
+ object-fit:cover;
  margin-bottom:10px;
+ box-shadow:0 0 15px #22c55e;
 }
 
 .line{
@@ -207,8 +204,6 @@ function load(){
    if(t.on){
     showOverlay(`
      <div class="popup">
-
-      <div class="closeBtn" onclick="location.reload()">✖</div>
 
       <img src="/cobra-logo.png" class="logo">
 
