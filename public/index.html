@@ -10,7 +10,6 @@ body{
  font-family:Arial;
  color:#fff;
  text-align:center;
-
  background:url("cobra.png") no-repeat center center fixed;
  background-size:cover;
 }
@@ -48,7 +47,11 @@ input,select{
  border-radius:6px;
 }
 
-.mono{font-family:monospace;display:block;margin:8px 0}
+.mono{
+ font-family:monospace;
+ display:block;
+ margin:10px 0;
+}
 
 .overlay{
  position:fixed;
@@ -57,22 +60,69 @@ input,select{
  display:flex;
  justify-content:center;
  align-items:center;
- backdrop-filter:blur(10px);
+ backdrop-filter:blur(12px);
  background:rgba(0,0,0,0.7);
  z-index:999;
 }
 
-/* 🔥 UPDATED POPUP */
+/* 🔥 PREMIUM POPUP */
 .popup{
- background:#020617;
- padding:25px;
- border-radius:18px;
-
- width:92%;
- max-width:420px;
-
+ background:#0b1220;
+ padding:28px;
+ border-radius:20px;
+ width:88%;
+ max-width:340px;
  text-align:center;
- box-shadow:0 0 25px #22c55e;
+ box-shadow:0 0 30px #22c55e;
+ position:relative;
+ animation:pop .3s ease;
+}
+
+@keyframes pop{
+ from{transform:scale(0.8);opacity:0}
+ to{transform:scale(1);opacity:1}
+}
+
+.closeBtn{
+ position:absolute;
+ top:10px;
+ right:12px;
+ font-size:20px;
+ cursor:pointer;
+ opacity:.6;
+}
+
+.logo{
+ width:90px;
+ margin-bottom:10px;
+}
+
+.line{
+ height:2px;
+ background:#22c55e;
+ margin:12px 0;
+ position:relative;
+}
+.line::after{
+ content:"";
+ width:8px;height:8px;
+ background:#22c55e;
+ border-radius:50%;
+ position:absolute;
+ left:50%;
+ top:-3px;
+ transform:translateX(-50%);
+}
+
+.bigBtn{
+ width:100%;
+ padding:14px;
+ border:none;
+ border-radius:12px;
+ background:#0088cc;
+ color:#fff;
+ font-size:16px;
+ margin-top:15px;
 }
 
 .loader{
@@ -109,9 +159,7 @@ input,select{
 
 <body>
 
-<!-- 🔥 TITLE -->
 <div class="top">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
-
 <div id="main"></div>
 
 <script>
@@ -119,13 +167,13 @@ input,select{
 let lock=false;
 let shown=false;
 
-// ===== COPY KEY =====
+// COPY KEY
 function copyKey(t){
  navigator.clipboard.writeText(t);
  alert("KEY COPIED ✔");
 }
 
-// ===== OVERLAY =====
+// OVERLAY
 function showOverlay(html){
  let old=document.getElementById("overlayBox");
  if(old) old.remove();
@@ -143,42 +191,42 @@ function removeOverlay(){
  if(o) o.remove();
 }
 
-// ===== LOAD =====
+// LOAD
 function load(){
  fetch("/status").then(r=>r.json()).then(d=>{
 
   if(!d.on){
-   showOverlay(`
-    <div class="popup">
-     <h3>⚠️ PLEASE WAIT</h3>
-     <p>ADMIN UPDATE</p>
-    </div>
-   `);
+   showOverlay(`<div class="popup"><h3>⚠️ PLEASE WAIT</h3><p>ADMIN UPDATE</p></div>`);
    return;
   }else{
    removeOverlay();
   }
 
-  // 🔥 TRIAL POPUP FIXED
+  // 🔥 TRIAL POPUP
   fetch("/trial").then(r=>r.json()).then(t=>{
    if(t.on){
     showOverlay(`
      <div class="popup">
 
-      <h3>${t.title}</h3>
+      <div class="closeBtn" onclick="location.reload()">✖</div>
+
+      <img src="cobra.png" class="logo">
+
+      <h2>${t.title}</h2>
+
+      <div class="line"></div>
 
       <span class="mono"
-        style="font-size:16px;cursor:pointer;background:#000;padding:10px;border-radius:8px"
-        onclick="copyKey('${t.key}')">
+       style="cursor:pointer;background:#000;padding:10px;border-radius:8px"
+       onclick="copyKey('${t.key}')">
        KEY - ${t.key}
       </span>
 
       <span class="mono">${t.kill}</span>
 
-      <br>
-
-      <button onclick="window.open('${t.telegram}','_blank')">
-       JOIN TELEGRAM
+      <button class="bigBtn"
+       onclick="window.open('${t.telegram}','_blank')">
+       🚀 JOIN TELEGRAM
       </button>
 
      </div>
@@ -193,7 +241,7 @@ function load(){
 
 load();
 
-// ===== MAIN =====
+// MAIN
 function showMain(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
   main.innerHTML=`
@@ -213,14 +261,13 @@ function showMain(){
  });
 }
 
-// ===== BUY =====
+// BUY
 function goBuy(){
  let v=planSel.value.split("|");
  buy(v[0],v[1]);
 }
 
 function buy(plan,price){
-
  fetch("/settings").then(r=>r.json()).then(s=>{
   main.innerHTML=`
   <div class="card">
@@ -241,7 +288,7 @@ function buy(plan,price){
  });
 }
 
-// ===== VERIFY =====
+// VERIFY
 function verify(plan,price){
 
  if(lock) return;
@@ -275,7 +322,7 @@ function verify(plan,price){
  check(u,plan);
 }
 
-// ===== CHECK =====
+// CHECK
 function check(u,plan){
 
  let t=setInterval(()=>{
@@ -301,7 +348,7 @@ function check(u,plan){
  },2000);
 }
 
-// ===== SUCCESS =====
+// SUCCESS
 function success(key){
  showOverlay(`
  <div class="popup">
@@ -320,7 +367,7 @@ function success(key){
  `);
 }
 
-// ===== REJECT =====
+// REJECT
 function reject(){
  showOverlay(`
  <div class="popup">
