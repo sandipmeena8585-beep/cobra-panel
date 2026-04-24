@@ -7,23 +7,61 @@
 <style>
 body{
  margin:0;
+ padding-top:55px; /* 🔥 topbar space */
  font-family:Arial;
  color:#fff;
  text-align:center;
-
- /* 🔥 OLD BACKGROUND */
  background:url("/cobra.png") no-repeat center center fixed;
  background-size:cover;
 }
 
-.top{
- padding:15px;
- font-size:20px;
+/* 🔥 NEW TOP BAR (same text, just with menu) */
+.topbar{
+ position:fixed;
+ top:0; left:0; width:100%;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ padding:12px;
+ font-size:18px;
  font-weight:bold;
  color:#22c55e;
  text-shadow:0 0 10px #22c55e;
+ background:rgba(0,0,0,0.6);
+ z-index:10000;
 }
 
+/* 🔥 SMALL MENU ICON */
+.menuBtn{
+ font-size:14px;
+ cursor:pointer;
+ padding:4px 8px;
+ background:#111;
+ border-radius:5px;
+}
+
+/* 🔥 MENU BOX */
+.menuBox{
+ position:fixed;
+ top:55px;
+ right:10px;
+ width:150px;
+ background:#fff;
+ color:#000;
+ border-radius:8px;
+ display:none;
+ z-index:10001;
+ overflow:hidden;
+}
+.menuBox div{
+ padding:8px;
+ font-size:13px;
+ border-bottom:1px solid #eee;
+ cursor:pointer;
+}
+.menuBox div:hover{background:#f1f1f1}
+
+/* ====== TERA ORIGINAL CSS SAME ====== */
 .card{
  background:rgba(30,41,59,0.85);
  margin:10px;
@@ -67,7 +105,6 @@ input,select{
  z-index:999;
 }
 
-/* POPUP */
 .popup{
  background:#0b1220;
  padding:28px;
@@ -84,7 +121,6 @@ input,select{
  to{transform:scale(1);opacity:1}
 }
 
-/* 🔥 ROUND LOGO */
 .logo{
  width:90px;
  height:90px;
@@ -156,21 +192,41 @@ input,select{
 
 <body>
 
-<div class="top">𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
+<!-- 🔥 UPDATED TOP -->
+<div class="topbar">
+ <div>𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
+ <div class="menuBtn" onclick="toggleMenu()">☰</div>
+</div>
+
+<!-- 🔥 MENU -->
+<div id="menuBox" class="menuBox">
+ <div onclick="go('/contact.html')">Connect</div>
+ <div onclick="go('/terms.html')">Terms</div>
+ <div onclick="go('/refund.html')">Refund</div>
+ <div onclick="go('/privacy.html')">Privacy</div>
+</div>
+
 <div id="main"></div>
 
 <script>
 
+/* 🔥 MENU JS */
+function toggleMenu(){
+ let m=document.getElementById("menuBox");
+ m.style.display = (m.style.display==="block") ? "none" : "block";
+}
+function go(u){ location.href=u; }
+
+/* ===== TERA ORIGINAL JS SAME ===== */
+
 let lock=false;
 let shown=false;
 
-// COPY KEY
 function copyKey(t){
  navigator.clipboard.writeText(t);
  alert("KEY COPIED ✔");
 }
 
-// OVERLAY
 function showOverlay(html){
  let old=document.getElementById("overlayBox");
  if(old) old.remove();
@@ -188,7 +244,6 @@ function removeOverlay(){
  if(o) o.remove();
 }
 
-// LOAD
 function load(){
  fetch("/status").then(r=>r.json()).then(d=>{
 
@@ -199,31 +254,18 @@ function load(){
    removeOverlay();
   }
 
-  // TRIAL POPUP
   fetch("/trial").then(r=>r.json()).then(t=>{
    if(t.on){
     showOverlay(`
      <div class="popup">
-
       <img src="/cobra-logo.png" class="logo">
-
       <h2>${t.title}</h2>
-
       <div class="line"></div>
-
-      <span class="mono"
-       style="cursor:pointer;background:#000;padding:10px;border-radius:8px"
-       onclick="copyKey('${t.key}')">
-       KEY - ${t.key}
-      </span>
-
+      <span class="mono" onclick="copyKey('${t.key}')">KEY - ${t.key}</span>
       <span class="mono">${t.kill}</span>
-
-      <button class="bigBtn"
-       onclick="window.open('${t.telegram}','_blank')">
+      <button class="bigBtn" onclick="window.open('${t.telegram}','_blank')">
        🚀 JOIN TELEGRAM
       </button>
-
      </div>
     `);
    }
@@ -236,27 +278,21 @@ function load(){
 
 load();
 
-// MAIN
 function showMain(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
   main.innerHTML=`
   <div class="card">
-
    <h3>Select Game</h3>
    <select><option>BGMI</option></select>
-
    <h3>Select Plan</h3>
    <select id="planSel">
     ${plans.map(p=>`<option value="${p.time}|${p.price}">${p.time} - ₹${p.price}</option>`)}
    </select>
-
    <button class="buyBtn" onclick="goBuy()">BUY KEY</button>
-
   </div>`;
  });
 }
 
-// BUY
 function goBuy(){
  let v=planSel.value.split("|");
  buy(v[0],v[1]);
@@ -266,24 +302,16 @@ function buy(plan,price){
  fetch("/settings").then(r=>r.json()).then(s=>{
   main.innerHTML=`
   <div class="card">
-
    <h2>𝗩𝗘𝗥𝗜𝗙𝗬 𝗣𝗔𝗬𝗠𝗘𝗡𝗧 ✅</h2>
-
    <p>Pay ₹${price}</p>
-
    <span class="mono">${s.upi}</span>
-
    <img src="${s.qr}" width="200">
-
    <input id="utr" placeholder="ENTER UTR (12 digit)">
-
    <button onclick="verify('${plan}','${price}')">VERIFY</button>
-
   </div>`;
  });
 }
 
-// VERIFY
 function verify(plan,price){
 
  if(lock) return;
@@ -296,12 +324,7 @@ function verify(plan,price){
   return alert("Invalid UTR");
  }
 
- showOverlay(`
- <div class="popup">
-  <div class="loader"></div>
-  <p>Please wait admin verify</p>
- </div>
- `);
+ showOverlay(`<div class="popup"><div class="loader"></div><p>Please wait admin verify</p></div>`);
 
  fetch("/buy",{
   method:"POST",
@@ -317,7 +340,6 @@ function verify(plan,price){
  check(u,plan);
 }
 
-// CHECK
 function check(u,plan){
 
  let t=setInterval(()=>{
@@ -329,40 +351,28 @@ function check(u,plan){
    shown=true;
    clearInterval(t);
 
-   if(f.status==="approved"){
-    success(f.key);
-   }
-
-   if(f.status==="rejected"){
-    reject();
-   }
-
+   if(f.status==="approved") success(f.key);
+   if(f.status==="rejected") reject();
   }
 
  });
  },2000);
 }
 
-// SUCCESS
 function success(key){
  showOverlay(`
  <div class="popup">
-
   <h3>COBRA SERVER 🎉</h3>
-
   <span class="mono">${key}</span>
   <span class="mono">Kill limit 10-12</span>
-
   <div class="btnRow">
    <button class="joinBtn" onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">JOIN</button>
    <button class="noBtn" onclick="location.reload()">OK</button>
   </div>
-
  </div>
  `);
 }
 
-// REJECT
 function reject(){
  showOverlay(`
  <div class="popup">
