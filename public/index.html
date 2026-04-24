@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-<title>COBRA PANEL</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cobra Digital Services</title>
 
 <style>
 body{
@@ -11,11 +11,10 @@ body{
  font-family:Arial;
  color:#fff;
  text-align:center;
- background:url("/cobra.png") no-repeat center center fixed;
- background-size:cover;
+ background:#0f172a;
 }
 
-/* 🔥 TOP BAR */
+/* TOP */
 .topbar{
  position:fixed;
  top:0; left:0; width:100%;
@@ -23,78 +22,59 @@ body{
  justify-content:space-between;
  align-items:center;
  padding:12px;
- font-size:18px;
  font-weight:bold;
+ background:#020617;
  color:#22c55e;
- text-shadow:0 0 10px #22c55e;
- background:rgba(0,0,0,0.6);
- z-index:10000;
 }
 
-/* 🔥 MENU BTN (UPGRADED) */
+/* MENU */
 .menuBtn{
- font-size:15px;
- cursor:pointer;
+ font-size:14px;
  padding:6px 10px;
- background:linear-gradient(135deg,#2563eb,#1d4ed8);
- border-radius:8px;
- box-shadow:0 0 8px rgba(37,99,235,0.6);
- transition:.2s;
+ background:#2563eb;
+ border-radius:6px;
+ cursor:pointer;
 }
-.menuBtn:active{ transform:scale(0.9); }
-
-/* 🔥 MENU BOX (UPGRADED) */
 .menuBox{
  position:fixed;
- top:60px;
- right:12px;
- width:180px;
- background:rgba(255,255,255,0.95);
+ top:55px;
+ right:10px;
+ width:170px;
+ background:#fff;
  color:#000;
- border-radius:12px;
+ border-radius:10px;
  display:none;
- z-index:10001;
- overflow:hidden;
- box-shadow:0 10px 25px rgba(0,0,0,0.4);
- animation:menuFade .2s ease;
 }
-
 .menuBox div{
- padding:11px;
- font-size:14px;
+ padding:10px;
  border-bottom:1px solid #eee;
  cursor:pointer;
- transition:.2s;
 }
-.menuBox div:last-child{border-bottom:none;}
-
 .menuBox div:hover{
  background:#2563eb;
  color:#fff;
 }
 
-@keyframes menuFade{
- from{opacity:0; transform:translateY(-10px)}
- to{opacity:1; transform:translateY(0)}
-}
-
-/* ====== TERA ORIGINAL CSS ====== */
+/* CARD */
 .card{
- background:rgba(30,41,59,0.85);
+ background:#1e293b;
  margin:10px;
  padding:15px;
  border-radius:12px;
- backdrop-filter:blur(6px);
 }
 
 button{
  padding:12px;
  border:none;
  border-radius:6px;
- margin:5px;
+ margin-top:10px;
 }
 
-.buyBtn{background:#22c55e;color:#fff;width:90%}
+.buyBtn{
+ background:#22c55e;
+ color:#fff;
+ width:90%;
+}
 
 input,select{
  padding:10px;
@@ -104,104 +84,29 @@ input,select{
  border-radius:6px;
 }
 
-.mono{
- font-family:monospace;
- display:block;
- margin:10px 0;
+/* FOOTER */
+.footer{
+ margin-top:20px;
+ font-size:13px;
+ color:#aaa;
 }
-
-.overlay{
- position:fixed;
- top:0;left:0;
- width:100%;height:100%;
- display:flex;
- justify-content:center;
- align-items:center;
- backdrop-filter:blur(12px);
- background:rgba(0,0,0,0.7);
- z-index:999;
+.footer a{
+ color:#22c55e;
+ margin:0 5px;
+ text-decoration:none;
 }
-
-.popup{
- background:#0b1220;
- padding:28px;
- border-radius:20px;
- width:88%;
- max-width:340px;
- text-align:center;
- box-shadow:0 0 30px #22c55e;
- animation:pop .3s ease;
-}
-
-@keyframes pop{
- from{transform:scale(0.8);opacity:0}
- to{transform:scale(1);opacity:1}
-}
-
-.logo{
- width:90px;
- height:90px;
- border-radius:50%;
- object-fit:cover;
- margin-bottom:10px;
- box-shadow:0 0 15px #22c55e;
-}
-
-.line{
- height:2px;
- background:#22c55e;
- margin:12px 0;
- position:relative;
-}
-.line::after{
- content:"";
- width:8px;height:8px;
- background:#22c55e;
- border-radius:50%;
- position:absolute;
- left:50%;
- top:-3px;
- transform:translateX(-50%);
-}
-
-.bigBtn{
- width:100%;
- padding:14px;
- border:none;
- border-radius:12px;
- background:#0088cc;
- color:#fff;
- font-size:16px;
- margin-top:15px;
-}
-
-.loader{
- border:4px solid #111;
- border-top:4px solid #22c55e;
- border-radius:50%;
- width:40px;height:40px;
- margin:10px auto;
- animation:spin 1s linear infinite;
-}
-
-@keyframes spin{ to{transform:rotate(360deg)} }
-
-.btnRow{ display:flex; justify-content:space-between; }
-
-.joinBtn{ background:#0088cc; color:#fff; width:48%; }
-.noBtn{ background:#111; color:#fff; width:48%; }
 </style>
 </head>
 
 <body>
 
-<!-- 🔥 TOP -->
+<!-- TOP -->
 <div class="topbar">
- <div>𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
+ <div>COBRA DIGITAL SERVICES</div>
  <div class="menuBtn" onclick="toggleMenu()">☰</div>
 </div>
 
-<!-- 🔥 MENU -->
+<!-- MENU -->
 <div id="menuBox" class="menuBox">
  <div onclick="go('/contact.html')">Connect</div>
  <div onclick="go('/terms.html')">Terms</div>
@@ -211,6 +116,14 @@ input,select{
 
 <div id="main"></div>
 
+<!-- FOOTER -->
+<div class="footer">
+ <a href="/contact.html">Contact</a> |
+ <a href="/terms.html">Terms</a> |
+ <a href="/refund.html">Refund</a> |
+ <a href="/privacy.html">Privacy</a>
+</div>
+
 <script>
 
 /* MENU */
@@ -218,93 +131,44 @@ function toggleMenu(){
  let m=document.getElementById("menuBox");
  m.style.display = (m.style.display==="block") ? "none" : "block";
 }
-
-/* CLICK OUTSIDE CLOSE */
-document.addEventListener("click",(e)=>{
- let menu=document.getElementById("menuBox");
- let btn=document.querySelector(".menuBtn");
-
- if(menu.style.display==="block" && !menu.contains(e.target) && !btn.contains(e.target)){
-  menu.style.display="none";
- }
-});
-
 function go(u){ location.href=u; }
 
-/* ===== ORIGINAL JS ===== */
-
-let lock=false;
-let shown=false;
-
-function copyKey(t){
- navigator.clipboard.writeText(t);
- alert("KEY COPIED ✔");
-}
-
-function showOverlay(html){
- let old=document.getElementById("overlayBox");
- if(old) old.remove();
-
- let div=document.createElement("div");
- div.id="overlayBox";
- div.className="overlay";
- div.innerHTML=html;
- document.body.appendChild(div);
-}
-
-function removeOverlay(){
- let o=document.getElementById("overlayBox");
- if(o) o.remove();
-}
-
+/* LOAD */
 function load(){
  fetch("/status").then(r=>r.json()).then(d=>{
-
   if(!d.on){
-   showOverlay(`<div class="popup"><h3>⚠️ PLEASE WAIT</h3><p>ADMIN UPDATE</p></div>`);
+   main.innerHTML="<h3>Service temporarily unavailable</h3>";
    return;
-  }else{
-   removeOverlay();
   }
-
-  fetch("/trial").then(r=>r.json()).then(t=>{
-   if(t.on){
-    showOverlay(`
-     <div class="popup">
-      <img src="/cobra-logo.png" class="logo">
-      <h2>${t.title}</h2>
-      <div class="line"></div>
-      <span class="mono" onclick="copyKey('${t.key}')">KEY - ${t.key}</span>
-      <span class="mono">${t.kill}</span>
-      <button class="bigBtn" onclick="window.open('${t.telegram}','_blank')">
-       🚀 JOIN TELEGRAM
-      </button>
-     </div>
-    `);
-   }
-  });
-
   showMain();
  });
 }
-
 load();
 
+/* MAIN */
 function showMain(){
  fetch("/plans").then(r=>r.json()).then(plans=>{
   main.innerHTML=`
   <div class="card">
-   <h3>Select Game</h3>
-   <select><option>BGMI</option></select>
+
+   <h2>Premium Digital Subscription</h2>
+
+   <p>Access our secure online services and tools with subscription plans.</p>
+
    <h3>Select Plan</h3>
    <select id="planSel">
-    ${plans.map(p=>`<option value="${p.time}|${p.price}">${p.time} - ₹${p.price}</option>`)}
+    ${plans.map(p=>`<option value="${p.time}|${p.price}">
+     ${p.time} - ₹${p.price}
+    </option>`)}
    </select>
-   <button class="buyBtn" onclick="goBuy()">BUY KEY</button>
+
+   <button class="buyBtn" onclick="goBuy()">Purchase Subscription</button>
+
   </div>`;
  });
 }
 
+/* BUY */
 function goBuy(){
  let v=planSel.value.split("|");
  buy(v[0],v[1]);
@@ -314,82 +178,36 @@ function buy(plan,price){
  fetch("/settings").then(r=>r.json()).then(s=>{
   main.innerHTML=`
   <div class="card">
-   <h2>𝗩𝗘𝗥𝗜𝗙𝗬 𝗣𝗔𝗬𝗠𝗘𝗡𝗧 ✅</h2>
-   <p>Pay ₹${price}</p>
-   <span class="mono">${s.upi}</span>
+
+   <h2>Complete Payment</h2>
+
+   <p>Amount: ₹${price}</p>
+
+   <p>${s.upi}</p>
+
    <img src="${s.qr}" width="200">
-   <input id="utr" placeholder="ENTER UTR (12 digit)">
-   <button onclick="verify('${plan}','${price}')">VERIFY</button>
+
+   <input id="utr" placeholder="Enter UTR Number">
+
+   <button onclick="verify('${plan}','${price}')">Submit</button>
+
   </div>`;
  });
 }
 
+/* VERIFY */
 function verify(plan,price){
- if(lock) return;
- lock=true;
-
  let u=utr.value;
-
- if(!u || u.length!=12){
-  lock=false;
-  return alert("Invalid UTR");
- }
-
- showOverlay(`<div class="popup"><div class="loader"></div><p>Please wait admin verify</p></div>`);
-
  fetch("/buy",{
   method:"POST",
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify({
    user:"USER_"+Date.now(),
-   plan:plan,
-   price:price,
-   utr:u
+   plan,price,utr:u
   })
  });
-
- check(u,plan);
+ alert("Payment submitted. Wait for confirmation.");
 }
-
-function check(u,plan){
- let t=setInterval(()=>{
- fetch("/history").then(r=>r.json()).then(h=>{
-  let f=h.find(x=>x.utr===u && x.plan===plan);
-
-  if(f && !shown){
-   shown=true;
-   clearInterval(t);
-
-   if(f.status==="approved") success(f.key);
-   if(f.status==="rejected") reject();
-  }
- });
- },2000);
-}
-
-function success(key){
- showOverlay(`
- <div class="popup">
-  <h3>COBRA SERVER 🎉</h3>
-  <span class="mono">${key}</span>
-  <span class="mono">Kill limit 10-12</span>
-  <div class="btnRow">
-   <button class="joinBtn" onclick="window.open('https://t.me/+wRZN39fdVcRkYTM9')">JOIN</button>
-   <button class="noBtn" onclick="location.reload()">OK</button>
-  </div>
- </div>
- `);
-}
-
-function reject(){
- showOverlay(`
- <div class="popup">
-  <h3>❌ PAYMENT REJECTED</h3>
-  <button onclick="location.reload()">OK</button>
- </div>
- `);
-}
-
 </script>
 
 </body>
