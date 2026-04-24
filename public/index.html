@@ -39,14 +39,14 @@ body{
  position:fixed;
  top:55px;
  right:10px;
- width:170px;
+ width:180px;
  background:#fff;
  color:#000;
  border-radius:10px;
  display:none;
 }
 .menuBox div{
- padding:10px;
+ padding:12px;
  border-bottom:1px solid #eee;
  cursor:pointer;
 }
@@ -58,8 +58,8 @@ body{
 /* CARD */
 .card{
  background:#1e293b;
- margin:10px;
- padding:15px;
+ margin:12px;
+ padding:18px;
  border-radius:12px;
 }
 
@@ -74,6 +74,14 @@ button{
  background:#22c55e;
  color:#fff;
  width:90%;
+ font-weight:bold;
+}
+
+/* TRUST TEXT */
+.trust{
+ font-size:12px;
+ color:#22c55e;
+ margin-top:8px;
 }
 
 input,select{
@@ -86,9 +94,10 @@ input,select{
 
 /* FOOTER */
 .footer{
- margin-top:20px;
+ margin-top:30px;
  font-size:13px;
  color:#aaa;
+ padding:15px;
 }
 .footer a{
  color:#22c55e;
@@ -108,7 +117,7 @@ input,select{
 
 <!-- MENU -->
 <div id="menuBox" class="menuBox">
- <div onclick="go('/contact.html')">Connect</div>
+ <div onclick="go('/contact.html')">Contact</div>
  <div onclick="go('/terms.html')">Terms</div>
  <div onclick="go('/refund.html')">Refund</div>
  <div onclick="go('/privacy.html')">Privacy</div>
@@ -118,10 +127,17 @@ input,select{
 
 <!-- FOOTER -->
 <div class="footer">
+ <div>Cobra Digital Services</div>
+ <p>We provide digital subscription-based services for users.</p>
+ <p>Contact: cobrasupport@gmail.com</p>
+ <p>Telegram: @yourbot</p>
+
  <a href="/contact.html">Contact</a> |
  <a href="/terms.html">Terms</a> |
  <a href="/refund.html">Refund</a> |
  <a href="/privacy.html">Privacy</a>
+
+ <p style="margin-top:10px;">© 2026 All Rights Reserved</p>
 </div>
 
 <script>
@@ -151,9 +167,9 @@ function showMain(){
   main.innerHTML=`
   <div class="card">
 
-   <h2>Premium Digital Subscription</h2>
+   <h2>Premium Digital Subscription Services</h2>
 
-   <p>Access our secure online services and tools with subscription plans.</p>
+   <p>We provide secure access to premium digital tools and services through subscription plans.</p>
 
    <h3>Select Plan</h3>
    <select id="planSel">
@@ -163,6 +179,10 @@ function showMain(){
    </select>
 
    <button class="buyBtn" onclick="goBuy()">Purchase Subscription</button>
+
+   <div class="trust">
+    🔒 Secure Payment | Instant Activation | 24/7 Support
+   </div>
 
   </div>`;
  });
@@ -183,13 +203,19 @@ function buy(plan,price){
 
    <p>Amount: ₹${price}</p>
 
-   <p>${s.upi}</p>
+   <p><b>${s.upi}</b></p>
 
    <img src="${s.qr}" width="200">
 
+   <p style="font-size:12px;color:#aaa;">
+   ✔ Instant activation after verification<br>
+   ✔ Validity as per plan<br>
+   ❌ No refund after activation
+   </p>
+
    <input id="utr" placeholder="Enter UTR Number">
 
-   <button onclick="verify('${plan}','${price}')">Submit</button>
+   <button onclick="verify('${plan}','${price}')">Submit Payment</button>
 
   </div>`;
  });
@@ -208,6 +234,7 @@ function verify(plan,price){
  });
  alert("Payment submitted. Wait for confirmation.");
 }
+
 </script>
 
 </body>
