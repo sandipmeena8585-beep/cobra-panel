@@ -7,7 +7,7 @@
 <style>
 body{
  margin:0;
- padding-top:55px; /* 🔥 topbar space */
+ padding-top:55px;
  font-family:Arial;
  color:#fff;
  text-align:center;
@@ -15,7 +15,7 @@ body{
  background-size:cover;
 }
 
-/* 🔥 NEW TOP BAR (same text, just with menu) */
+/* 🔥 TOP BAR */
 .topbar{
  position:fixed;
  top:0; left:0; width:100%;
@@ -31,37 +31,54 @@ body{
  z-index:10000;
 }
 
-/* 🔥 SMALL MENU ICON */
+/* 🔥 MENU BTN (UPGRADED) */
 .menuBtn{
- font-size:14px;
+ font-size:15px;
  cursor:pointer;
- padding:4px 8px;
- background:#111;
- border-radius:5px;
+ padding:6px 10px;
+ background:linear-gradient(135deg,#2563eb,#1d4ed8);
+ border-radius:8px;
+ box-shadow:0 0 8px rgba(37,99,235,0.6);
+ transition:.2s;
 }
+.menuBtn:active{ transform:scale(0.9); }
 
-/* 🔥 MENU BOX */
+/* 🔥 MENU BOX (UPGRADED) */
 .menuBox{
  position:fixed;
- top:55px;
- right:10px;
- width:150px;
- background:#fff;
+ top:60px;
+ right:12px;
+ width:180px;
+ background:rgba(255,255,255,0.95);
  color:#000;
- border-radius:8px;
+ border-radius:12px;
  display:none;
  z-index:10001;
  overflow:hidden;
+ box-shadow:0 10px 25px rgba(0,0,0,0.4);
+ animation:menuFade .2s ease;
 }
+
 .menuBox div{
- padding:8px;
- font-size:13px;
+ padding:11px;
+ font-size:14px;
  border-bottom:1px solid #eee;
  cursor:pointer;
+ transition:.2s;
 }
-.menuBox div:hover{background:#f1f1f1}
+.menuBox div:last-child{border-bottom:none;}
 
-/* ====== TERA ORIGINAL CSS SAME ====== */
+.menuBox div:hover{
+ background:#2563eb;
+ color:#fff;
+}
+
+@keyframes menuFade{
+ from{opacity:0; transform:translateY(-10px)}
+ to{opacity:1; transform:translateY(0)}
+}
+
+/* ====== TERA ORIGINAL CSS ====== */
 .card{
  background:rgba(30,41,59,0.85);
  margin:10px;
@@ -167,32 +184,18 @@ input,select{
  animation:spin 1s linear infinite;
 }
 
-@keyframes spin{
- to{transform:rotate(360deg)}
-}
+@keyframes spin{ to{transform:rotate(360deg)} }
 
-.btnRow{
- display:flex;
- justify-content:space-between;
-}
+.btnRow{ display:flex; justify-content:space-between; }
 
-.joinBtn{
- background:#0088cc;
- color:#fff;
- width:48%;
-}
-
-.noBtn{
- background:#111;
- color:#fff;
- width:48%;
-}
+.joinBtn{ background:#0088cc; color:#fff; width:48%; }
+.noBtn{ background:#111; color:#fff; width:48%; }
 </style>
 </head>
 
 <body>
 
-<!-- 🔥 UPDATED TOP -->
+<!-- 🔥 TOP -->
 <div class="topbar">
  <div>𝗖𝗢𝗕𝗥𝗔 𝗦𝗘𝗥𝗩𝗘𝗥 𝗣𝗔𝗡𝗡𝗘𝗟</div>
  <div class="menuBtn" onclick="toggleMenu()">☰</div>
@@ -210,14 +213,25 @@ input,select{
 
 <script>
 
-/* 🔥 MENU JS */
+/* MENU */
 function toggleMenu(){
  let m=document.getElementById("menuBox");
  m.style.display = (m.style.display==="block") ? "none" : "block";
 }
+
+/* CLICK OUTSIDE CLOSE */
+document.addEventListener("click",(e)=>{
+ let menu=document.getElementById("menuBox");
+ let btn=document.querySelector(".menuBtn");
+
+ if(menu.style.display==="block" && !menu.contains(e.target) && !btn.contains(e.target)){
+  menu.style.display="none";
+ }
+});
+
 function go(u){ location.href=u; }
 
-/* ===== TERA ORIGINAL JS SAME ===== */
+/* ===== ORIGINAL JS ===== */
 
 let lock=false;
 let shown=false;
@@ -235,7 +249,6 @@ function showOverlay(html){
  div.id="overlayBox";
  div.className="overlay";
  div.innerHTML=html;
-
  document.body.appendChild(div);
 }
 
@@ -272,7 +285,6 @@ function load(){
   });
 
   showMain();
-
  });
 }
 
@@ -313,7 +325,6 @@ function buy(plan,price){
 }
 
 function verify(plan,price){
-
  if(lock) return;
  lock=true;
 
@@ -341,10 +352,8 @@ function verify(plan,price){
 }
 
 function check(u,plan){
-
  let t=setInterval(()=>{
  fetch("/history").then(r=>r.json()).then(h=>{
-
   let f=h.find(x=>x.utr===u && x.plan===plan);
 
   if(f && !shown){
@@ -354,7 +363,6 @@ function check(u,plan){
    if(f.status==="approved") success(f.key);
    if(f.status==="rejected") reject();
   }
-
  });
  },2000);
 }
