@@ -1,4 +1,103 @@
-<h2>Contact Us</h2>
-<p>Email: cobrasupport@gmail.com</p>
-<p>Telegram: @yourbot</p>
-<p>Response time: within 24 hours</p>
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Us</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f172a;
+  color:#fff;
+}
+.container{
+  padding:20px;
+}
+.box{
+  background:linear-gradient(145deg,#111827,#1f2937);
+  border-radius:15px;
+  padding:20px;
+  margin-bottom:20px;
+}
+h1{text-align:center;}
+
+input,textarea,select{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  margin-bottom:15px;
+  border-radius:10px;
+  border:none;
+  background:#1e293b;
+  color:#fff;
+}
+
+button{
+  width:100%;
+  padding:15px;
+  border:none;
+  border-radius:10px;
+  background:#2563eb;
+  color:#fff;
+  font-size:16px;
+}
+
+.success{
+  background:#064e3b;
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:15px;
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Contact Us</h1>
+
+<div class="box">
+<p>Need help? Contact us anytime.</p>
+</div>
+
+<div class="success" id="msg">Message sent successfully!</div>
+
+<div class="box">
+<form onsubmit="sendMsg(event)">
+
+<input type="text" placeholder="Full Name" required>
+
+<input type="text" placeholder="Telegram Username (@username)">
+
+<input type="email" placeholder="Email Address" required>
+
+<select required>
+<option value="">Select Subject</option>
+<option>Technical Support</option>
+<option>Refund Request</option>
+<option>Sales Inquiry</option>
+<option>Account Issue</option>
+<option>Other</option>
+</select>
+
+<textarea placeholder="Your Message..." required></textarea>
+
+<button type="submit">Send Message</button>
+
+</form>
+</div>
+
+</div>
+
+<script>
+function sendMsg(e){
+ e.preventDefault();
+ document.getElementById("msg").style.display="block";
+}
+</script>
+
+</body>
+</html>
